@@ -17,11 +17,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.apache.log4j.Logger;
 
 /**
  * @author tim
  */
 public class ManagedObjectPersistor  {
+    
+  private static final Logger logger = Logger.getLogger(ManagedObjectPersistor.class);
 
   private static final String ROOT_DB = "root_db";
   private static final String OBJECT_ID_SEQUENCE = "object_id_sequence";
@@ -32,6 +35,7 @@ public class ManagedObjectPersistor  {
   private final ObjectIDSequence objectIDSequence;
 
   private final ObjectIDSetMaintainer oidSetMaintainer;
+  private volatile Set<ObjectID>   deleted;
 
   public ManagedObjectPersistor(StorageManager storageManager, SequenceManager sequenceManager, final ObjectIDSetMaintainer oidSetMaintainer) {
     this.rootMap = storageManager.getKeyValueStorage(ROOT_DB, String.class, ObjectID.class);
@@ -77,7 +81,12 @@ public class ManagedObjectPersistor  {
       if ( managedObject.getManagedObjectState() instanceof DeletedClusterObjectState ) {
           //  do nothing.  This does not belong in objectdb
       } else {
-        objectMap.put(managedObject.getID(), managedObject, managedObject.getManagedObjectState().getType());
+        Set<ObjectID> set = this.deleted;
+        if ( set != null && set.contains(managedObject.getID())) {
+          logger.warn("object deleted " + managedObject.getID());
+          } else {
+            objectMap.put(managedObject.getID(), managedObject, managedObject.getManagedObjectState().getType());
+          }
       }
     managedObject.setIsDirty(false);
   }
@@ -90,6 +99,7 @@ public class ManagedObjectPersistor  {
 
   public void deleteAllObjects(Set<ObjectID> ids) {
     objectMap.removeAll(ids);
+    deleted = ids;
   }
 
   public Map<String, ObjectID> loadRootNamesToIDs() {

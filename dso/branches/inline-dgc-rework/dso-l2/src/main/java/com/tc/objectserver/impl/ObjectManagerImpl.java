@@ -485,14 +485,23 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     try {
       for (final ObjectID id : toDelete) {
         ManagedObjectReference ref = this.references.get(id);
-        if (ref != null) {
-          if (ref.setDeleted()) {
-              this.checkedOutCount.incrementAndGet();
-            removeReferenceAndDestroyIfNecessary(id);
-            unmarkReferenced(ref);
-            makeUnBlocked(id);
-          } 
+        if (ref == null) {
+//  TODO: test this.  path may never be used.  concept is that if a delete comes in for a 
+//  non-existent objectid, we must be in passive sync and object will eventually come
+//  so reference needs to be up until the object comes in.
+            ManagedObject mo = objectStore.getObjectByID(id);
+            if ( mo == null ) {
+                mo = objectStore.createObject(id);
+                createObject(mo);
+            } 
+            ref = addNewReference(mo, true);
         }
+        if (ref.setDeleted()) {
+          this.checkedOutCount.incrementAndGet();
+          removeReferenceAndDestroyIfNecessary(id);
+          unmarkReferenced(ref);
+          makeUnBlocked(id);
+        } 
       }
     } finally {
       this.lock.readLock().unlock();

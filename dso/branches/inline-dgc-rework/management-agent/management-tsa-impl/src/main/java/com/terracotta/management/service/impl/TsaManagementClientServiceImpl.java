@@ -1195,6 +1195,8 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
               value = Integer.valueOf(value.intValue() + serverValue.intValue());
               result.put(key, value);
             }
+          } catch (Exception e) {
+            // ignore
           } finally {
             if (jmxConnector != null) {
               jmxConnector.close();
