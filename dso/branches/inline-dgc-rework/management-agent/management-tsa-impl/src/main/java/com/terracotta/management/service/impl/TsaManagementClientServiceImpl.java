@@ -8,6 +8,7 @@ import net.sf.ehcache.management.service.impl.DfltSamplerRepositoryServiceMBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terracotta.management.ServiceExecutionException;
+import org.terracotta.management.resource.exceptions.ExceptionUtils;
 
 import com.tc.config.schema.L2Info;
 import com.tc.config.schema.ServerGroupInfo;
@@ -46,7 +47,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -157,13 +157,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     } catch (Exception e) {
       throw new ServiceExecutionException("error getting client stack traces", e);
     } finally {
-      if (jmxConnector != null) {
-        try {
-          jmxConnector.close();
-        } catch (IOException ioe) {
-          LOG.warn("error closing JMX connection", ioe);
-        }
-      }
+      closeConnector(jmxConnector);
     }
   }
 
@@ -250,13 +244,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     } catch (Exception e) {
       throw new ServiceExecutionException("error making JMX call", e);
     } finally {
-      if (jmxConnector != null) {
-        try {
-          jmxConnector.close();
-        } catch (IOException ioe) {
-          LOG.warn("error closing JMX connection", ioe);
-        }
-      }
+      closeConnector(jmxConnector);
     }
   }
 
@@ -306,13 +294,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     } catch (Exception e) {
       throw new ServiceExecutionException("error making JMX call", e);
     } finally {
-      if (jmxConnector != null) {
-        try {
-          jmxConnector.close();
-        } catch (IOException ioe) {
-          LOG.warn("error closing JMX connection", ioe);
-        }
-      }
+      closeConnector(jmxConnector);
     }
   }
 
@@ -399,13 +381,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     } catch (Exception e) {
       throw new ServiceExecutionException("error making JMX call", e);
     } finally {
-      if (jmxConnector != null) {
-        try {
-          jmxConnector.close();
-        } catch (IOException ioe) {
-          LOG.warn("error closing JMX connection", ioe);
-        }
-      }
+      closeConnector(jmxConnector);
     }
   }
 
@@ -456,13 +432,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     } catch (Exception e) {
       throw new ServiceExecutionException("error making JMX call", e);
     } finally {
-      if (jmxConnector != null) {
-        try {
-          jmxConnector.close();
-        } catch (IOException ioe) {
-          LOG.warn("error closing JMX connection", ioe);
-        }
-      }
+      closeConnector(jmxConnector);
     }
   }
 
@@ -498,13 +468,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     } catch (Exception e) {
       throw new ServiceExecutionException("error making JMX call", e);
     } finally {
-      if (jmxConnector != null) {
-        try {
-          jmxConnector.close();
-        } catch (IOException ioe) {
-          LOG.warn("error closing JMX connection", ioe);
-        }
-      }
+      closeConnector(jmxConnector);
     }
   }
 
@@ -550,12 +514,16 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     } catch (Exception e) {
       throw new ServiceExecutionException("error making JMX call", e);
     } finally {
-      if (jmxConnector != null) {
-        try {
-          jmxConnector.close();
-        } catch (IOException ioe) {
-          LOG.warn("error closing JMX connection", ioe);
-        }
+      closeConnector(jmxConnector);
+    }
+  }
+
+  private void closeConnector(JMXConnector jmxConnector) {
+    if (jmxConnector != null) {
+      try {
+        jmxConnector.close();
+      } catch (IOException ioe) {
+        LOG.warn("error closing JMX connection", ioe);
       }
     }
   }
@@ -602,9 +570,10 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
   }
 
   @Override
-  public Set<String> getL2Urls() throws ServiceExecutionException {
+  public Collection<String> getL2Urls() throws ServiceExecutionException {
+    Collection<String> urls = new ArrayList<String>();
+    Collection<String> exceptions = new ArrayList<String>();
     try {
-      HashSet<String> urls = new HashSet<String>();
       MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
       L2Info[] l2Infos = (L2Info[])mBeanServer.getAttribute(
@@ -619,15 +588,27 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
           }
           urls.add(prefix + serverEntity.getAttributes().get("SecurityHostname") + ":" + serverEntity.getAttributes().get("TSAGroupPort"));
         } catch (ServiceExecutionException see) {
-          LOG.warn("Error building L2 URL of " + l2Info.host(), see);
+          if (LOG.isDebugEnabled()) {
+            LOG.warn("Error building L2 URL of " + l2Info.host(), see);
+          } else {
+            LOG.warn("Error building L2 URL of " + l2Info.host() + ": " + see.getMessage());
+          }
+          exceptions.add("Error building L2 URL of " + l2Info.host() + ": " + see.getMessage());
           urls.add("?");
         }
       }
 
-      return urls;
     } catch (Exception e) {
       throw new ServiceExecutionException("error making JMX call", e);
     }
+
+    // throw ServiceExecutionException if we did not manage to build a single URL
+    HashSet<String> urlSet = new HashSet<String>(urls);
+    if (urlSet.size() == 1 && urlSet.contains("?")) {
+      throw new ServiceExecutionException(exceptions.toString());
+    }
+
+    return urls;
   }
 
   @Override
@@ -658,13 +639,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     } catch (Exception e) {
       throw new ServiceExecutionException("error making JMX call", e);
     } finally {
-      if (jmxConnector != null) {
-        try {
-          jmxConnector.close();
-        } catch (IOException ioe) {
-          LOG.warn("error closing JMX connection", ioe);
-        }
-      }
+      closeConnector(jmxConnector);
     }
   }
 
@@ -718,28 +693,10 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     } catch (ServiceExecutionException see) {
       throw see;
     } catch (Exception e) {
-      throw new ServiceExecutionException("error making JMX call", getRootCause(e));
+      throw new ServiceExecutionException("error making JMX call", ExceptionUtils.getRootCause(e));
     } finally {
-      if (jmxConnector != null) {
-        try {
-          jmxConnector.close();
-        } catch (IOException ioe) {
-          LOG.warn("error closing JMX connection", ioe);
-        }
-      }
+      closeConnector(jmxConnector);
     }
-  }
-
-  private static Throwable getRootCause(Throwable t) {
-    Throwable last = null;
-    while (t != null) {
-      last = t;
-      t = t.getCause();
-    }
-    if (last instanceof InvocationTargetException) {
-      last = ((InvocationTargetException)last).getTargetException();
-    }
-    return last;
   }
 
   @Override
@@ -851,13 +808,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     } catch (Exception e) {
       throw new ServiceExecutionException("error getting clients config", e);
     } finally {
-      if (jmxConnector != null) {
-        try {
-          jmxConnector.close();
-        } catch (IOException ioe) {
-          LOG.warn("error closing JMX connection", ioe);
-        }
-      }
+      closeConnector(jmxConnector);
     }
   }
 
@@ -1342,7 +1293,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
       try {
         jmxConnector = jmxConnectorPool.getConnector(jmxHost, jmxPort);
       } catch (Exception e) {
-        errors.add("Error opening JMX connection to " + jmxHost + ":" + jmxPort + " - " + getRootCause(e).getMessage());
+        errors.add("Error opening JMX connection to " + jmxHost + ":" + jmxPort + " - " + ExceptionUtils.getRootCause(e).getMessage());
       } finally {
         if (jmxConnector != null) {
           try {
@@ -1385,7 +1336,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         }
 
       } catch (IOException ioe) {
-        errors.add("Error opening connection to Security Service Location [" + securityServiceLocation + "]: " + getRootCause(ioe).getMessage());
+        errors.add("Error opening connection to Security Service Location [" + securityServiceLocation + "]: " + ExceptionUtils.getRootCause(ioe).getMessage());
       } catch (Exception e) {
         errors.add("Error setting up SSL socket factory: " + e.getMessage());
       }
