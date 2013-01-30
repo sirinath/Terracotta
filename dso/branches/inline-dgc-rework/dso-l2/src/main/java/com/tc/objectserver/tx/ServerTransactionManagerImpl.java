@@ -49,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -354,6 +353,12 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
     final boolean active = isActive();
 
     for (DNA orgDNA : changes) {
+      if (applyInfo.isObjectIgnored(orgDNA.getObjectID())) {
+        // Just skip broadcasts for changes that are ignorable and missing objects.
+        Assert.assertTrue(orgDNA.isIgnoreMissing());
+        applyInfo.ignoreBroadcastFor(orgDNA.getObjectID());
+        continue;
+      }
       long version = orgDNA.getVersion();
       if (version == DNA.NULL_VERSION) {
         Assert.assertFalse(gtxID.isNull());

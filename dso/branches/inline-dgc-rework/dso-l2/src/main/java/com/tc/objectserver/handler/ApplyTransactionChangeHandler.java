@@ -85,7 +85,7 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
     ApplyTransactionContext atc = (ApplyTransactionContext) context;
     ServerTransaction txn = atc.getTxn();
     ServerTransactionID stxnID = txn.getServerTransactionID();
-    ApplyTransactionInfo applyInfo = new ApplyTransactionInfo(txn.isActiveTxn(), stxnID, txn.isSearchEnabled());
+    ApplyTransactionInfo applyInfo = new ApplyTransactionInfo(txn.isActiveTxn(), stxnID, txn.isSearchEnabled(), atc.getIgnoredObjects());
 
     if (atc.needsApply()) {
       transactionManager.apply(txn, atc.getObjects(), applyInfo, this.instanceMonitor);

@@ -7,37 +7,32 @@ import com.tc.async.api.MultiThreadedEventContext;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.tx.ServerTransaction;
-import java.util.Collection;
-import java.util.HashMap;
+import com.tc.objectserver.tx.TxnObjectGrouping;
+import com.tc.util.ObjectIDSet;
 
+import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 public class ApplyTransactionContext implements MultiThreadedEventContext {
 
-  private final Object key;
+  private final TxnObjectGrouping grouping;
   private final ServerTransaction txn;
-  private final Map<ObjectID, ManagedObject> objects;
   private final boolean needsApply;
+  private final Collection<ObjectID> ignoredObjects;
 
-  public ApplyTransactionContext(ServerTransaction txn, Map<ObjectID, ManagedObject> objects, boolean needsApply, Object key) {
+  public ApplyTransactionContext(ServerTransaction txn, TxnObjectGrouping grouping, boolean needsApply,
+                                 Collection<ObjectID> ignoredObjects) {
     this.txn = txn;
-    this.objects = objects;
     this.needsApply = needsApply;
-    this.key = key;
+    this.grouping = grouping;
+    this.ignoredObjects = ignoredObjects;
   }
-  
-  public ApplyTransactionContext(ServerTransaction txn, Collection<ManagedObject> objects, boolean needsApply, Object key) {
-    this.txn = txn;
-    this.objects = new HashMap<ObjectID,ManagedObject>();
-    for ( ManagedObject object: objects ) {
-        this.objects.put(object.getID(),object);
-    }
-    this.needsApply = needsApply;
-    this.key = key;
-  }
-  
+
   public Map<ObjectID, ManagedObject> getObjects() {
-    return objects;
+    Set<ObjectID> oids = new ObjectIDSet(txn.getObjectIDs());
+    oids.removeAll(ignoredObjects);
+    return grouping.getObjects(oids);
   }
 
   public ServerTransaction getTxn() {
@@ -47,9 +42,13 @@ public class ApplyTransactionContext implements MultiThreadedEventContext {
   public boolean needsApply() {
     return needsApply;
   }
-  
+
+  public Collection<ObjectID> getIgnoredObjects() {
+    return ignoredObjects;
+  }
+
   @Override
   public Object getKey() {
-    return key;
+    return grouping;
   }
 }

@@ -99,7 +99,7 @@ public class TDCSerializedEntryManagedObjectState extends AbstractManagedObjectS
       } else {
         final LogicalAction la = (LogicalAction) action;
         switch (la.getMethod()) {
-          case SerializationUtil.FIELD_CHANGED:
+          case SerializationUtil.IGNORABLE_FIELD_CHANGE:
             Object[] parameters = la.getParameters();
             String fieldName = getString(parameters[0]);
             if (LAST_ACCESS_TIME_FIELD.equals(fieldName)) {
