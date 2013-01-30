@@ -401,7 +401,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
 
  //  locked by ManagedObject checkout
   @Override
-  public synchronized boolean startEviction() {
+  public boolean startEviction() {
     // do not start eviction if it is turned off
     if (!this.evictionEnabled || this.evictionStatus != EvictionStatus.NOT_INITIATED ) {
         return false;
@@ -411,12 +411,12 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
   }
 
   @Override
-  public synchronized boolean isEvicting() {
+  public boolean isEvicting() {
       return this.evictionStatus != EvictionStatus.NOT_INITIATED;
   }
  //  locked by ManagedObject checkout
   @Override
-  public synchronized void evictionCompleted() {
+  public void evictionCompleted() {
     this.evictionStatus = EvictionStatus.NOT_INITIATED;
   }
 
