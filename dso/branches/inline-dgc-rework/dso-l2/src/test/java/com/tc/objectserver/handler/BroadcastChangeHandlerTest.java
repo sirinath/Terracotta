@@ -89,7 +89,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 
 import junit.framework.Assert;
 
@@ -247,6 +246,11 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
     @Override
     public boolean isResent() {
       return false;
+    }
+
+    @Override
+    public Set<ObjectID> ignorableObjects() {
+      return Collections.EMPTY_SET;
     }
   }
 
