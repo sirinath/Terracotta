@@ -600,8 +600,12 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
         logger.info(mor + " is DIRTY but isRemoveOnRelease is true, resetting it");
         mor.setRemoveOnRelease(false);
       } else {
-        final Object removed = this.removeReferenceAndDestroyIfNecessary(mor.getObjectID());
-        if (removed == null) { throw new AssertionError("Removed is null : " + mor); }
+        this.removeReferenceAndDestroyIfNecessary(mor.getObjectID());
+    /**
+     * delete could have removed this object from the references map so this is no longer a valid assertion
+     * 
+     * if (removed == null) { throw new AssertionError("Removed is null : " + mor); }
+     */
       }
     }
   }
