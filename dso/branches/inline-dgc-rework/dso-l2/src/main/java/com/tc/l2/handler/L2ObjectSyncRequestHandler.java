@@ -123,11 +123,11 @@ public class L2ObjectSyncRequestHandler extends AbstractEventHandler {
         i.remove();
         m = objectManager.getObjectByIDReadOnly(oid);
         if ( m != null ) {
-            m.toDNA(out, serializer, DNAType.L2_SYNC);
+          m.toDNA(out, serializer, DNAType.L2_SYNC);
+          synced.add(oid);
         } else {
           deletedOids.add(oid);
         }
-        synced.add(oid);
       } finally {
         if (m != null) {
           this.objectManager.releaseReadOnly(m);
