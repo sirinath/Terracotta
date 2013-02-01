@@ -212,7 +212,8 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
 
   public String shortDescription() {
     return "TxnObjectManager : checked Out count = " + this.checkedOutObjects.size() + " pending txns = "
-           + this.pendingTxnList.size() + " pending object requests = " + this.pendingObjectRequest.size();
+           + this.pendingTxnList.size() + " pending object requests = " + this.pendingObjectRequest.size()
+           + " live object checkouts = " + liveObjectGroupings.size();
   }
 
   private Collection<ObjectID> addObjectsToGrouping(Collection<ObjectID> oids, TxnObjectGrouping txnObjectGrouping, Set<ObjectID> missingOKObjects) {
@@ -303,6 +304,9 @@ public class TransactionalObjectManagerImpl implements TransactionalObjectManage
       for (ManagedObject mo : grouping.getObjects()) {
         liveObjectGroupings.remove(mo.getID());
       }
+      applyInfo.setCommitNow(true);
+    } else {
+      applyInfo.setCommitNow(false);
     }
   }
 

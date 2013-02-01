@@ -146,8 +146,6 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
             throw new AssertionError(ie);
         }
     }
-//    this.version = DELETED_VERSION;
-//    this.state = new DeletedClusterObjectState(ManagedObjectStateStaticConfig.DELETED_CLUSTER_OBJECT.ordinal());
     this.flags = Conversion.setFlag(this.flags, IS_DIRTY_OFFSET, false);
 // if already referenced, someone else owns it, can't de-reference
     if ( (this.flags & REFERENCED_OFFSET) == REFERENCED_OFFSET ) {
@@ -349,9 +347,7 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
                 
             (state != null && 
                 (
-                    state instanceof TDCSerializedEntryManagedObjectState 
-                    || 
-                    state instanceof DeletedClusterObjectState
+                    state instanceof TDCSerializedEntryManagedObjectState
                 ))
            )
            || 

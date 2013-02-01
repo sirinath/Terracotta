@@ -31,6 +31,7 @@ import com.tc.objectserver.tx.ServerTransaction;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionalObjectManager;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -78,7 +79,7 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
     begin();
 
     if (context instanceof FlushApplyCommitContext) {
-      commit(((FlushApplyCommitContext)context).getObjectsToRelease());
+      commit(((FlushApplyCommitContext)context).getObjectsToRelease(), true);
       return;
     }
 
@@ -130,22 +131,21 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
   private void commit(ApplyTransactionContext atc, ApplyTransactionInfo applyInfo) {
     if (atc.needsApply()) {
       commit(applyInfo.getObjectsToRelease(), atc.getTxn().getNewRoots(), 
-              atc.getTxn().getServerTransactionID(), atc.getTxn().getObjectIDs().isEmpty());
+              atc.getTxn().getServerTransactionID(), applyInfo.isCommitNow());
     } else {
-      commit(applyInfo.getObjectsToRelease());
+      commit(applyInfo.getObjectsToRelease(), applyInfo.isCommitNow());
     }
   }
 
   private void commit(Collection<ManagedObject> objectsToRelease, Map<String, ObjectID> moreRoots,
-                      ServerTransactionID stxID,
-                      boolean done) {
+                      ServerTransactionID stxID, boolean done) {
     if (localCommitContext.get().commit(objectsToRelease, moreRoots, stxID, done)) {
       localCommitContext.set(null);
     }
   }
 
-  private void commit(Collection<ManagedObject> objectsToRelease) {
-    if (localCommitContext.get().commit(objectsToRelease, false)) {
+  private void commit(Collection<ManagedObject> objectsToRelease, boolean done) {
+    if (localCommitContext.get().commit(objectsToRelease, done)) {
       localCommitContext.set(null);
     }
   }
@@ -165,9 +165,11 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
     private final Transaction transaction = persistenceTransactionProvider.newTransaction();
     private final Map<String, ObjectID> newRoots = new HashMap<String, ObjectID>();
     private final Collection<ServerTransactionID> stxIDs = new HashSet<ServerTransactionID>();
+    private final Collection<ManagedObject> objectsToRelease = new ArrayList<ManagedObject>();
 
-    public boolean commit(Collection<ManagedObject> objectsToRelease, boolean done) {
-      if (done || !objectsToRelease.isEmpty()) {
+    public boolean commit(Collection<ManagedObject> moreObjectsToRelease, boolean done) {
+      objectsToRelease.addAll(moreObjectsToRelease);
+      if (done) {
         transaction.commit();
         transactionManager.commit(objectsToRelease, newRoots, stxIDs);
         return true;
