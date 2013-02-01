@@ -25,5 +25,7 @@ public interface ManagedObjectReference {
 
   public ManagedObject getObject();
 
-  public boolean setDeleted();
+  public boolean delete();
+  
+  public boolean isDeleted();
 }
