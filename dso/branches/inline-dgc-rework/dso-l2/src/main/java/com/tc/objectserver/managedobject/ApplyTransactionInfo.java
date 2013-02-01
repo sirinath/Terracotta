@@ -35,6 +35,7 @@ public class ApplyTransactionInfo {
   private Invalidations             invalidate         = null;
   private final boolean             isSearchEnabled;
   private final ObjectIDSet         keyPresentForValue = new ObjectIDSet();
+  private boolean commitNow;
 
   // For tests
   public ApplyTransactionInfo() {
@@ -206,5 +207,13 @@ public class ApplyTransactionInfo {
 
   public Collection<ManagedObject> getObjectsToRelease() {
     return objectsToRelease;
+  }
+
+  public boolean isCommitNow() {
+    return commitNow;
+  }
+
+  public void setCommitNow(final boolean commitNow) {
+    this.commitNow = commitNow;
   }
 }

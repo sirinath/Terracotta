@@ -8,7 +8,6 @@ import org.terracotta.corestorage.StorageManager;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.api.Transaction;
 import com.tc.objectserver.core.api.ManagedObject;
-import com.tc.objectserver.managedobject.DeletedClusterObjectState;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.sequence.ObjectIDSequence;
 
@@ -17,14 +16,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.apache.log4j.Logger;
 
 /**
  * @author tim
  */
 public class ManagedObjectPersistor  {
-    
-  private static final Logger logger = Logger.getLogger(ManagedObjectPersistor.class);
 
   private static final String ROOT_DB = "root_db";
   private static final String OBJECT_ID_SEQUENCE = "object_id_sequence";
@@ -77,11 +73,7 @@ public class ManagedObjectPersistor  {
   }
 
   public void saveObject(Transaction tx, ManagedObject managedObject) {
-      if ( managedObject.getManagedObjectState() instanceof DeletedClusterObjectState ) {
-          //  do nothing.  This does not belong in objectdb
-      } else {
-        objectMap.put(managedObject.getID(), managedObject, managedObject.getManagedObjectState().getType());
-      }
+    objectMap.put(managedObject.getID(), managedObject, managedObject.getManagedObjectState().getType());
     managedObject.setIsDirty(false);
   }
 

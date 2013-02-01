@@ -20,16 +20,11 @@ import com.tc.net.NodeID;
 import com.tc.net.groups.GroupManager;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.api.DNA.DNAType;
-import com.tc.object.dna.api.DNAWriter;
-import com.tc.object.dna.impl.ObjectDNAWriterImpl;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.dna.impl.ObjectStringSerializerImpl;
-import com.tc.object.dna.impl.StorageDNAEncodingImpl;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
-import com.tc.objectserver.managedobject.ManagedObjectImpl;
-import com.tc.objectserver.managedobject.ManagedObjectStateStaticConfig;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.ObjectIDSet;
@@ -119,6 +114,7 @@ public class L2ObjectSyncRequestHandler extends AbstractEventHandler {
     final TCByteBufferOutputStream out = new TCByteBufferOutputStream();
     final ObjectIDSet synced = new ObjectIDSet();
     final ObjectIDSet notSynced = new ObjectIDSet(oids);
+    final ObjectIDSet deletedOids = new ObjectIDSet();
     final Iterator<ObjectID> i = notSynced.iterator();
     for (; i.hasNext() && L2_OBJECT_SYNC_MESSAGE_MAXSIZE > (out.getBytesWritten() + serializer.getApproximateBytesWritten());) {
       ManagedObject m = null;
@@ -129,11 +125,7 @@ public class L2ObjectSyncRequestHandler extends AbstractEventHandler {
         if ( m != null ) {
             m.toDNA(out, serializer, DNAType.L2_SYNC);
         } else {
-            DNAWriter writer = new ObjectDNAWriterImpl(out, oid, 
-                    ManagedObjectStateStaticConfig.DELETED_CLUSTER_OBJECT.getClientClassName(), 
-                    serializer, new StorageDNAEncodingImpl(), 0l, false);
-            writer.markSectionEnd();
-            writer.finalizeHeader();
+          deletedOids.add(oid);
         }
         synced.add(oid);
       } finally {
@@ -142,7 +134,7 @@ public class L2ObjectSyncRequestHandler extends AbstractEventHandler {
         }
       }
     }
-    mosc.setDehydratedBytes(synced, notSynced, out.toArray(), synced.size(), serializer);
+    mosc.setDehydratedBytes(synced, notSynced, out.toArray(), synced.size(), serializer, deletedOids);
     this.sendSink.add(mosc);
   }
 
