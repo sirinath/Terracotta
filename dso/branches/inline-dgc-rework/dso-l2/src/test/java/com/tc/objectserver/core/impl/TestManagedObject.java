@@ -81,10 +81,14 @@ public class TestManagedObject implements ManagedObject, ManagedObjectReference,
   }
 
     @Override
-    public boolean setDeleted() {
+    public boolean delete() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
+    public boolean isDeleted() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
   public void commit() {
     return;

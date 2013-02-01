@@ -486,18 +486,37 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     try {
       for (final ObjectID id : toDelete) {
         ManagedObjectReference ref = this.references.get(id);
-        if (ref != null) {
-          if ( !ref.isNew() && markReferenced(ref)) {
-            removeReferenceAndDestroyIfNecessary(id);
+        boolean addedRef = false;
+        if (ref == null) {
+//  TODO: test this.  path may never be used.  concept is that if a delete comes in for a 
+//  non-existent objectid, we must be in passive sync and object will eventually come
+//  so reference needs to be up until the object comes in.
+            ManagedObject mo = objectStore.getObjectByID(id);
+//  object is not here yet, need to queue it for lookup so
+//  we can delete it when it arrives
+            if (mo == null) {
+              if ( referenced == null ) {
+                  referenced = new ObjectIDSet();
+              }
+              referenced.add(id);
+              continue;
+            } else {
+              ref = addNewReference(mo, true);
+              addedRef = true;
+            }
+        }
+        if ( ref.delete() && addedRef ) {
+//  delete has the reference.  No one else should ever see this object again
+//  so remove the reference from the reference map
+            this.checkedOutCount.incrementAndGet();
+            removeReferenceIfNecessary(ref);
             unmarkReferenced(ref);
             makeUnBlocked(id);
-          } else {
-            if (referenced == null) {
-              referenced = new ObjectIDSet();
-            }
-            referenced.add(id);
-          }
-       }
+        } else {
+// weren't able to mark the reference, so the reference must hang around until 
+//  all operators are done with it.  All applies will noop because the managed 
+//  object under the reference no longer exists
+        }
      }
     } finally {
       this.lock.readLock().unlock();
@@ -629,12 +648,9 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
         logger.info(mor + " is DIRTY but isRemoveOnRelease is true, resetting it");
         mor.setRemoveOnRelease(false);
       } else {
-        this.removeReferenceAndDestroyIfNecessary(mor.getObjectID());
-    /**
-     * delete could have removed this object from the references map so this is no longer a valid assertion
-     * 
-     * if (removed == null) { throw new AssertionError("Removed is null : " + mor); }
-     */
+        final ManagedObjectReference removed = this.removeReferenceAndDestroyIfNecessary(mor.getObjectID());
+
+        if (removed == null) { throw new AssertionError("Removed is null : " + mor); }
       }
     }
   }
@@ -706,9 +722,10 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
   }
 
   @Override
-  public void deleteObjects(final Set<ObjectID> toDelete) {
+  public void deleteObjects(Set<ObjectID> toDelete) {
     SortedSet<ObjectID> notDeleted = removeAllObjectsByID(toDelete);
     if ( notDeleted != null ) {
+        toDelete = new ObjectIDSet(toDelete);
         toDelete.removeAll(notDeleted);
         lookupAndDelete((ObjectIDSet)notDeleted);
     }

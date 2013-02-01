@@ -56,7 +56,6 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   private final static byte                INITIAL_FLAG_VALUE       = IS_DIRTY_OFFSET | IS_NEW_OFFSET;
 
   private static final long                UNINITIALIZED_VERSION    = -1;
-  private static final long                DELETED_VERSION    = Long.MAX_VALUE;
 
   private final ObjectID                   id;
   private long                             version                  = UNINITIALIZED_VERSION;
@@ -127,12 +126,13 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
     setBasicIsNew(isNew);
   }
   
-  private boolean isDeleted() {
+    @Override
+  public boolean isDeleted() {
       return getFlag(DELETED_OFFSET);
   }
   
   @Override
-  public synchronized boolean setDeleted() {
+  public synchronized boolean delete() {
     if ( (this.flags & DELETED_OFFSET) == DELETED_OFFSET ) {
         return false;
     }
@@ -146,10 +146,9 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
             throw new AssertionError(ie);
         }
     }
-    this.version = DELETED_VERSION;
-    this.state = new DeletedClusterObjectState(ManagedObjectStateStaticConfig.DELETED_CLUSTER_OBJECT.ordinal());
+//    this.version = DELETED_VERSION;
+//    this.state = new DeletedClusterObjectState(ManagedObjectStateStaticConfig.DELETED_CLUSTER_OBJECT.ordinal());
     this.flags = Conversion.setFlag(this.flags, IS_DIRTY_OFFSET, false);
-    this.flags = Conversion.setFlag(this.flags, REMOVE_ON_RELEASE_OFFSET, true);
 // if already referenced, someone else owns it, can't de-reference
     if ( (this.flags & REFERENCED_OFFSET) == REFERENCED_OFFSET ) {
         return false;
@@ -312,6 +311,7 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
     out.indent().print("version:" + this.version).println();
     out.indent().print("state: ").visit(this.state).println();
     out.indent().print("isDirty:" + isDirty());
+    out.indent().print("isDeleted:" + isDeleted());
     out.indent().print("isNew:" + isNew());
     out.indent().print("isReferenced:" + isReferenced()).println();
     return rv;
