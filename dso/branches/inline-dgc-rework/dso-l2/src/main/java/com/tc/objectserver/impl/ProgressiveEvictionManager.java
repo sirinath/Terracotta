@@ -358,7 +358,7 @@ public class ProgressiveEvictionManager implements ServerMapEvictionManager {
   }
 
   @Override
-  public void evict(ObjectID oid, Map samples, String className, String cacheName) {
+  public void evict(ObjectID oid, Map<Object,ObjectID> samples, String className, String cacheName) {
     evictor.evictFrom(oid, samples, className, cacheName);
   }
 

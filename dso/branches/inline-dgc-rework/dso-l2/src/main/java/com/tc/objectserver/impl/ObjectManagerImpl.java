@@ -480,33 +480,62 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     postRelease();
   }
 
-  private void removeAllObjectsByID(final Set<ObjectID> toDelete) {
+  private SortedSet<ObjectID> removeAllObjectsByID(final Set<ObjectID> toDelete) {
+    SortedSet<ObjectID> referenced = null;
     this.lock.readLock().lock();
     try {
       for (final ObjectID id : toDelete) {
         ManagedObjectReference ref = this.references.get(id);
-        if (ref == null) {
-//  TODO: test this.  path may never be used.  concept is that if a delete comes in for a 
-//  non-existent objectid, we must be in passive sync and object will eventually come
-//  so reference needs to be up until the object comes in.
-            ManagedObject mo = objectStore.getObjectByID(id);
-            if ( mo == null ) {
-                mo = objectStore.createObject(id);
-                createObject(mo);
-            } 
-            ref = addNewReference(mo, true);
-        }
-        if (ref.setDeleted()) {
-          this.checkedOutCount.incrementAndGet();
-          removeReferenceAndDestroyIfNecessary(id);
-          unmarkReferenced(ref);
-          makeUnBlocked(id);
-        } 
-      }
+        if (ref != null) {
+          if ( !ref.isNew() && markReferenced(ref)) {
+            removeReferenceAndDestroyIfNecessary(id);
+            unmarkReferenced(ref);
+            makeUnBlocked(id);
+          } else {
+            if (referenced == null) {
+              referenced = new ObjectIDSet();
+            }
+            referenced.add(id);
+          }
+       }
+     }
     } finally {
       this.lock.readLock().unlock();
     }
+    return referenced;
   }
+  
+  private void lookupAndDelete(final ObjectIDSet toDelete) {
+    assertNotInShutdown();
+
+    final ObjectManagerResultsContext waitContext = new ObjectManagerResultsContext() {
+
+          @Override
+          public ObjectIDSet getLookupIDs() {
+              return toDelete;
+          }
+
+          @Override
+          public ObjectIDSet getNewObjectIDs() {
+              return TCCollections.EMPTY_OBJECT_ID_SET;
+          }
+
+          @Override
+          public void setResults(ObjectManagerLookupResults results) {
+              Map<ObjectID,ManagedObject> map = results.getObjects();
+              releaseAll(map.values());
+              deleteObjects(map.keySet());
+              if (  !results.getLookupPendingObjectIDs().isEmpty() ) {
+//              if (  !results.getLookupPendingObjectIDs().isEmpty() || !results.getMissingObjectIDs().isEmpty() ) {
+                  throw new AssertionError("deletion is not complete " + !results.getLookupPendingObjectIDs().isEmpty() + " " + !results.getMissingObjectIDs().isEmpty());
+              }
+          }
+        
+    };
+    final ObjectManagerLookupContext context = new ObjectManagerLookupContext(waitContext, AccessLevel.READ_WRITE);
+    basicLookupObjectsFor(ClientID.NULL_ID, context, -1);
+  }
+  
 
   @Override
   public int getCheckedOutCount() {
@@ -678,7 +707,11 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
 
   @Override
   public void deleteObjects(final Set<ObjectID> toDelete) {
-    removeAllObjectsByID(toDelete);
+    SortedSet<ObjectID> notDeleted = removeAllObjectsByID(toDelete);
+    if ( notDeleted != null ) {
+        toDelete.removeAll(notDeleted);
+        lookupAndDelete((ObjectIDSet)notDeleted);
+    }
     this.objectStore.removeAllObjectsByID(toDelete);    
     // Process pending, since we disabled process pending while GC pause was initiate.
     processPendingLookups();
