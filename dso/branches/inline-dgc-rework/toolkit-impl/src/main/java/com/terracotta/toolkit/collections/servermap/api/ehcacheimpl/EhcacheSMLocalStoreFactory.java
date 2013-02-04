@@ -86,6 +86,7 @@ public class EhcacheSMLocalStoreFactory implements ServerMapLocalStoreFactory {
     }
 
     if (config.isPinnedInLocalMemory()) {
+      // pin elements in local shadow cache.
       cacheConfig.pinning(new PinningConfiguration().store(PinningConfiguration.Store.LOCALMEMORY));
     }
 
