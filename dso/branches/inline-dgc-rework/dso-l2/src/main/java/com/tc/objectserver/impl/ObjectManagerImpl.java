@@ -650,7 +650,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       } else {
         final ManagedObjectReference removed = this.removeReferenceAndDestroyIfNecessary(mor.getObjectID());
 
-        if (removed == null) { throw new AssertionError("Removed is null : " + mor); }
+        if (removed == null && !mor.isDeleted()) { throw new AssertionError("Removed is null : " + mor); }
       }
     }
   }
