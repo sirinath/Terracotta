@@ -27,8 +27,6 @@ import com.tc.objectserver.managedobject.ManagedObjectTraverser;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 
-import gnu.trove.TLinkable;
-
 import java.io.IOException;
 import java.io.ObjectOutput;
 import java.io.Serializable;
@@ -79,16 +77,6 @@ public class TestManagedObject implements ManagedObject, ManagedObjectReference,
                     final ObjectInstanceMonitor imo) {
     // do nothing
   }
-
-    @Override
-    public boolean delete() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public boolean isDeleted() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
 
   public void commit() {
     return;

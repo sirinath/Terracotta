@@ -20,7 +20,15 @@ import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.util.Assert;
 import com.tc.util.ObjectIDSet;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 
 public class GCTestObjectManager implements ObjectManager {
 
@@ -238,7 +246,12 @@ public class GCTestObjectManager implements ObjectManager {
   }
 
   @Override
-  public void deleteObjects(final Set<ObjectID> objectsToDelete) {
-    //
+  public Set<ObjectID> deleteObjects(final Set<ObjectID> objectsToDelete) {
+    return Collections.EMPTY_SET;
+  }
+
+  @Override
+  public Set<ObjectID> tryDeleteObjects(final Set<ObjectID> objectsToDelete) {
+    return Collections.EMPTY_SET;
   }
 }
