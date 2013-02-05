@@ -257,10 +257,6 @@ public class ManagedObjectImpl implements ManagedObject, ManagedObjectReference,
   }
 
   private void setState(final ManagedObjectState newState) {
-    if ( Conversion.getFlag(this.flags, DELETED_OFFSET) ) {
-        return;
-    }
-    
     if (this.state != null) { throw new AssertionError("Trying to set state on already initialized object : " + this
                                                        + " state : " + this.state); }
     this.state = newState;
