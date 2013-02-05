@@ -93,6 +93,11 @@ enum LookupState implements LookupStateTransition {
 
   MISSING_OBJECT_ID {
     @Override
+    public LookupState makeMissingObject() {
+      return this;
+    }
+
+    @Override
     public boolean isMissing() {
       return true;
     }
