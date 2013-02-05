@@ -4,9 +4,6 @@
  */
 package com.tc.objectserver.impl;
 
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-
 import org.apache.commons.lang.NotImplementedException;
 
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
@@ -78,6 +75,7 @@ import com.tc.util.sequence.SimpleSequence;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -88,6 +86,9 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import junit.framework.TestCase;
+
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 public class ObjectRequestManagerTest extends TestCase {
 
@@ -1017,8 +1018,13 @@ public class ObjectRequestManagerTest extends TestCase {
     }
 
     @Override
-    public void deleteObjects(final Set<ObjectID> objectsToDelete) {
-      //
+    public Set<ObjectID> deleteObjects(final Set<ObjectID> objectsToDelete) {
+      return Collections.EMPTY_SET;
+    }
+
+    @Override
+    public Set<ObjectID> tryDeleteObjects(final Set<ObjectID> objectsToDelete) {
+      return Collections.EMPTY_SET;
     }
   }
 

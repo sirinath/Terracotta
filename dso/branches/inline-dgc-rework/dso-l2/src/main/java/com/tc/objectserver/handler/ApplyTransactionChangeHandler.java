@@ -14,6 +14,7 @@ import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.gtx.GlobalTransactionManager;
 import com.tc.object.locks.Notify;
 import com.tc.object.tx.ServerTransactionID;
+import com.tc.objectserver.api.GarbageCollectionManager;
 import com.tc.objectserver.api.ObjectInstanceMonitor;
 import com.tc.objectserver.api.Transaction;
 import com.tc.objectserver.api.TransactionProvider;
@@ -60,6 +61,7 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
   private final TransactionProvider      persistenceTransactionProvider;
 
   private final ThreadLocal<CommitContext> localCommitContext = new ThreadLocal<CommitContext>();
+  private GarbageCollectionManager garbageCollectionManager;
 
   public ApplyTransactionChangeHandler(final ObjectInstanceMonitor instanceMonitor, final GlobalTransactionManager gtxm,
                                        TransactionProvider persistenceTransactionProvider) {
@@ -90,7 +92,7 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
 
     if (atc.needsApply()) {
       transactionManager.apply(txn, atc.getObjects(), applyInfo, this.instanceMonitor);
-      transactionManager.cleanup(applyInfo.getObjectIDsToDelete());
+      garbageCollectionManager.deleteObjects(applyInfo.getObjectIDsToDelete());
       txnObjectMgr.applyTransactionComplete(applyInfo);
     } else {
       transactionManager.skipApplyAndCommit(txn);
@@ -159,6 +161,7 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
     this.evictionInitiateSink = scc.getStage(ServerConfigurationContext.SERVER_MAP_CAPACITY_EVICTION_STAGE).getSink();
     this.txnObjectMgr = scc.getTransactionalObjectManager();
     this.lockManager = scc.getLockManager();
+    this.garbageCollectionManager = scc.getGarbageCollectionManager();
   }
 
   public class CommitContext {

@@ -9,7 +9,14 @@ import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.net.NodeID;
 import com.tc.object.ObjectID;
-import com.tc.objectserver.api.*;
+import com.tc.objectserver.api.Destroyable;
+import com.tc.objectserver.api.NoSuchObjectException;
+import com.tc.objectserver.api.ObjectManager;
+import com.tc.objectserver.api.ObjectManagerLookupResults;
+import com.tc.objectserver.api.ObjectManagerStatsListener;
+import com.tc.objectserver.api.ShutdownError;
+import com.tc.objectserver.api.Transaction;
+import com.tc.objectserver.api.TransactionProvider;
 import com.tc.objectserver.context.DGCResultContext;
 import com.tc.objectserver.context.ObjectManagerResultsContext;
 import com.tc.objectserver.core.api.ManagedObject;
@@ -27,7 +34,17 @@ import com.tc.util.ObjectIDSet;
 import com.tc.util.TCCollections;
 import com.tc.util.concurrent.TCConcurrentMultiMap;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -267,14 +284,13 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
    * 
    * @return null if the object is missing
    */
-  private ManagedObjectReference getOrLookupReference(final ObjectManagerLookupContext context, final ObjectID id) {
+  private ManagedObjectReference getOrLookupReference(final ObjectID id) {
     ManagedObjectReference rv = getReference(id);
 
     if (rv == null) {
       ManagedObject mo = objectStore.getObjectByID(id);
       if (mo == null) {
         // Object doesn't exist, bail out early.
-        context.missingObject(id);
         return null;
       } else {
         rv = addNewReference(mo, false);
@@ -340,8 +356,11 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       // We don't check available flag before doing calling getOrLookupReference() for two reasons.
       // 1) To get the right hit/miss count and
       // 2) to Fault objects that are not available
-      final ManagedObjectReference reference = getOrLookupReference(context, id);
-      if (reference == null || !available) {
+      final ManagedObjectReference reference = getOrLookupReference(id);
+      if (reference == null) {
+        context.missingObject(id);
+        continue;
+      } else if (!available) {
         continue;
       }
 
@@ -480,81 +499,53 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     postRelease();
   }
 
-  private SortedSet<ObjectID> removeAllObjectsByID(final Set<ObjectID> toDelete) {
-    SortedSet<ObjectID> referenced = null;
-    this.lock.readLock().lock();
-    try {
-      for (final ObjectID id : toDelete) {
-        ManagedObjectReference ref = this.references.get(id);
-        boolean addedRef = false;
+  private ObjectIDSet removeAllObjectsByID(final Set<ObjectID> toDelete) {
+    ObjectIDSet missingObjects = new ObjectIDSet();
+    while(!toDelete.isEmpty()) {
+      Iterator<ObjectID> i = toDelete.iterator();
+      while (i.hasNext()) {
+        ObjectID id = i.next();
+        ManagedObjectReference ref = getOrLookupReference(id);
         if (ref == null) {
-//  TODO: test this.  path may never be used.  concept is that if a delete comes in for a 
-//  non-existent objectid, we must be in passive sync and object will eventually come
-//  so reference needs to be up until the object comes in.
-            ManagedObject mo = objectStore.getObjectByID(id);
-//  object is not here yet, need to queue it for lookup so
-//  we can delete it when it arrives
-            if (mo == null) {
-              if ( referenced == null ) {
-                  referenced = new ObjectIDSet();
-              }
-              referenced.add(id);
-              continue;
-            } else {
-              ref = addNewReference(mo, true);
-              addedRef = true;
-            }
+          logger.info("Can't find ref! " + id);
+          missingObjects.add(id);
+          i.remove();
+          continue;
         }
-        if ( ref.delete() && addedRef ) {
-//  delete has the reference.  No one else should ever see this object again
-//  so remove the reference from the reference map
-            this.checkedOutCount.incrementAndGet();
-            removeReferenceIfNecessary(ref);
-            unmarkReferenced(ref);
-            makeUnBlocked(id);
-        } else {
-// weren't able to mark the reference, so the reference must hang around until 
-//  all operators are done with it.  All applies will noop because the managed 
-//  object under the reference no longer exists
+        if (markReferenced(ref)) {
+          if (!ref.isNew()) {
+            i.remove();
+            objectStore.removeAllObjectsByID(Collections.singleton(id));
+          }
+          removeReferenceIfNecessary(ref);
+          unmarkReferenced(ref);
+          makeUnBlocked(id);
         }
-     }
-    } finally {
-      this.lock.readLock().unlock();
+      }
     }
-    return referenced;
+    return missingObjects;
   }
-  
-  private void lookupAndDelete(final ObjectIDSet toDelete) {
-    assertNotInShutdown();
 
-    final ObjectManagerResultsContext waitContext = new ObjectManagerResultsContext() {
-
-          @Override
-          public ObjectIDSet getLookupIDs() {
-              return toDelete;
-          }
-
-          @Override
-          public ObjectIDSet getNewObjectIDs() {
-              return TCCollections.EMPTY_OBJECT_ID_SET;
-          }
-
-          @Override
-          public void setResults(ObjectManagerLookupResults results) {
-              Map<ObjectID,ManagedObject> map = results.getObjects();
-              releaseAll(map.values());
-              deleteObjects(map.keySet());
-              if (  !results.getLookupPendingObjectIDs().isEmpty() ) {
-//              if (  !results.getLookupPendingObjectIDs().isEmpty() || !results.getMissingObjectIDs().isEmpty() ) {
-                  throw new AssertionError("deletion is not complete " + !results.getLookupPendingObjectIDs().isEmpty() + " " + !results.getMissingObjectIDs().isEmpty());
-              }
-          }
-        
-    };
-    final ObjectManagerLookupContext context = new ObjectManagerLookupContext(waitContext, AccessLevel.READ_WRITE);
-    basicLookupObjectsFor(ClientID.NULL_ID, context, -1);
+  @Override
+  public Set<ObjectID> tryDeleteObjects(final Set<ObjectID> objectsToDelete) {
+    Set<ObjectID> retry = new ObjectIDSet();
+    for (ObjectID objectID : objectsToDelete) {
+      ManagedObjectReference ref = getOrLookupReference(objectID);
+      if (ref == null || !markReferenced(ref)) {
+        retry.add(objectID);
+        continue;
+      } else if (ref.isNew()) {
+        retry.add(objectID);
+      } else {
+        objectStore.removeAllObjectsByID(Collections.singleton(objectID));
+      }
+      removeReferenceIfNecessary(ref);
+      unmarkReferenced(ref);
+      makeUnBlocked(objectID);
+    }
+    processPendingLookups();
+    return retry;
   }
-  
 
   @Override
   public int getCheckedOutCount() {
@@ -650,7 +641,7 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
       } else {
         final ManagedObjectReference removed = this.removeReferenceAndDestroyIfNecessary(mor.getObjectID());
 
-        if (removed == null && !mor.isDeleted()) { throw new AssertionError("Removed is null : " + mor); }
+        if (removed == null) { throw new AssertionError("Removed is null : " + mor); }
       }
     }
   }
@@ -718,20 +709,23 @@ public class ObjectManagerImpl implements ObjectManager, ManagedObjectChangeList
     } finally {
       this.lock.writeLock().unlock();
     }
+    Transaction transaction = persistenceTransactionProvider.newTransaction();
     deleteObjects(gcResult.getGarbageIDs());
+    transaction.commit();
   }
 
   @Override
-  public void deleteObjects(Set<ObjectID> toDelete) {
-    SortedSet<ObjectID> notDeleted = removeAllObjectsByID(toDelete);
-    if ( notDeleted != null ) {
-        toDelete = new ObjectIDSet(toDelete);
-        toDelete.removeAll(notDeleted);
-        lookupAndDelete((ObjectIDSet)notDeleted);
-    }
-    this.objectStore.removeAllObjectsByID(toDelete);    
+  public Set<ObjectID> deleteObjects(Set<ObjectID> toDelete) {
+    ObjectIDSet missing = removeAllObjectsByID(new ObjectIDSet(toDelete));
+
     // Process pending, since we disabled process pending while GC pause was initiate.
     processPendingLookups();
+
+    return missing;
+//
+//    if (!notDeleted.isEmpty()) {
+//      lookupAndDelete(notDeleted);
+//    }
   }
   
   private void flushAllAndCommit(final Transaction persistenceTransaction, final Collection managedObjects) {
