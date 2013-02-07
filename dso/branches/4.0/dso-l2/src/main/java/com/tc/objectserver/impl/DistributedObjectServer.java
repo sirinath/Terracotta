@@ -956,9 +956,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
         .getSequence(SequenceNames.DGC_SEQUENCE_NAME.getName(), 1L);
     final DGCSequenceProvider dgcSequenceProvider = new DGCSequenceProvider(dgcSequence);
     final GarbageCollector gc = new MarkAndSweepGarbageCollector(objectManagerConfig, this.objectManager,
-            this.clientStateManager, gcPublisher,
-            dgcSequenceProvider,
-            garbageCollectionManager);
+            this.clientStateManager, gcPublisher, dgcSequenceProvider);
     gc.addListener(getGcStatsEventPublisher());
     gc.addListener(new DGCOperatorEventPublisher());
 
