@@ -12,7 +12,6 @@ import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.net.ClientID;
-import com.tc.object.ObjectID;
 import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.MetaDataReader;
 import com.tc.object.locks.LockID;
@@ -23,11 +22,11 @@ import com.tc.object.locks.ThreadID;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
+import com.tc.objectserver.api.GarbageCollectionManager;
 import com.tc.objectserver.api.Transaction;
 import com.tc.objectserver.api.TransactionProvider;
 import com.tc.objectserver.context.ApplyTransactionContext;
 import com.tc.objectserver.context.BroadcastChangeContext;
-import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.core.impl.TestServerConfigurationContext;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
@@ -39,6 +38,7 @@ import com.tc.objectserver.tx.ServerTransaction;
 import com.tc.objectserver.tx.ServerTransactionImpl;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionalObjectManager;
+import com.tc.objectserver.tx.TxnObjectGrouping;
 import com.tc.util.SequenceID;
 
 import java.util.Collection;
@@ -84,6 +84,7 @@ public class ApplyTransactionChangeHandlerTest extends TestCase {
     context.addStage(ServerConfigurationContext.BROADCAST_CHANGES_STAGE, broadcastStage);
     context.addStage(ServerConfigurationContext.COMMIT_CHANGES_STAGE, mock(Stage.class));
     context.addStage(ServerConfigurationContext.SERVER_MAP_CAPACITY_EVICTION_STAGE, mock(Stage.class));
+    context.garbageCollectionManager = mock(GarbageCollectionManager.class);
     context.lockManager = this.lockManager;
 
     this.handler.initializeContext(context);
@@ -91,13 +92,15 @@ public class ApplyTransactionChangeHandlerTest extends TestCase {
 
   public void testLockManagerNotifyOnNoApply() throws Exception {
     ServerTransaction tx = createServerTransaction();
-    this.handler.handleEvent(new ApplyTransactionContext(tx, Collections.<ObjectID, ManagedObject>emptyMap(), false, 1));
+    TxnObjectGrouping grouping = new TxnObjectGrouping(tx.getServerTransactionID());
+    this.handler.handleEvent(new ApplyTransactionContext(tx, grouping, false, Collections.EMPTY_SET));
     verifyNotifies(tx);
   }
 
   public void testLockManagerNotifyOnApply() throws Exception {
     ServerTransaction tx = createServerTransaction();
-    this.handler.handleEvent(new ApplyTransactionContext(tx, Collections.<ObjectID, ManagedObject>emptyMap(), true, 1));
+    TxnObjectGrouping grouping = new TxnObjectGrouping(tx.getServerTransactionID());
+    this.handler.handleEvent(new ApplyTransactionContext(tx, grouping, true, Collections.EMPTY_SET));
     verifyNotifies(tx);
   }
 
