@@ -12,6 +12,7 @@ import com.tc.object.BaseDSOTestCase;
 import com.tc.objectserver.control.ExtraL1ProcessControl;
 import com.tc.test.JMXUtils;
 import com.tc.util.Assert;
+import com.tc.util.CallableWaiter;
 import com.tc.util.TcConfigBuilder;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tctest.process.ExternalDsoServer;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import javax.management.MBeanServerConnection;
 import javax.management.remote.JMXConnector;
@@ -60,15 +62,22 @@ public class TcConfigFromServerInitializationSystemTest extends BaseDSOTestCase 
     ExtraL1ProcessControl client2 = createClient(0, 2);
     client2.start();
     ThreadUtil.reallySleep(30000);
-    File workingDirectory = new File(TcConfigFromServerInitializationSystemTest.class.getSimpleName() + File.separator
+
+    final File workingDirectory = new File(TcConfigFromServerInitializationSystemTest.class.getSimpleName()
+                                           + File.separator
                                      + "l1client0");
     System.out.println("XXXX " + workingDirectory.getAbsolutePath());
     Assert.assertTrue(workingDirectory.exists());
     Assert.assertTrue(workingDirectory.isDirectory());
-    String[] extensions = { "log" };
-    Collection logFiles = FileUtils.listFiles(workingDirectory, extensions, true);
-
-    Assert.assertEquals(2, logFiles.size());
+    final String[] extensions = { "log" };
+    CallableWaiter.waitOnCallable(new Callable<Boolean>() {
+      @Override
+      public Boolean call() throws Exception {
+        Collection logFiles = FileUtils.listFiles(workingDirectory, extensions, true);
+        System.out.println("Number of log files found " + logFiles.size());
+        return logFiles.size() == 2;
+      }
+    });
   }
 
   private boolean isActive(int jmxPort) {
