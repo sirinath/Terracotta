@@ -463,7 +463,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     NIOWorkarounds.solaris10Workaround();
     ConcurrentDistributedServerMapManagedObjectState.init();
     this.tcProperties = TCPropertiesImpl.getProperties();
-    final TCProperties objManagerProperties = this.l2Properties.getPropertiesFor("objectmanager");
     this.l1ReconnectConfig = new L1ReconnectConfigImpl();
     final boolean restartable = l2DSOConfig.getRestartable().getEnabled();
 
