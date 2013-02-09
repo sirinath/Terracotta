@@ -30,9 +30,9 @@
     <jetty.version>6.1.8</jetty.version>
     <slf4j.version>1.6.1</slf4j.version>
     <offheap-store.version>1.0.10</offheap-store.version>
-    <search.version>1.1.1</search.version>
-    <security-core-version>1.0.4</security-core-version>
-    <security-keychain-version>1.0.4</security-keychain-version>
+    <search.version>1.1.2</search.version>
+    <security-core-version>1.0.5</security-core-version>
+    <security-keychain-version>1.0.5</security-keychain-version>
     <management.version>1.0.2</management.version>
     <terracotta-license.version>1.0.5</terracotta-license.version>
     <derby.version>10.8.2.2</derby.version>
