@@ -131,6 +131,14 @@ public class ExternalDsoServer {
     inited = true;
   }
 
+  public void stop(String username, String password) throws Exception {
+    Assert.assertNotNull(serverProc);
+    Assert.assertNotNull(logOutputStream);
+    serverProc.shutdown(username, password);
+    inited = false;
+    IOUtils.closeQuietly(logOutputStream);
+  }
+
   public void stop() throws Exception {
     Assert.assertNotNull(serverProc);
     Assert.assertNotNull(logOutputStream);

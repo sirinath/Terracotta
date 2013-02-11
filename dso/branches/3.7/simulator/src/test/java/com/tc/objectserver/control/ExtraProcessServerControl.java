@@ -381,8 +381,28 @@ public class ExtraProcessServerControl extends ServerControlBase {
   }
 
   public void attemptForceShutdown() throws Exception {
-    System.out.println("Force Shutting down server " + this.name + "...");
-    LinkedJavaProcess stopper = createLinkedJavaProcess("com.tc.admin.TCStop", getMainClassArguments(), jvmArgs);
+    attemptForceShutdown(null, null);
+  }
+
+  public void attemptForceShutdown(String username, String passwd) throws Exception {
+    System.out.println("Force Shutting down server " + this.name +
+                       (username != null ? ", username = " + username : "") +
+                       (passwd != null ? ", passwd = " + passwd : "") + "...");
+
+    List<String> mainClassArguments = new ArrayList<String>();
+    mainClassArguments.addAll(getMainClassArguments());
+    mainClassArguments.add("-force");
+
+    if (username != null) {
+      mainClassArguments.add("-u");
+      mainClassArguments.add(username);
+    }
+    if (passwd != null) {
+      mainClassArguments.add("-w");
+      mainClassArguments.add(passwd);
+    }
+
+    LinkedJavaProcess stopper = createLinkedJavaProcess("com.tc.admin.TCStop", mainClassArguments, jvmArgs);
     stopper.start();
 
     ByteArrayOutputStream stopperLog = null;
@@ -413,6 +433,16 @@ public class ExtraProcessServerControl extends ServerControlBase {
   public void shutdown() throws Exception {
     try {
       attemptForceShutdown();
+    } catch (Exception e) {
+      System.err.println("Attempt to shutdown server but it might have already crashed: " + e.getMessage());
+    }
+    waitUntilShutdown();
+    System.out.println(this.name + " stopped.");
+  }
+
+  public void shutdown(String username, String password) throws Exception {
+    try {
+      attemptForceShutdown(username, password);
     } catch (Exception e) {
       System.err.println("Attempt to shutdown server but it might have already crashed: " + e.getMessage());
     }
