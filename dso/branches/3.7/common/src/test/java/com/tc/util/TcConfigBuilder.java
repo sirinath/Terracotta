@@ -90,6 +90,18 @@ public class TcConfigBuilder {
     setDsoPort(0, portNo);
   }
 
+  public void setAuthenticationPasswordFile(String filename) {
+    ensureServers();
+    Server server = tcConfig.getServers().getServerArray(0);
+    server.getAuthentication().getMode().setPasswordFile(filename);
+  }
+
+  public void setAuthenticationAccessFile(String filename) {
+    ensureServers();
+    Server server = tcConfig.getServers().getServerArray(0);
+    server.getAuthentication().setAccessFile(filename);
+  }
+
   public void setDsoPort(int serverIndex, int portNo) {
     ensureServers();
     Server server = tcConfig.getServers().getServerArray(serverIndex);
