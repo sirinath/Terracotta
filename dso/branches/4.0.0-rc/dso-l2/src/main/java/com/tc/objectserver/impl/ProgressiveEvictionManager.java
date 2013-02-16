@@ -238,9 +238,12 @@ public class ProgressiveEvictionManager implements ServerMapEvictionManager {
     final Future<SampledRateCounter> run = agent.submit(new Runnable() {
       @Override
       public void run() {
-        while (triggerParam.isValid()) {
+        if (triggerParam.isValid()) {
           doEvictionOn(triggerParam);
           count.increment(triggerParam.getCount(), triggerParam.getRuntimeInMillis());
+          if ( triggerParam.resubmit() ) {
+              scheduleEvictionTrigger(triggerParam);
+          }
         }
       }
     }, count);
