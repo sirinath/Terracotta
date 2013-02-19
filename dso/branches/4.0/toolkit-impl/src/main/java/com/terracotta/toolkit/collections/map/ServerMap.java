@@ -1048,12 +1048,6 @@ public class ServerMap<K, V> extends AbstractTCToolkitObject implements Internal
       unlockedClear();
     } finally {
       commitLock(getInstanceDsoLockName(), this.lockType);
-      try {
-        platformService.waitForAllCurrentTransactionsToComplete();
-      } catch (AbortedOperationException e) {
-        throw new ToolkitAbortableOperationException(e);
-      }
-      internalClearLocalCache();
     }
   }
 
