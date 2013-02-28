@@ -14,7 +14,6 @@ import org.terracotta.toolkit.collections.ToolkitMap;
 import org.terracotta.toolkit.concurrent.locks.ToolkitLock;
 import org.terracotta.toolkit.concurrent.locks.ToolkitReadWriteLock;
 import org.terracotta.toolkit.config.Configuration;
-import org.terracotta.toolkit.internal.cache.ToolkitCacheInternal;
 import org.terracotta.toolkit.internal.concurrent.locks.ToolkitLockTypeInternal;
 import org.terracotta.toolkit.rejoin.RejoinException;
 import org.terracotta.toolkit.search.QueryBuilder;
@@ -78,7 +77,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AggregateServerMap<K, V> implements DistributedToolkitType<InternalToolkitMap<K, V>>,
-    ToolkitCacheListener<K>, ToolkitCacheInternal<K, V>, ConfigChangeListener, ValuesResolver<K, V>, SearchableEntity {
+    ToolkitCacheListener<K>, ToolkitCacheImplInterface<K, V>, ConfigChangeListener, ValuesResolver<K, V>,
+    SearchableEntity {
   private static final TCLogger                                            LOGGER                               = TCLogging
                                                                                                                     .getLogger(AggregateServerMap.class);
   private static final int                                                 KB                                   = 1024;
