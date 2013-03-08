@@ -36,11 +36,11 @@
     <security-core-version>1.1.0</security-core-version>
     <security-keychain-version>1.1.0</security-keychain-version>
     <management.version>2.7.1-SNAPSHOT</management.version>
-    <terracotta-license.version>1.0.7</terracotta-license.version>
+    <terracotta-license.version>1.0.8</terracotta-license.version>
     <toolkit-api.version>2.1-SNAPSHOT</toolkit-api.version>
     <!-- version of ehcache embedded inside toolkit -->
     <ehcache.version>2.7.1-SNAPSHOT</ehcache.version>
-    <maven-forge-plugin.version>1.0.8</maven-forge-plugin.version>
+    <maven-forge-plugin.version>1.0.7</maven-forge-plugin.version>
     <tcconfig.version>4.0.0</tcconfig.version>
     <linked-child-process.version>1.0.8</linked-child-process.version>
     <gmaven-plugin.version>1.4</gmaven-plugin.version>
