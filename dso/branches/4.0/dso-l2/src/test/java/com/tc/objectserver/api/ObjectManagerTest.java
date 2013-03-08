@@ -39,8 +39,8 @@ import com.tc.objectserver.managedobject.NullManagedObjectChangeListenerProvider
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.mgmt.MapEntryFacade;
 import com.tc.objectserver.persistence.HeapStorageManagerFactory;
+import com.tc.objectserver.persistence.PersistenceTransactionProvider;
 import com.tc.objectserver.persistence.Persistor;
-import com.tc.objectserver.persistence.impl.TestPersistenceTransactionProvider;
 import com.tc.stats.counter.sampled.SampledCounter;
 import com.tc.stats.counter.sampled.SampledCounterConfig;
 import com.tc.stats.counter.sampled.SampledCounterImpl;
@@ -69,6 +69,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author steve
@@ -85,7 +86,7 @@ public class ObjectManagerTest extends TCTestCase {
   private TCLogger                           logger;
   private ObjectManagerStatsImpl             stats;
   private SampledCounter                     newObjectCounter;
-  private TestPersistenceTransactionProvider persistenceTransactionProvider;
+  private PersistenceTransactionProvider persistenceTransactionProvider;
   private Persistor persistor;
 
   @Override
@@ -100,7 +101,9 @@ public class ObjectManagerTest extends TCTestCase {
     ManagedObjectStateFactory.createInstance(new NullManagedObjectChangeListenerProvider(), persistor);
     this.newObjectCounter = new SampledCounterImpl(new SampledCounterConfig(1, 1, true, 0L));
     this.stats = new ObjectManagerStatsImpl(this.newObjectCounter);
-    this.persistenceTransactionProvider = new TestPersistenceTransactionProvider();
+    this.persistenceTransactionProvider = mock(PersistenceTransactionProvider.class);
+    Transaction tx = mock(Transaction.class);
+    when(persistenceTransactionProvider.newTransaction()).thenReturn(tx);
   }
 
   private void initObjectManager() {
@@ -110,7 +113,7 @@ public class ObjectManagerTest extends TCTestCase {
 
   private void initObjectManager(final PersistentManagedObjectStore store) {
     this.objectManager = new ObjectManagerImpl(this.config, this.clientStateManager, store,
-                                               this.persistenceTransactionProvider);
+        stats, this.persistenceTransactionProvider);
   }
 
   public void testShutdownAndSetGarbageCollector() throws Exception {
@@ -210,7 +213,6 @@ public class ObjectManagerTest extends TCTestCase {
   public void testReachableObjects() {
     this.config.paranoid = true;
     initObjectManager();
-    this.objectManager.setStatsListener(this.stats);
 
     // each object has 1000 distinct reachable objects
     createObjects(0, 1, createObjects(1000, 2000, new HashSet<ObjectID>()));
@@ -534,7 +536,6 @@ public class ObjectManagerTest extends TCTestCase {
 
   public void testNewObjectCounter() {
     initObjectManager();
-    this.objectManager.setStatsListener(this.stats);
     createObjects(666);
     assertEquals(666, this.stats.getTotalObjectsCreated());
     assertEquals(666, this.newObjectCounter.getValue());
@@ -649,7 +650,6 @@ public class ObjectManagerTest extends TCTestCase {
   public void testGetObjectReferencesFrom() {
     this.config.paranoid = true;
     initObjectManager();
-    this.objectManager.setStatsListener(this.stats);
 
     final TestGarbageCollector gc = new TestGarbageCollector(this.objectManager);
     this.objectManager.setGarbageCollector(gc);
