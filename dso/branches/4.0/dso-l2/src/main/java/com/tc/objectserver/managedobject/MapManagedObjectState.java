@@ -25,7 +25,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -41,14 +40,14 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
     super(classID);
     this.factory = factory;
     this.id = id;
-    this.references = factory.getMap(id, true);
+    this.references = factory.getKeyValueStorage(id, true);
   }
 
   protected MapManagedObjectState(final ObjectInput in, PersistentObjectFactory factory) throws IOException {
     super(in);
     this.factory = factory;
     this.id = new ObjectID(in.readLong());
-    this.references = factory.getMap(id, false);
+    this.references = factory.getKeyValueStorage(id, false);
   }
 
   @Override
@@ -183,11 +182,6 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
     out.writeLong(id.toLong());
   }
 
-//
-//  public Map getMap() {
-//    return this.references;
-//  }
-
   // CollectionsPersistor will save retrieve data in references map.
   static MapManagedObjectState readFrom(final ObjectInput in, PersistentObjectFactory factory) throws IOException,
       ClassNotFoundException {
@@ -217,7 +211,7 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
 
   @Override
   public void destroy() {
-    factory.destroyMap(id);
+    factory.destroyKeyValueStorage(id);
   }
 
   /*
@@ -237,9 +231,5 @@ public class MapManagedObjectState extends LogicalManagedObjectState implements 
   @Deprecated
   public boolean containsKey(Object key) {
     return references.containsKey(key);
-  }
-
-  public Map getPersistentCollection() {
-    throw new UnsupportedClassVersionError();
   }
 }
