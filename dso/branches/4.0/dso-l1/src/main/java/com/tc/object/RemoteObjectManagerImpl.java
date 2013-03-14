@@ -253,6 +253,7 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, PrettyPrint
   }
 
   synchronized void requestOutstanding() {
+    this.logger.info("Sending Pending LookUp Requests");
     for (final ObjectLookupState ols : this.objectLookupStates.values()) {
       if (!ols.isMissing() && !ols.isPending()) {
         sendRequestNow(ols);
@@ -818,7 +819,9 @@ public class RemoteObjectManagerImpl implements RemoteObjectManager, PrettyPrint
   public synchronized PrettyPrinter prettyPrint(final PrettyPrinter out) {
     out.duplicateAndIndent().indent().print(getClass().getSimpleName()).flush();
     out.duplicateAndIndent().indent().print(this.groupID).flush();
+    out.duplicateAndIndent().indent().print(this.state).flush();
     out.duplicateAndIndent().indent().print("dnaCache:").visit(this.dnaCache).flush();
+
     // printing this.objectLookupStates.toString() as PrettyPrinter prints the size of the map otherwise
     out.duplicateAndIndent().indent().print("lookupstates:").print(this.objectLookupStates.toString()).flush();
     return out;
