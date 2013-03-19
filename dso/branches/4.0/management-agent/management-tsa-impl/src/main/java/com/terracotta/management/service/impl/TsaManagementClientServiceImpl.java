@@ -1248,6 +1248,10 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
 
   @Override
   public Collection<TopologyReloadStatusEntity> reloadConfiguration() throws ServiceExecutionException {
+    return reloadConfiguration(true);
+  }
+
+  private Collection<TopologyReloadStatusEntity> reloadConfiguration(boolean retry) throws ServiceExecutionException {
     Collection<TopologyReloadStatusEntity> topologyReloadStatusEntities = new ArrayList<TopologyReloadStatusEntity>();
 
     try {
@@ -1289,12 +1293,13 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
           }
         }
       }
-      return topologyReloadStatusEntities;
+      return retry ? reloadConfiguration(false) : topologyReloadStatusEntities;
     } catch (Exception e) {
       throw new ServiceExecutionException("error reloading configuration", e);
     }
   }
 
+  @Override
   public List<String> performSecurityChecks() {
     List<String> errors = new ArrayList<String>();
 
