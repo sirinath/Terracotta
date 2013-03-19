@@ -21,7 +21,7 @@
     <toolkit.api>1.6</toolkit.api>
     <toolkit.version>5.5.0</toolkit.version>    
     <ehcache.version>2.6.6</ehcache.version>
-    <quartz.version>2.1.6</quartz.version>
+    <quartz.version>2.1.7</quartz.version>
     <terracotta-session.version>1.3.5</terracotta-session.version>
     <quartz-terracotta.version>2.3.5</quartz-terracotta.version>
     
