@@ -23,7 +23,7 @@
     <ehcache.version>2.6.7-SNAPSHOT</ehcache.version>
     <quartz.version>2.1.7</quartz.version>
     <terracotta-session.version>1.3.6-SNAPSHOT</terracotta-session.version>
-    <quartz-terracotta.version>2.3.7-SNAPSHOT</quartz-terracotta.version>
+    <quartz-terracotta.version>2.3.6-SNAPSHOT</quartz-terracotta.version>
     
     <skip.deploy>true</skip.deploy>
     <skip.testjar>true</skip.testjar>
