@@ -30,7 +30,7 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
     private int size = 0;
     private ClientObjectReferenceSet clientSet;
     private boolean repeat = false;
-    private boolean restart = false;
+    private boolean waitOnly = false;
 
     public CapacityEvictionTrigger( ObjectID oid) {
         super(oid);
@@ -39,15 +39,13 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
     @Override
     public boolean startEviction(EvictableMap map) {
   //  capacity eviction ignores underlying strategy b/c map.startEviction has already been called
-        repeat = false;
-
-        if ( restart ) {
+        if ( repeat && !map.isEvicting() ) {
             if ( !map.startEviction() ) {
-                return false;
+                waitOnly = true;
+                return true;
             }
-        } 
-        
-        restart = true;
+        }
+        repeat = false;
         max = map.getMaxTotalCount();
         size = map.getSize();
     // ignore return value, capacity needs to make an independent decision on whether to run
@@ -70,21 +68,28 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
             
     @Override
     public ServerMapEvictionContext collectEvictionCandidates(final int maxParam, String className, final EvictableMap map, final ClientObjectReferenceSet clients) {
+        if ( waitOnly ) {
+            registerForUpdates(clients);
+            waitOnly = false;
+            return null;
+        }
+        
         // lets try and get smarter about this in the future but for now, just bring it back to capacity
         final int sample = boundsCheckSampleSize(size - maxParam);
         Map samples = ( sample > 0 ) ? map.getRandomSamples(sample, clients) : Collections.<Object,ObjectID>emptyMap();
         count = samples.size();
         // didn't get the sample count we wanted.  wait for a clientobjectidset refresh, only once and try it again
-        if ( count < size - maxParam ) {
-            repeat = true;
-            if ( count == 0 ) {
-                restart = false;
-                registerForUpdates(clients);
-                samples = Collections.<Object,ObjectID>emptyMap();
+        try {
+            return createEvictionContext(className, samples);
+        } finally {
+            int count = getCount();
+            if ( count < size - maxParam ) {
+                repeat = true;
+                if ( count == 0 ) {
+                    registerForUpdates(clients);
+                }
             }
         }
-        
-        return createEvictionContext(className, samples);
     } 
     
     private synchronized void registerForUpdates(ClientObjectReferenceSet clients) {
@@ -119,6 +124,7 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
     public boolean isValid() {
         if ( repeat ) {
             waitForClient();
+            reset();
             return true;
         }
         return super.isValid();
@@ -131,7 +137,7 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
 
     @Override
     public void completeEviction(EvictableMap map) {
-        if ( restart ) {
+        if ( !repeat ) {
             super.completeEviction(map);
         }
         logger.debug(this.toString());
