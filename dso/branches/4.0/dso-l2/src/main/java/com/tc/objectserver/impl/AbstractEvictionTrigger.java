@@ -29,6 +29,17 @@ public abstract class AbstractEvictionTrigger implements EvictionTrigger {
     public AbstractEvictionTrigger(final ObjectID oid) {
         this.oid = oid;
     }
+    
+    protected void reset() {
+        started = false;
+        evicting = false;
+        mapEvicting = false;
+        processed = false;
+        name = null;
+        startTime = 0;
+        endTime = 0;
+        count = 0;
+    }
 
     @Override
     public ObjectID getId() {
@@ -74,6 +85,7 @@ public abstract class AbstractEvictionTrigger implements EvictionTrigger {
         endTime = System.currentTimeMillis() + 1;
         if ( !evicting ) {
             map.evictionCompleted();
+            mapEvicting = map.isEvicting();
         }
 
     }
