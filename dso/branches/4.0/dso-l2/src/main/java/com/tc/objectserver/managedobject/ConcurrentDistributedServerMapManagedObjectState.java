@@ -225,7 +225,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
         break;
       case SerializationUtil.EVICTION_COMPLETED:
         evictionCompleted();
-        break;
+       break;
       case SerializationUtil.CLEAR_LOCAL_CACHE:
         break;
       case SerializationUtil.DESTROY:
@@ -236,7 +236,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
     }
 
     if (applyInfo.isActiveTxn()
-        && method == SerializationUtil.PUT
+        && ( method == SerializationUtil.PUT || method == SerializationUtil.EVICTION_COMPLETED )
         && this.targetMaxTotalCount >= 0 // do not trigger capacity eviction if totalMaxCount is negative
         && this.references.size() > this.targetMaxTotalCount * (1 + (OVERSHOOT / 100))) {
       if (startEviction()) {
