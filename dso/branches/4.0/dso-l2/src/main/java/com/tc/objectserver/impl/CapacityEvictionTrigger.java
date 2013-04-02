@@ -39,7 +39,6 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
     public boolean startEviction(EvictableMap map) {
   //  capacity eviction ignores underlying strategy b/c map.startEviction has already been called
         boolean startedLocally = super.startEviction(map);
-        
         if ( startedLocally ) {
             throw new AssertionError("capacity eviction cannot be started locally");
         }
@@ -59,8 +58,7 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
         } else {
             map.evictionCompleted();
         }
-        
-        aboveCapacity = false;
+        aboveCapacity = false;        
         return false;
     }
             
@@ -120,18 +118,15 @@ public class CapacityEvictionTrigger extends AbstractEvictionTrigger implements 
         }
         return super.isValid();
     }
-    
-    @Override
-    public boolean resubmit() {
-        return repeat;
-    }
 
     @Override
     public void completeEviction(EvictableMap map) {
         if ( !repeat ) {
             super.completeEviction(map);
         }
-        logger.debug(this.toString());
+        if ( logger.isDebugEnabled() ) {
+            logger.debug(this.toString());
+        }
     }
 
      @Override
