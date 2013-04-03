@@ -23,24 +23,23 @@ import org.codehaus.cargo.container.configuration.LocalConfiguration;
 import org.codehaus.cargo.container.weblogic.internal.AbstractWebLogicInstalledLocalContainer;
 
 /**
- * Special container support for the Bea WebLogic 10.x application server. Written for Terracotta
+ * Special container support for the Bea WebLogic 12.x application server. Written for Terracotta
  * 
  * @author hhuynh
- * @version $Id$
  */
-public class WebLogic10xInstalledLocalContainer extends AbstractWebLogicInstalledLocalContainer
+public class WebLogic12xInstalledLocalContainer extends AbstractWebLogicInstalledLocalContainer
 {
     /**
      * Unique container id.
      */
-    public static final String ID = "weblogic10x";
+    public static final String ID = "weblogic12x";
 
     /**
      * {@inheritDoc}
      * 
      * @see AbstractWebLogicInstalledLocalContainer#AbstractInstalledLocalContainer(org.codehaus.cargo.container.configuration.LocalConfiguration)
      */
-    public WebLogic10xInstalledLocalContainer(LocalConfiguration configuration)
+    public WebLogic12xInstalledLocalContainer(LocalConfiguration configuration)
     {
         super(configuration);
     }
@@ -52,7 +51,7 @@ public class WebLogic10xInstalledLocalContainer extends AbstractWebLogicInstalle
      */
     public final String getName()
     {
-        return "WebLogic 10.x";
+        return "WebLogic 12.x";
     }
 
     /**
