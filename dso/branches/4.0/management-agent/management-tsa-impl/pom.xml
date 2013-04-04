@@ -36,7 +36,7 @@
     <dependency>
       <groupId>com.terracotta</groupId>
       <artifactId>security-REST</artifactId>
-      <version>1.2.0-SNAPSHOT</version>
+      <version>1.1.1-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>com.sun.jersey</groupId>
