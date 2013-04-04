@@ -12,7 +12,7 @@
   </parent>
 
   <properties>
-    <management-core.version>1.1.1</management-core.version>
+    <management-core.version>1.1.4</management-core.version>
   </properties>
 
 
