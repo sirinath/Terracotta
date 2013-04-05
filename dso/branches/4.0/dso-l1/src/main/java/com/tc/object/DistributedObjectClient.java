@@ -4,13 +4,15 @@
  */
 package com.tc.object;
 
+import bsh.EvalError;
+import bsh.Interpreter;
+
 import com.tc.abortable.AbortableOperationManager;
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
 import com.tc.async.api.Stage;
 import com.tc.async.api.StageManager;
 import com.tc.bytes.TCByteBuffer;
-import com.tc.client.ClientMode;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.exception.TCRuntimeException;
 import com.tc.handler.CallbackDumpAdapter;
@@ -209,9 +211,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import bsh.EvalError;
-import bsh.Interpreter;
-
 /**
  * This is the main point of entry into the DSO client.
  */
@@ -273,14 +272,14 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                  final DsoClusterInternal dsoCluster,
                                  final AbortableOperationManager abortableOperationManager,
                                  final RejoinManagerInternal rejoinManager) {
-    this(config, threadGroup, classProvider, connectionComponents, manager, dsoCluster, ClientMode.DSO_MODE, null,
+    this(config, threadGroup, classProvider, connectionComponents, manager, dsoCluster, null,
          abortableOperationManager, rejoinManager, UUID.NULL_ID);
   }
 
   public DistributedObjectClient(final DSOClientConfigHelper config, final TCThreadGroup threadGroup,
                                  final ClassProvider classProvider,
                                  final PreparedComponentsFromL2Connection connectionComponents, final Manager manager,
-                                 final DsoClusterInternal dsoCluster, final ClientMode clientMode,
+                                 final DsoClusterInternal dsoCluster,
                                  final TCSecurityManager securityManager,
                                  final AbortableOperationManager abortableOperationManager,
                                  final RejoinManagerInternal rejoinManager, UUID uuid) {
@@ -423,13 +422,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final MessageMonitor mm = MessageMonitorImpl.createMonitor(tcProperties, DSO_LOGGER);
     final DNAEncodingInternal encoding = new ApplicatorDNAEncodingImpl(this.classProvider);
     final TCMessageRouter messageRouter = new TCMessageRouterImpl();
-
-    // ReconnectionRejectedHandler reconnectionRejectedHandler;
-    // if (clientMode.isExpressRejoinClient()) {
-    // reconnectionRejectedHandler = new ReconnectionRejectedExpressRejoinClientBehaviour();
-    // } else {
-    // reconnectionRejectedHandler = new ReconnectionRejectedDefaultHandler();
-    // }
 
     this.communicationsManager = this.dsoClientBuilder
         .createCommunicationsManager(mm,
