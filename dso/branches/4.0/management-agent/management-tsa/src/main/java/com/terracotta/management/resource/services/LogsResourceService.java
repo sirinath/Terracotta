@@ -27,8 +27,4 @@ public interface LogsResourceService {
   @Produces(MediaType.APPLICATION_JSON)
   Collection<LogEntity> getLogs(@Context UriInfo info);
 
-  @GET
-  @Produces("application/zip")
-  Response getLogsZipped(@Context UriInfo info);
-
 }
