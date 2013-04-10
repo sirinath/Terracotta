@@ -70,18 +70,6 @@ public class LogsResourceServiceImpl implements LogsResourceService {
     }
   }
 
-  @Override
-  public Response getLogsZipped(UriInfo info) {
-    Collection<LogEntity> logEntities = getLogs(info);
-
-    try {
-      InputStream inputStream = zipAndConvertToInputStream(logEntities);
-      return Response.ok().entity(inputStream).header("Content-Disposition", "attachment; filename=logs.zip").build();
-    } catch (IOException ioe) {
-      throw new ResourceRuntimeException("Failed to get TSA logs", ioe, Response.Status.BAD_REQUEST.getStatusCode());
-    }
-  }
-
   private InputStream zipAndConvertToInputStream(Collection<LogEntity> unsortedLogEntities) throws IOException {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ZipOutputStream out = new ZipOutputStream(baos);
