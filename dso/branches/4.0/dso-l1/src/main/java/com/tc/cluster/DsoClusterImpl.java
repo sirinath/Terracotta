@@ -312,6 +312,10 @@ public class DsoClusterImpl implements DsoClusterInternal, DsoClusterInternalEve
     if (node != null) {
       retrieveMetaDataForDsoNode(node);
     }
+    DsoNodeInternal node = topology.getInternalNode(nodeId);
+    if (node != null && clusterMetaDataManager != null) {
+      retrieveMetaDataForDsoNode(node);
+    }
     for (DsoClusterListener listener : listeners) {
       fireNodeJoinedInternal(node, event, listener);
     }
