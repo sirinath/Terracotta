@@ -441,11 +441,6 @@ public class ExplicitLockingTCObjectServerMapImpl implements TCObjectServerMap {
   }
 
   @Override
-  public void removeValueFromLocalCache(Object key) {
-    delegate.removeValueFromLocalCache(key);
-  }
-
-  @Override
   public void addMetaData(MetaDataDescriptor mdd) {
     delegate.addMetaData(mdd);
   }
@@ -471,8 +466,13 @@ public class ExplicitLockingTCObjectServerMapImpl implements TCObjectServerMap {
   }
 
   @Override
-  public void doLogicalSetLastAccessedTime(Object key, Object value, long lastAccessedTime) {
-    assertLockStateBeforeRejoin();
-    delegate.doLogicalSetLastAccessedTime(key, value, lastAccessedTime);
+  public void checkInObject(Object key, Object value) {
+    delegate.checkInObject(key, value);
+
+  }
+
+  @Override
+  public Object checkOutObject(Object key, Object value) {
+    return delegate.checkOutObject(key, value);
   }
 }
