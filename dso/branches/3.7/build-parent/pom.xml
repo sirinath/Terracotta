@@ -417,6 +417,34 @@
         <type>dylib</type>
       </dependency>
 
+      <!-- hp-ux -->
+      <dependency>
+        <groupId>org.hyperic</groupId>
+        <artifactId>libsigar-pa-hpux-11</artifactId>
+        <version>${sigar.version}</version>
+        <type>sl</type>
+      </dependency>
+      <dependency>
+        <groupId>org.hyperic</groupId>
+        <artifactId>libsigar-ia64-hpux-11</artifactId>
+        <version>${sigar.version}</version>
+        <type>sl</type>
+      </dependency>
+
+      <!-- aix -->
+      <dependency>
+        <groupId>org.hyperic</groupId>
+        <artifactId>libsigar-ppc-aix-5</artifactId>
+        <version>${sigar.version}</version>
+        <type>so</type>
+      </dependency>
+      <dependency>
+        <groupId>org.hyperic</groupId>
+        <artifactId>libsigar-ppc64-aix-5</artifactId>
+        <version>${sigar.version}</version>
+        <type>so</type>
+      </dependency>
+
       <!-- tests -->
       <dependency>
         <groupId>org.apache.ant</groupId>
