@@ -114,6 +114,34 @@
       <scope>compile</scope>
     </dependency> 
     
+    <!-- hp-ux -->
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-pa-hpux-11</artifactId>
+      <type>sl</type>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-ia64-hpux-11</artifactId>
+      <type>sl</type>
+      <scope>compile</scope>
+    </dependency>
+
+    <!-- aix -->
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-ppc-aix-5</artifactId>
+      <type>so</type>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hyperic</groupId>
+      <artifactId>libsigar-ppc64-aix-5</artifactId>
+      <type>so</type>
+      <scope>compile</scope>
+    </dependency>
+
     <dependency>
       <groupId>org.terracotta.internal</groupId>
       <artifactId>common-api</artifactId>
