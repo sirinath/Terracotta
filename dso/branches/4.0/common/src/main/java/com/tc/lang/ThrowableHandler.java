@@ -3,6 +3,7 @@
  */
 package com.tc.lang;
 
+import com.google.common.base.Throwables;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.exception.DatabaseException;
 import com.tc.exception.ExceptionHelper;
@@ -21,6 +22,8 @@ import com.tc.util.startuplock.LocationNotCreatedException;
 
 import java.net.BindException;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -39,11 +42,12 @@ public class ThrowableHandler {
   private final Map<Class<?>, CallbackOnExitHandler> callbackOnExitExceptionHandlers = new HashMap();
   private final Object                               dumpLock                        = new Object();
 
-  private static final long          TIME_OUT                        = TCPropertiesImpl
-                                                                         .getProperties()
-                                                                         .getLong(TCPropertiesConsts.L2_DUMP_ON_EXCEPTION_TIMEOUT) * 1000;
-  private boolean                    isExitScheduled                 = false;
-  private boolean                    isDumpTaken                     = false;
+  private static final long                          TIME_OUT                        = TCPropertiesImpl
+                                                                                       .getProperties()
+                                                                                       .getLong(TCPropertiesConsts.L2_DUMP_ON_EXCEPTION_TIMEOUT)
+                                                                                       * 1000;
+  private boolean                                    isExitScheduled;
+  private boolean                                    isDumpTaken;
 
   /**
    * Construct a new ThrowableHandler with a logger
@@ -87,13 +91,15 @@ public class ThrowableHandler {
    * @param t Throwable
    */
   public void handleThrowable(final Thread thread, final Throwable t) {
+    handlePossibleOOME(t);
+
     final CallbackOnExitState throwableState = new CallbackOnExitState(t);
     scheduleExit(throwableState);
 
     final Throwable proximateCause = helper.getProximateCause(t);
     final Throwable ultimateCause = helper.getUltimateCause(t);
 
-    Object registeredExitHandlerObject = null;
+    Object registeredExitHandlerObject;
     try {
       if ((registeredExitHandlerObject = callbackOnExitExceptionHandlers.get(proximateCause.getClass())) != null) {
         ((CallbackOnExitHandler) registeredExitHandlerObject).callbackOnExit(throwableState);
@@ -107,6 +113,17 @@ public class ThrowableHandler {
     }
 
     exit(throwableState);
+  }
+
+  /**
+   * Makes sure we don't allocate any heap objects on OOME.
+   * {@code -XX:+HeapDumpOnOutOfMemoryError} should take care of debug information.
+   * Considering {@code -XX:OnOutOfMemoryError=<cmd>} option might be also a good idea.
+   */
+  void handlePossibleOOME(final Throwable t) {
+    if (Throwables.getRootCause(t) instanceof OutOfMemoryError) {
+      exit(ServerExitStatus.EXITCODE_FATAL_ERROR);
+    }
   }
 
   private synchronized void scheduleExit(final CallbackOnExitState throwableState) {
@@ -129,9 +146,8 @@ public class ThrowableHandler {
     synchronized (dumpLock) {
       if (!isDumpTaken) {
         isDumpTaken = true;
-        for (Iterator iter = callbackOnExitDefaultHandlers.iterator(); iter.hasNext();) {
-          CallbackOnExitHandler callbackOnExitHandler = (CallbackOnExitHandler) iter.next();
-          callbackOnExitHandler.callbackOnExit(throwableState);
+        for (CallbackOnExitHandler handler : callbackOnExitDefaultHandlers) {
+          handler.callbackOnExit(throwableState);
         }
       }
     }

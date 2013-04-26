@@ -34,6 +34,25 @@ public class ThrowableHandlerTest extends TestCase {
     }
   }
 
+  public void testImmediatelyExitOnOOME() {
+    final AtomicInteger exitCode =  new AtomicInteger(-1);
+    final ThrowableHandler throwableHandler = new ThrowableHandler(TCLogging.getLogger(ThrowableHandlerTest.class)) {
+      @Override
+      protected void exit(int status) {
+        exitCode.set(status);
+      }
+    };
+
+    throwableHandler.handlePossibleOOME(new OutOfMemoryError());
+    assertEquals(ServerExitStatus.EXITCODE_FATAL_ERROR, exitCode.get());
+    exitCode.set(-1);
+    throwableHandler.handlePossibleOOME(new RuntimeException(new OutOfMemoryError()));
+    assertEquals(ServerExitStatus.EXITCODE_FATAL_ERROR, exitCode.get());
+    exitCode.set(-1);
+    throwableHandler.handlePossibleOOME(new RuntimeException());
+    assertEquals(-1, exitCode.get());
+  }
+
   private class TestCallbackOnExitHandler implements CallbackOnExitHandler {
 
     @Override
