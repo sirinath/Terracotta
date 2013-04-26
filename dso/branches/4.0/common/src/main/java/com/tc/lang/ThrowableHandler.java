@@ -21,25 +21,23 @@ import com.tc.util.startuplock.LocationNotCreatedException;
 
 import java.net.BindException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Handle throwables appropriately by printing messages to the logger, etc. Deal with nasty problems that can occur as
- * the VM shuts down.
+ * Handles Throwable appropriately by printing messages to the logger, etc. Deal with nasty problems that can occur as
+ * the Terracotta Client is shutting down.
  */
 public class ThrowableHandler {
   // XXX: The dispatching in this class is retarded, but I wanted to move as much of the exception handling into a
-  // single
-  // place first, then come up with fancy ways of dealing with them. --Orion 03/20/2006
+  // single place first, then come up with fancy ways of dealing with them. --Orion 03/20/2006
 
-  private final TCLogger             logger;
-  private final ExceptionHelperImpl  helper;
-  private final CopyOnWriteArrayList callbackOnExitDefaultHandlers   = new CopyOnWriteArrayList();
-  private final HashMap              callbackOnExitExceptionHandlers = new HashMap();
-  private final Object               dumpLock                        = new Object();
+  protected final TCLogger                           logger;
+  private final ExceptionHelperImpl                  helper;
+  private final List<CallbackOnExitHandler>          callbackOnExitDefaultHandlers   = new CopyOnWriteArrayList();
+  private final Map<Class<?>, CallbackOnExitHandler> callbackOnExitExceptionHandlers = new HashMap();
+  private final Object                               dumpLock                        = new Object();
 
   private static final long          TIME_OUT                        = TCPropertiesImpl
                                                                          .getProperties()
