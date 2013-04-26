@@ -8,6 +8,8 @@ import com.tc.logging.CallbackOnExitHandler;
 import com.tc.logging.CallbackOnExitState;
 import com.tc.logging.TCLogging;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import junit.framework.TestCase;
 
 public class ThrowableHandlerTest extends TestCase {
