@@ -5,9 +5,10 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.GroupID;
 import com.tc.net.NodeID;
+import com.tc.object.dna.impl.UTF8ByteDataHolder;
 import com.tc.object.msg.ClientHandshakeMessage;
-import com.tc.object.msg.ServerEventListenerMessageFactory;
 import com.tc.object.msg.RegisterServerEventListenerMessage;
+import com.tc.object.msg.ServerEventListenerMessageFactory;
 import com.tc.object.msg.ServerEventMessage;
 import com.tc.object.msg.UnregisterServerEventListenerMessage;
 
@@ -36,21 +37,34 @@ public class ServerEventListenerManagerImpl implements ServerEventListenerManage
 
   @Override
   public void dispatch(final ServerEventMessage message) {
-    final String cacheName = message.getCacheName();
-    LOG.info("Server notification message has been received. Type: "
-             + message.getType() + ", key: " + message.getKey()
-             + ", cache: " + cacheName);
+    final String destinationName = message.getDestinationName();
+    LOG.debug("Server notification message has been received. Type: "
+              + message.getType() + ", key: " + message.getKey()
+              + ", cache: " + destinationName);
 
     lock.readLock().lock();
     try {
-      final SubscribedDestination destination = registry.get(cacheName);
+      final SubscribedDestination destination = registry.get(destinationName);
       if (destination == null) {
-        throw new IllegalStateException("Could not find cache by name: " + cacheName);
+        throw new IllegalStateException("Could not find server event destination by name: " + destinationName);
       }
-      destination.target.handleServerEvent(message.getType(), message.getKey());
+      destination.target.handleServerEvent(message.getType(), extractStringIfNecessary(message.getKey()));
     } finally {
       lock.readLock().unlock();
     }
+  }
+
+  /**
+   * Transform a key from internal representation to string if necessary.
+   */
+  private static Object extractStringIfNecessary(final Object key) {
+    final Object normalizedKey;
+    if (key instanceof UTF8ByteDataHolder) {
+      normalizedKey = ((UTF8ByteDataHolder)key).asString();
+    } else {
+      normalizedKey = key;
+    }
+    return normalizedKey;
   }
 
   @Override

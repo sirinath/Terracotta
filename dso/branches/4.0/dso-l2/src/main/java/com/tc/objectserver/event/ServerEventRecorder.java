@@ -6,12 +6,12 @@ package com.tc.objectserver.event;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.tc.object.ObjectID;
 import com.tc.object.ServerEventType;
 import com.tc.objectserver.impl.SamplingType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +24,7 @@ import java.util.Map;
 public final class ServerEventRecorder {
 
   private final List<IntermediateForm> events = new ArrayList<IntermediateForm>();
-  private final Map<ObjectID, byte[]> oidToValueMap = new HashMap<ObjectID, byte[]>();
+  private final Map<ObjectID, byte[]> oidToValueMap = Maps.newHashMap();
 
   public void recordEvent(final ServerEventType type, final Object key, final ObjectID objectId,
                           final String cacheName) {
