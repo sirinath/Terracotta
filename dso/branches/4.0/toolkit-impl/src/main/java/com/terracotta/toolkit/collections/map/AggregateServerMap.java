@@ -78,7 +78,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.terracotta.toolkit.config.ConfigUtil.distributeInStripes;
 
 public class AggregateServerMap<K, V> implements DistributedToolkitType<InternalToolkitMap<K, V>>,
-    ToolkitCacheImplInterface<K, V>, ConfigChangeListener, ValuesResolver<K, V>, SearchableEntity, ServerEventDestination {
+    ToolkitCacheImplInterface<K, V>, ConfigChangeListener, ValuesResolver<K, V>, SearchableEntity,
+    ServerEventDestination, LocalExpirationCallback {
   private static final TCLogger                                            LOGGER                               = TCLogging
                                                                                                                     .getLogger(AggregateServerMap.class);
 
@@ -177,6 +178,7 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
         .getValueIfExistsOrDefault(config);
     for (InternalToolkitMap<K, V> serverMap : serverMapsParam) {
       serverMap.initializeLocalCache(localCacheStore, pinnedEntryFaultCallback, localCacheEnabled);
+      serverMap.setExpirationCallback(this);
     }
   }
 
@@ -403,13 +405,13 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
   private void registerServerEventListener() {
     final EnumSet<ServerEventType> types = EnumSet.of(ServerEventType.EVICT, ServerEventType.EXPIRE);
     platformService.registerServerEventListener(this, types);
-    LOGGER.info("Server event listener has been registered for cache: "
+    LOGGER.debug("Server event listener has been registered for cache: "
                 + getName() + ". Notification types: " + types);
   }
 
   private void unregisterServerEventListener() {
     platformService.unregisterServerEventListener(this);
-    LOGGER.info("Server event listener has been unregistered for cache: "
+    LOGGER.debug("Server event listener has been unregistered for cache: "
                 + getName());
   }
 
@@ -743,6 +745,10 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
 
   @Override
   public void handleServerEvent(final ServerEventType type, final Object key) {
+    doHandleServerEvent(type, key);
+  }
+
+  private void doHandleServerEvent(final ServerEventType type, final Object key) {
     for (final ToolkitCacheListener listener : listeners) {
       try {
         switch (type) {
@@ -760,6 +766,12 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
         LOGGER.error("Cache listener threw an exception.", t);
       }
     }
+  }
+
+  @Override
+  public void expiredLocally(final Object key) {
+    // transform to regular server expiration to correctly notify listeners
+    doHandleServerEvent(ServerEventType.EXPIRE, key);
   }
 
   private static class AggregateServerMapIterator<E> implements Iterator<E> {
