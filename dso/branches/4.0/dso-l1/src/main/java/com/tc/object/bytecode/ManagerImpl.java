@@ -23,14 +23,14 @@ import com.tc.net.core.security.TCSecurityManager;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ClientShutdownManager;
 import com.tc.object.DistributedObjectClient;
-import com.tc.object.ServerEventDestination;
-import com.tc.object.ServerEventType;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.Portability;
 import com.tc.object.RemoteSearchRequestManager;
 import com.tc.object.SerializationUtil;
+import com.tc.object.ServerEventDestination;
 import com.tc.object.ServerEventListenerManager;
+import com.tc.object.ServerEventType;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.DSOClientConfigHelper;
@@ -115,6 +115,7 @@ public class ManagerImpl implements Manager {
   private final RejoinManagerInternal                 rejoinManager;
   private final UUID                                  uuid;
   private ServerEventListenerManager serverEventListenerManager;
+  private final String                                L1VMShutdownHookName      = "L1 VM Shutdown Hook";
 
   public ManagerImpl(final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents,
                      final TCSecurityManager securityManager) {
@@ -150,7 +151,7 @@ public class ManagerImpl implements Manager {
     this.uuid = UUID.getUUID();
 
     if (shutdownActionRequired) {
-      this.shutdownAction = new Thread(new ShutdownAction(), "L1 VM Shutdown Hook");
+      this.shutdownAction = new Thread(new ShutdownAction(), L1VMShutdownHookName);
       // Register a shutdown hook for the terracotta client
       Runtime.getRuntime().addShutdownHook(this.shutdownAction);
     } else {
@@ -305,6 +306,7 @@ public class ManagerImpl implements Manager {
 
   private void shutdown(boolean fromShutdownHook, boolean forceImmediate) {
     if (clientStopped.attemptSet()) {
+      logger.info("shuting down Terracotta Client hook=" + fromShutdownHook + " force=" + forceImmediate);
       shutdownClient(fromShutdownHook, forceImmediate);
     } else {
       logger.info("Client already shutdown.");
