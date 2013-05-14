@@ -15,7 +15,7 @@ import com.tc.logging.TCLogging;
 public class TCServerMain {
 
   public static void main(final String[] args) {
-    ThrowableHandler throwableHandler = new ThrowableHandler(TCLogging.getLogger(TCServerMain.class));
+    ThrowableHandler throwableHandler = new ThrowableHandler();
     throwableHandler.addHelper(new MortbayMultiExceptionHelper());
 
     try {

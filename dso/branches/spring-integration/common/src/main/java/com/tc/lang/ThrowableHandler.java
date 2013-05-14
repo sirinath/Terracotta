@@ -3,6 +3,8 @@
  */
 package com.tc.lang;
 
+import org.springframework.stereotype.Component;
+
 import com.google.common.base.Throwables;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.exception.DatabaseException;
@@ -13,6 +15,7 @@ import com.tc.handler.CallbackStartupExceptionLoggingAdapter;
 import com.tc.logging.CallbackOnExitHandler;
 import com.tc.logging.CallbackOnExitState;
 import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.TCDataFileLockingException;
@@ -33,6 +36,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Handles Throwable appropriately by printing messages to the logger, etc. Deal with nasty problems that can occur as
  * the Terracotta Client is shutting down.
  */
+@Component
 public class ThrowableHandler {
   // XXX: The dispatching in this class is retarded, but I wanted to move as much of the exception handling into a
   // single place first, then come up with fancy ways of dealing with them. --Orion 03/20/2006
@@ -49,6 +53,10 @@ public class ThrowableHandler {
                                                                                        * 1000;
   private boolean                                    isExitScheduled;
   private boolean                                    isDumpTaken;
+
+  public ThrowableHandler() {
+    this(TCLogging.getLogger(ThrowableHandler.class));
+  }
 
   /**
    * Construct a new ThrowableHandler with a logger
