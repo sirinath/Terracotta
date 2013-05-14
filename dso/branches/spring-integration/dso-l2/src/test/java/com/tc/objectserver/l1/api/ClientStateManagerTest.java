@@ -5,7 +5,6 @@
 package com.tc.objectserver.l1.api;
 
 import com.tc.invalidation.Invalidations;
-import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.TestDNA;
@@ -29,7 +28,7 @@ import junit.framework.TestCase;
 public class ClientStateManagerTest extends TestCase {
 
   public void test() throws Exception {
-    ClientStateManager stateManager = new ClientStateManagerImpl(TCLogging.getLogger(ClientStateManager.class));
+    ClientStateManager stateManager = new ClientStateManagerImpl();
 
     Set toGC = new HashSet();
     toGC.add(new ObjectID(0));
@@ -101,7 +100,7 @@ public class ClientStateManagerTest extends TestCase {
     // map id 2 has 101 - 200
     // map id 3 has 201 - 400
 
-    ClientStateManager stateManager = new ClientStateManagerImpl(TCLogging.getLogger(ClientStateManager.class));
+    ClientStateManager stateManager = new ClientStateManagerImpl();
     final ClientID cid1 = new ClientID(1);
     final ClientID cid2 = new ClientID(2);
     final ClientID cid3 = new ClientID(3);
