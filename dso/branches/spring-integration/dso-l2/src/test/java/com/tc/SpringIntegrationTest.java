@@ -9,6 +9,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.tc.objectserver.l1.api.ClientStateManager;
+import com.tc.objectserver.l1.impl.ClientObjectReferenceSet;
 
 import static com.tc.util.Assert.assertNotNull;
 
@@ -21,10 +22,16 @@ import static com.tc.util.Assert.assertNotNull;
 public class SpringIntegrationTest {
 
   private ClientStateManager clientStateManager;
+  private ClientObjectReferenceSet clientObjectReferenceSet;
 
   @Autowired
   public void setClientStateManager(final ClientStateManager clientStateManager) {
     this.clientStateManager = clientStateManager;
+  }
+
+  @Autowired
+  public void setClientObjectReferenceSet(final ClientObjectReferenceSet clientObjectReferenceSet) {
+    this.clientObjectReferenceSet = clientObjectReferenceSet;
   }
 
   @Before
@@ -35,6 +42,7 @@ public class SpringIntegrationTest {
   @Test
   public void testFoo() {
     assertNotNull(clientStateManager);
+    assertNotNull(clientObjectReferenceSet);
   }
 
 }

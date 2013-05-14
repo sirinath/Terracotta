@@ -3,6 +3,9 @@
  */
 package com.tc.objectserver.l1.impl;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
@@ -21,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+@Component
 public class ClientObjectReferenceSet implements ObjectReferenceAddListener {
 
   private static final long                                                   REFRESH_INTERVAL_NANO = TimeUnit.MILLISECONDS
@@ -44,6 +48,7 @@ public class ClientObjectReferenceSet implements ObjectReferenceAddListener {
   private boolean                                                             objectRefAddRegistered;
   private final Timer                                                         timer;
 
+  @Autowired
   public ClientObjectReferenceSet(final ClientStateManager clientStateManager) {
     this.clientStateManager = clientStateManager;
     this.logger = TCLogging.getLogger(ClientObjectReferenceSet.class);
