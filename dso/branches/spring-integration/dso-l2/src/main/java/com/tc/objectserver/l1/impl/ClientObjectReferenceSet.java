@@ -17,8 +17,6 @@ import com.tc.util.ObjectIDSet;
 import com.tc.util.StripedObjectIDSet;
 
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -45,15 +43,12 @@ public class ClientObjectReferenceSet implements ObjectReferenceAddListener {
   // accessed under local lock / thread safe
   private StripedObjectIDSet                                                  liveObjectReferences;
   private ObjectIDSet                                                         snapshotObjectReferences;
-  private boolean                                                             objectRefAddRegistered;
-  private final Timer                                                         timer;
 
   @Autowired
   public ClientObjectReferenceSet(final ClientStateManager clientStateManager) {
     this.clientStateManager = clientStateManager;
     this.logger = TCLogging.getLogger(ClientObjectReferenceSet.class);
     this.lock = new ReentrantReadWriteLock();
-    this.timer = new Timer();
 
     this.snapshotObjectReferences = new ObjectIDSet();
     this.liveObjectReferences = new StripedObjectIDSet();
@@ -80,7 +75,7 @@ public class ClientObjectReferenceSet implements ObjectReferenceAddListener {
     }
   }
 
-  public boolean contains(Object value) {
+  public boolean contains(ObjectID value) {
     boolean found = false;
     refreshClientObjectReferencesIfNeeded();
 
@@ -151,9 +146,6 @@ public class ClientObjectReferenceSet implements ObjectReferenceAddListener {
 
       this.lastRefreshTime = System.nanoTime();
 
-      // register for new object reference added
-      monitorObjectReferenceAddition();
-
       this.snapshotObjectReferences = new ObjectIDSet();
       this.liveObjectReferences = new StripedObjectIDSet();
       this.clientStateManager.addAllReferencedIdsTo(snapshotObjectReferences);
@@ -164,33 +156,5 @@ public class ClientObjectReferenceSet implements ObjectReferenceAddListener {
     for (ClientObjectReferenceSetChangedListener listener : listeners) {
       listener.notifyReferenceSetChanged();
     }
-  }
-
-  private void monitorObjectReferenceAddition() {
-
-    if (objectRefAddRegistered) return;
-    // This timer task is here to avoid memory leak.
-    // When this Set is not in use and it will unregister the Listener so that the liveObjectReferences will not keep
-    // growing for ever. The state will be updated when someone checks for a contains on this set.
-    final TimerTask task = new TimerTask() {
-      @Override
-      public void run() {
-
-        lock.writeLock().lock();
-        try {
-          if ((lastRefreshTime < (System.nanoTime() - REFRESH_INTERVAL_NANO))) {
-            clientStateManager.unregisterObjectReferenceAddListener(ClientObjectReferenceSet.this);
-            cancel();
-            objectRefAddRegistered = false;
-          }
-        } finally {
-          lock.writeLock().unlock();
-        }
-      }
-    };
-
-    this.clientStateManager.registerObjectReferenceAddListener(this);
-    this.timer.schedule(task, TimeUnit.NANOSECONDS.toMillis(MONITOR_INTERVAL_NANO));
-    objectRefAddRegistered = true;
   }
 }
