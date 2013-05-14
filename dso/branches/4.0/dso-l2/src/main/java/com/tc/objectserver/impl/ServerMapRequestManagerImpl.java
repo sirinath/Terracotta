@@ -224,8 +224,11 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
           if ( logger.isDebugEnabled() ) {
             logger.debug("sending " + portableValue);
           }
-          
-          response.put(portableKey, portableValue, shouldPrefetch(clientID, portableValue), wrappedValue.getCreationTime(),
+          boolean shouldPrefetch = shouldPrefetch(clientID, portableValue);
+          if (shouldPrefetch) {
+            clientStateManager.addReference(clientID, portableValue);
+          }
+          response.put(portableKey, portableValue, shouldPrefetch, wrappedValue.getCreationTime(),
           wrappedValue.getLastAccessedTime(), wrappedValue.getTimeToIdle(), wrappedValue.getTimeToLive());
         }
       }
@@ -237,7 +240,7 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
   private boolean shouldPrefetch(ClientID cid, ObjectID object) {
  //  if the client is fetching the key-value, assume the client needs the value faulted in.  check for sure 
  //    before sending.  See ServerMapRequestPrefetchObjectsContext
-      return enablePrefetch;
+    return enablePrefetch && !clientStateManager.hasReference(cid, object);
   }
 
   private void sendResponseForGetAllSize(final ObjectID mapID, final ServerMapRequestSizeContext request,
