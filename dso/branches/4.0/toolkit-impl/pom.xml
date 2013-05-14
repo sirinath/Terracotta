@@ -15,7 +15,6 @@
   <packaging>jar</packaging>
 
   <properties>
-    <ehcache.version>2.7.1-SNAPSHOT</ehcache.version>
     <checkstyle-suppressions-file>${basedir}/../checkstyle-toolkit/suppressions.xml</checkstyle-suppressions-file>
   </properties>
 
