@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import com.tc.invalidation.Invalidations;
 import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.tc.net.NodeID;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.api.DNA;
@@ -34,13 +35,12 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @Component
 public class ClientStateManagerImpl implements ClientStateManager, PrettyPrintable {
+  private static final TCLogger logger = TCLogging.getLogger(ClientStateManager.class);
 
   private final ConcurrentHashMap<NodeID, ClientStateImpl>      clientStates;
-  private final TCLogger                                        logger;
   private final CopyOnWriteArraySet<ObjectReferenceAddListener> objectRefsAddListener;
 
-  public ClientStateManagerImpl(final TCLogger logger) {
-    this.logger = logger;
+  public ClientStateManagerImpl() {
     this.clientStates = new ConcurrentHashMap<NodeID, ClientStateImpl>();
     this.objectRefsAddListener = new CopyOnWriteArraySet<ObjectReferenceAddListener>();
   }

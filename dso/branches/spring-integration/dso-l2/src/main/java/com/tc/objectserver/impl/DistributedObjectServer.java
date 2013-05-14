@@ -600,7 +600,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                    + " MBean; this is a programming error. Please go fix that class.", ncmbe);
     }
 
-    this.clientStateManager = new ClientStateManagerImpl(TCLogging.getLogger(ClientStateManager.class));
+    this.clientStateManager = new ClientStateManagerImpl();
     final ClientObjectReferenceSet clientObjectReferenceSet = new ClientObjectReferenceSet(this.clientStateManager);
 
     final boolean gcEnabled = l2DSOConfig.garbageCollection().getEnabled();
