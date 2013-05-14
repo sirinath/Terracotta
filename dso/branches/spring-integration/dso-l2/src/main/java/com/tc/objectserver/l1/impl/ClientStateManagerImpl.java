@@ -4,6 +4,8 @@
  */
 package com.tc.objectserver.l1.impl;
 
+import org.springframework.stereotype.Component;
+
 import com.tc.invalidation.Invalidations;
 import com.tc.logging.TCLogger;
 import com.tc.net.NodeID;
@@ -30,6 +32,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Client State Manager maintains the list of objects that are faulted into each client.
  */
+@Component
 public class ClientStateManagerImpl implements ClientStateManager, PrettyPrintable {
 
   private final ConcurrentHashMap<NodeID, ClientStateImpl>      clientStates;
