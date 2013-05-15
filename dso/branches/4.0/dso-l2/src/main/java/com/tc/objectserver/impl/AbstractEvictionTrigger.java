@@ -3,8 +3,6 @@
  */
 package com.tc.objectserver.impl;
 
-import org.apache.log4j.Logger;
-
 import com.tc.object.ObjectID;
 import com.tc.objectserver.api.EvictableEntry;
 import com.tc.objectserver.api.EvictableMap;
@@ -28,7 +26,6 @@ public abstract class AbstractEvictionTrigger implements EvictionTrigger {
   private long                endTime     = 0;
   private int                 count;
   private int                 mapSize;
-  private static final Logger LOGGER      = Logger.getLogger(AbstractEvictionTrigger.class);
 
   public AbstractEvictionTrigger(final ObjectID oid) {
     this.oid = oid;
