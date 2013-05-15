@@ -220,17 +220,4 @@ public class ServerMapRequestManagerTest extends TestCase {
     when(managedObject.getManagedObjectState()).thenReturn(managedObjectState);
     serverMapRequestManager.sendResponseFor(mapID, managedObject);
   }
-
-  private static Matcher<ObjectRequestServerContextImpl> hasState(final LOOKUP_STATE state) {
-    return new ArgumentMatcher<ObjectRequestServerContextImpl>() {
-      @Override
-      public boolean matches(final Object o) {
-        if (o instanceof ObjectRequestServerContextImpl) {
-          return state == ((ObjectRequestServerContextImpl)o).getLookupState();
-        } else {
-          return false;
-        }
-      }
-    };
-  }
 }

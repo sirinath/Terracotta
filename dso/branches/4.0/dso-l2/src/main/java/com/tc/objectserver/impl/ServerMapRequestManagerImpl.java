@@ -53,7 +53,6 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
   private final Sink                  prefetchObjectsSink;
   private final ServerMapRequestQueue requestQueue = new ServerMapRequestQueue();
   private final ClientStateManager    clientStateManager;
-  private final ChannelStats          channelStats;
   private final boolean               enablePrefetch = TCPropertiesImpl.getProperties().getBoolean(TCPropertiesConsts.L2_OBJECTMANAGER_REQUEST_PREFETCH_ENABLED, true);
 
   public ServerMapRequestManagerImpl(final ObjectManager objectManager, final DSOChannelManager channelManager,
@@ -65,7 +64,6 @@ public class ServerMapRequestManagerImpl implements ServerMapRequestManager {
     this.respondToServerTCMapSink = respondToServerTCMapSink;
     this.prefetchObjectsSink = prefetchObjectsSink;
     this.clientStateManager = clientStateManager;
-    this.channelStats = channelStats;
   }
 
   @Override
