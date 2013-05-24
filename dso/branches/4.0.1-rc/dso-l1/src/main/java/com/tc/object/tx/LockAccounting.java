@@ -8,7 +8,6 @@ import com.tc.abortable.AbortableOperationManager;
 import com.tc.abortable.AbortedOperationException;
 import com.tc.exception.PlatformRejoinException;
 import com.tc.exception.TCNotRunningException;
-import com.tc.exception.TCRuntimeException;
 import com.tc.object.ClearableCallback;
 import com.tc.object.locks.LockID;
 import com.tc.util.AbortedOperationUtil;
@@ -34,16 +33,17 @@ public class LockAccounting implements ClearableCallback {
   private final Map<LockID, Set<TransactionIDWrapper>>   lock2Txs                       = new HashMap();
   private final Map<TransactionID, TransactionIDWrapper> tid2wrap                       = new HashMap();
   private volatile boolean                               shutdown                       = false;
-  private volatile boolean                               rejoinInProgress               = false;
   private final AbortableOperationManager                abortableOperationManager;
+  private final RemoteTransactionManagerImpl             remoteTxnMgrImpl;
 
-  public LockAccounting(AbortableOperationManager abortableOperationManager) {
+  public LockAccounting(AbortableOperationManager abortableOperationManager,
+                        RemoteTransactionManagerImpl remoteTxnMgrImpl) {
     this.abortableOperationManager = abortableOperationManager;
+    this.remoteTxnMgrImpl = remoteTxnMgrImpl;
   }
 
   @Override
   public synchronized void cleanup() {
-    rejoinInProgress = true;
     for (TxnRemovedListener listener : listeners) {
       listener.release();
     }
@@ -51,7 +51,6 @@ public class LockAccounting implements ClearableCallback {
     tx2Locks.clear();
     lock2Txs.clear();
     tid2wrap.clear();
-    rejoinInProgress = false;
   }
 
   public synchronized Object dump() {
@@ -166,21 +165,31 @@ public class LockAccounting implements ClearableCallback {
       listeners.add(listener);
     }
 
+    boolean txnsCompleted = false;
+    boolean interrupted = false;
     try {
       // DEV-6271: During rejoin, the client could be shut down. In that case we need to get
       // out of this wait and throw a TCNotRunningException for upper layers to handle
       do {
-        if (shutdown) { throw new TCNotRunningException(); }
-        if (rejoinInProgress) { throw new PlatformRejoinException(); }
-      } while (!latch.await(WAIT_FOR_TRANSACTIONS_INTERVAL, TimeUnit.MILLISECONDS));
-    } catch (InterruptedException e) {
-      AbortedOperationUtil.throwExceptionIfAborted(abortableOperationManager);
-      throw new TCRuntimeException(e);
-    } finally {
-        synchronized (this) {
-            listeners.remove(listener);
+        try {
+          if (shutdown) { throw new TCNotRunningException(); }
+          if (remoteTxnMgrImpl.isRejoinInProgress()) { throw new PlatformRejoinException(); }
+          txnsCompleted = latch.await(WAIT_FOR_TRANSACTIONS_INTERVAL, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+          AbortedOperationUtil.throwExceptionIfAborted(abortableOperationManager);
+          interrupted = true;
         }
+      } while (!txnsCompleted);
+    } finally {
+      synchronized (this) {
+        listeners.remove(listener);
+      }
+
+      if (interrupted) {
+        Thread.currentThread().interrupt();
+      }
     }
+
   }
 
   private static Set getSetFor(Object key, Map m) {
