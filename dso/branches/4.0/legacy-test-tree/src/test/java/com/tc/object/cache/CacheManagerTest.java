@@ -33,6 +33,16 @@ public class CacheManagerTest extends TCTestCase implements Evictable {
   TCMemoryManagerImpl      tcMemManager;
   TCThreadGroup            thrdGrp;
 
+  public CacheManagerTest() {
+    super();
+    disableTest();
+  }
+
+  public CacheManagerTest(String arg0) {
+    super(arg0);
+    disableTest();
+  }
+
   @Override
   public void setUp() {
     callCount = new SynchronizedInt(0);
