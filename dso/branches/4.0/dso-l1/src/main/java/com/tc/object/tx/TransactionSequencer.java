@@ -94,6 +94,7 @@ public class TransactionSequencer implements ClearableCallback {
     notifyAll();
     sequence = new SequenceGenerator(1);
     pendingBatches.clear();
+    lockAccounting.cleanup();
     createNewBatch();
   }
   
