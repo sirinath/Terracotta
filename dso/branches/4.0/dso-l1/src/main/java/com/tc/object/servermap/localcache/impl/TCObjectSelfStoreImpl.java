@@ -3,6 +3,7 @@
  */
 package com.tc.object.servermap.localcache.impl;
 
+import com.tc.exception.PlatformRejoinException;
 import com.tc.exception.TCNotRunningException;
 import com.tc.invalidation.Invalidations;
 import com.tc.logging.TCLogger;
@@ -38,6 +39,7 @@ public class TCObjectSelfStoreImpl implements TCObjectSelfStore {
                                                                                                            .getLogger(TCObjectSelfStoreImpl.class);
 
   private volatile boolean                                                       isShutdown            = false;
+  private volatile boolean                                                       isRejoinInProgress     = false;
 
   public TCObjectSelfStoreImpl(ConcurrentHashMap<ServerMapLocalCache, PinnedEntryFaultCallback> localCaches) {
     this.localCaches = localCaches;
@@ -45,12 +47,15 @@ public class TCObjectSelfStoreImpl implements TCObjectSelfStore {
 
   @Override
   public void cleanup() {
-    tcObjectStoreLock.writeLock().lock();
-    try {
-      tcObjectSelfStoreOids.clear();
-      tcObjectSelfTempCache.clear();
-    } finally {
-      tcObjectStoreLock.writeLock().unlock();
+    synchronized (tcObjectSelfRemovedFromStoreCallback) {
+      tcObjectSelfRemovedFromStoreCallback.notifyAll();
+      tcObjectStoreLock.writeLock().lock();
+      try {
+        tcObjectSelfStoreOids.clear();
+        tcObjectSelfTempCache.clear();
+      } finally {
+        tcObjectStoreLock.writeLock().unlock();
+      }
     }
   }
 
@@ -135,21 +140,21 @@ public class TCObjectSelfStoreImpl implements TCObjectSelfStore {
 
   private void waitUntilNotified() {
     isShutdownThenException();
-
+    if (isRejoinInProgress) { throw new PlatformRejoinException(); }
     boolean isInterrupted = false;
     try {
       // since i know I am going to wait, let me wait on client lock manager instead of this condition
-      synchronized (this.tcObjectSelfRemovedFromStoreCallback) {
-        this.tcObjectSelfRemovedFromStoreCallback.wait(1000);
+      synchronized (tcObjectSelfRemovedFromStoreCallback) {
+        tcObjectSelfRemovedFromStoreCallback.wait(1000);
       }
     } catch (InterruptedException e) {
       isInterrupted = true;
     } finally {
-      isShutdownThenException();
-
       if (isInterrupted) {
         Thread.currentThread().interrupt();
       }
+      isShutdownThenException();
+      if (isRejoinInProgress) { throw new PlatformRejoinException(); }
     }
   }
 
@@ -353,6 +358,11 @@ public class TCObjectSelfStoreImpl implements TCObjectSelfStore {
   @Override
   public void initializeTCObjectSelfStore(TCObjectSelfCallback callback) {
     this.tcObjectSelfRemovedFromStoreCallback = callback;
+  }
+
+  @Override
+  public void rejoinInProgress(boolean rejoinInProgress) {
+    this.isRejoinInProgress = rejoinInProgress;
   }
 
   @Override
