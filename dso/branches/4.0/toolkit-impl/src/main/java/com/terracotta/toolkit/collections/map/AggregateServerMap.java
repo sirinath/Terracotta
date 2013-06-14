@@ -10,6 +10,7 @@ import org.terracotta.toolkit.cluster.ClusterNode;
 import org.terracotta.toolkit.collections.ToolkitMap;
 import org.terracotta.toolkit.concurrent.locks.ToolkitReadWriteLock;
 import org.terracotta.toolkit.config.Configuration;
+import org.terracotta.toolkit.internal.cache.VersionUpdateListener;
 import org.terracotta.toolkit.internal.concurrent.locks.ToolkitLockTypeInternal;
 import org.terracotta.toolkit.internal.store.ConfigFieldsInternal;
 import org.terracotta.toolkit.internal.store.ConfigFieldsInternal.LOCK_STRATEGY;
@@ -36,6 +37,9 @@ import com.tc.object.TCObjectServerMap;
 import com.tc.object.servermap.localcache.L1ServerMapLocalCacheStore;
 import com.tc.object.servermap.localcache.PinnedEntryFaultCallback;
 import com.tc.platform.PlatformService;
+import com.tc.server.ServerEvent;
+import com.tc.server.ServerEventType;
+import com.tc.server.VersionedServerEvent;
 import com.terracotta.toolkit.abortable.ToolkitAbortableOperationException;
 import com.terracotta.toolkit.cluster.TerracottaClusterInfo;
 import com.terracotta.toolkit.collections.map.ServerMap.GetType;
@@ -116,6 +120,7 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
   private final AtomicReference<ToolkitMap<String, String>>                attrSchema                           = new AtomicReference<ToolkitMap<String, String>>();
   private final LOCK_STRATEGY                                              lockStrategy;
   private volatile ToolkitAttributeExtractor                               attributeExtractor                 = null;
+  private final CopyOnWriteArrayList<VersionUpdateListener> versionUpdateListeners;
 
   private int getTerracottaProperty(String propName, int defaultValue) {
     try {
@@ -144,6 +149,7 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
     Preconditions.checkNotNull(schemaCreator);
     this.schemaCreator = schemaCreator;
     this.listeners = new CopyOnWriteArrayList<ToolkitCacheListener<K>>();
+    this.versionUpdateListeners = new CopyOnWriteArrayList<VersionUpdateListener>();
 
     this.config = new UnclusteredConfiguration(config);
     this.consistency = Consistency.valueOf((String) InternalCacheConfigurationType.CONSISTENCY
@@ -365,6 +371,11 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
   }
 
   @Override
+  public void removeVersioned(final Object key, final long version) {
+    getServerMapForKey(key).removeNoReturnVersioned(key, version);
+  }
+
+  @Override
   public V unsafeLocalGet(Object key) {
     return getServerMapForKey(key).unsafeLocalGet(key);
   }
@@ -439,7 +450,7 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
 
   @Override
   public void putNoReturn(K key, V value, long createTimeInSecs, int customMaxTTISeconds, int customMaxTTLSeconds) {
-    getServerMapForKey(key).putNoReturn(key, value, (int) createTimeInSecs, customMaxTTISeconds, customMaxTTLSeconds);
+    getServerMapForKey(key).putNoReturn(key, value, (int)createTimeInSecs, customMaxTTISeconds, customMaxTTLSeconds);
   }
 
   @Override
@@ -456,8 +467,7 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
   @Override
   public SearchQueryResultSet executeQuery(ToolkitSearchQuery query) {
     return searchBuilderFactory.createSearchExecutor(getName(), getToolkitObjectType(), this,
-                                                     getAnyServerMap().isEventual(), platformService)
-        .executeQuery(query);
+        getAnyServerMap().isEventual(), platformService).executeQuery(query);
   }
 
   public void setApplyDestroyCallback(DestroyApplicator destroyCallback) {
@@ -519,6 +529,21 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
     if (keys == null || keys.isEmpty()) { return; }
     for (K key : keys) {
       removeNoReturn(key);
+    }
+  }
+
+  @Override
+  public void registerVersionUpdateListener(final VersionUpdateListener listener) {
+    // synchronize not to have duplicate listeners
+    synchronized (versionUpdateListeners) {
+      if (!versionUpdateListeners.contains(listener)) {
+        versionUpdateListeners.add(listener);
+        platformService.registerServerEventListener(this, ServerEventType.PUT_LOCAL, ServerEventType.REMOVE_LOCAL);
+
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Versioned modification event listener has been registered for cache: " + getName());
+        }
+      }
     }
   }
 
@@ -682,8 +707,19 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
   }
 
   @Override
+  public void unlockedPutNoReturnVersioned(final K key, final V value, final long version, final int createTimeInSecs,
+                                           final int customTTISeconds, final int customTTLSeconds) {
+    getServerMapForKey(key).unlockedPutNoReturnVersioned(key, value, version, createTimeInSecs, customTTISeconds, customTTLSeconds);
+  }
+
+  @Override
   public void unlockedRemoveNoReturn(Object key) {
     getServerMapForKey(key).unlockedRemoveNoReturn(key);
+  }
+
+  @Override
+  public void unlockedRemoveNoReturnVersioned(final Object key, final long version) {
+    getServerMapForKey(key).unlockedRemoveNoReturnVersioned(key, version);
   }
 
   public void unlockedClear() {
@@ -728,6 +764,17 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
   }
 
   @Override
+  public void putVersioned(K key, V value, long version) {
+    putVersioned(key, value, version, timeSource.nowInSeconds(), ToolkitConfigFields.NO_MAX_TTI_SECONDS,
+        ToolkitConfigFields.NO_MAX_TTL_SECONDS);
+  }
+
+  @Override
+  public void putVersioned(K key, V value, long version, int createTimeInSecs, int customMaxTTISeconds, int customMaxTTLSeconds) {
+    getServerMapForKey(key).putVersioned(key, value, version, createTimeInSecs, customMaxTTISeconds, customMaxTTLSeconds);
+  }
+
+  @Override
   public V put(K key, V value) {
     return put(key, value, timeSource.nowInSeconds(), ToolkitConfigFields.NO_MAX_TTI_SECONDS,
         ToolkitConfigFields.NO_MAX_TTL_SECONDS);
@@ -766,19 +813,24 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
   }
 
   @Override
-  public void handleServerEvent(final ServerEventType type, final Object key) {
-    doHandleServerEvent(type, key);
+  public void handleServerEvent(final ServerEvent event) {
+    final ServerEventType type = event.getType();
+    if (type == ServerEventType.EVICT || type == ServerEventType.EXPIRE) {
+      doHandleEvictions(event);
+    } else if (type == ServerEventType.PUT_LOCAL || type == ServerEventType.REMOVE_LOCAL) {
+      doHandleVersionUpdates((VersionedServerEvent)event);
+    }
   }
 
-  private void doHandleServerEvent(final ServerEventType type, final Object key) {
+  private void doHandleEvictions(final ServerEvent event) {
     for (final ToolkitCacheListener listener : listeners) {
       try {
-        switch (type) {
+        switch (event.getType()) {
           case EVICT:
-            listener.onEviction(key);
+            listener.onEviction(event.getKey());
             break;
           case EXPIRE:
-            listener.onExpiration(key);
+            listener.onExpiration(event.getKey());
             break;
         }
       } catch (Throwable t) {
@@ -786,6 +838,23 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
         // That way we do not cause an unhandled exception to be thrown in a stage thread, bringing
         // down the L1.
         LOGGER.error("Cache listener threw an exception.", t);
+      }
+    }
+  }
+
+  private void doHandleVersionUpdates(final VersionedServerEvent event) {
+    for (VersionUpdateListener listener : versionUpdateListeners) {
+      try {
+        switch (event.getType()) {
+          case PUT_LOCAL:
+            listener.onLocalPut(event.getKey(), event.getValue(), event.getVersion());
+            break;
+          case REMOVE_LOCAL:
+            listener.onLocalRemove(event.getKey(), event.getVersion());
+            break;
+        }
+      } catch (Exception e) {
+        LOGGER.error("Cache mutation listener threw an exception.", e);
       }
     }
   }

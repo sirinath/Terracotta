@@ -94,6 +94,21 @@ public class RejoinAwarePlatformService implements PlatformService {
   }
 
   @Override
+  public void registerServerEventListener(final ServerEventDestination destination, final Set<ServerEventType> listenTo) {
+    delegate.registerServerEventListener(destination, listenTo);
+  }
+
+  @Override
+  public void registerServerEventListener(final ServerEventDestination destination, final ServerEventType... listenTo) {
+    delegate.registerServerEventListener(destination, listenTo);
+  }
+
+  @Override
+  public void unregisterServerEventListener(final ServerEventDestination destination) {
+    delegate.unregisterServerEventListener(destination);
+  }
+
+  @Override
   public boolean isRejoinEnabled() {
     return delegate.isRejoinEnabled();
   }
@@ -126,16 +141,6 @@ public class RejoinAwarePlatformService implements PlatformService {
     } catch (PlatformRejoinException e) {
       throw new RejoinException(e);
     }
-  }
-
-  @Override
-  public void registerServerEventListener(final ServerEventDestination destination, final Set<ServerEventType> listenTo) {
-    delegate.registerServerEventListener(destination, listenTo);
-  }
-
-  @Override
-  public void unregisterServerEventListener(final ServerEventDestination destination) {
-    delegate.unregisterServerEventListener(destination);
   }
 
   @Override
