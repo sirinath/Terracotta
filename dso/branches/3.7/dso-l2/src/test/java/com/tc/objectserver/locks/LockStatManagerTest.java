@@ -145,12 +145,8 @@ public class LockStatManagerTest extends TestCase {
     // Supposed to be expectedMinTime but changed to expectedMinTime-10
     // This is due to System.currentTimeMillis() which is not that accurate,
     // according to javadoc, the granularity can be in units of tens of milliseconds
-    if (Os.isWindows()) {
-      // on windows, System.currentTimeMills() only changes every 15-16 millis! Its even worse on windows 95 (~55ms)
-      Assert.assertTrue(actualTime >= (expectedMinTime - 200));
-    } else {
-      Assert.assertTrue(actualTime >= (expectedMinTime - 10));
-    }
+    // on windows, System.currentTimeMills() only changes every 15-16 millis! Its even worse on windows 95 (~55ms)
+    Assert.assertTrue(actualTime >= (expectedMinTime - 200));
   }
 
   public void testNestedDepth() throws InterruptedException {
