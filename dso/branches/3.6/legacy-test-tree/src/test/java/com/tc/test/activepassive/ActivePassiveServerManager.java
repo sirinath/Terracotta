@@ -354,6 +354,11 @@ public class ActivePassiveServerManager extends MultipleServerManager {
     System.out.println("*** Server started [" + servers[index].getDsoPort() + "]");
   }
 
+  public void waitFor(int index) throws Exception {
+    System.out.println("*** Waiting for server exit [" + servers[index].getDsoPort() + "] ... ");
+    servers[index].getServerControl().waitFor();
+  }
+
   public int getAndUpdateActiveIndex() throws Exception {
     return (activeIndex = getActiveIndex(false));
   }

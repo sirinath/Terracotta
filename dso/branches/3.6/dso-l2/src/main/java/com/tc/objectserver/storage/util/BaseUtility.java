@@ -36,6 +36,8 @@ public abstract class BaseUtility {
   protected final File[]        databaseDirs;
 
   public BaseUtility(Writer writer, File[] databaseDirs) throws Exception {
+    // skip sanity check and rollovers for utility scripts
+    System.setProperty("skip.persistor.sanity.check", "true");
     this.writer = writer;
     this.databaseDirs = databaseDirs;
     dbPersistorsMap = new HashMap(databaseDirs.length);

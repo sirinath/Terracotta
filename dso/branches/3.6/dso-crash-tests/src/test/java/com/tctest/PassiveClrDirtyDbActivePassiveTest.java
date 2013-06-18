@@ -20,6 +20,7 @@ import com.tc.test.MultipleServersSharedDataMode;
 import com.tc.test.activepassive.ActivePassiveServerManager;
 import com.tc.test.activepassive.ActivePassiveTestSetupManager;
 import com.tc.util.Assert;
+import com.tc.util.PortChooser;
 import com.tctest.runner.AbstractTransparentApp;
 
 import java.io.File;
@@ -48,6 +49,12 @@ public class PassiveClrDirtyDbActivePassiveTest extends ActivePassiveTransparent
   @Override
   protected Class getApplicationClass() {
     return DummyTestApp.class;
+  }
+
+  @Override
+  protected void setUpMultipleServersTest(PortChooser portChooser, ArrayList jvmArgs) throws Exception {
+    jvmArgs.add("-Dcom.tc.l2.nha.dirtydb.autoDelete=false");
+    super.setUpMultipleServersTest(portChooser, jvmArgs);
   }
 
   @Override
@@ -114,14 +121,20 @@ public class PassiveClrDirtyDbActivePassiveTest extends ActivePassiveTransparent
                                                               getConfigFileLocation(), Collections.EMPTY_LIST,
                                                               client1Workspace, Collections.EMPTY_LIST);
 
-    client1.start();
+    client1.startAndWait(Long.MAX_VALUE);
     client1.waitFor();
 
+    // make the DB dirty by simulating passive restart before active
     System.out.println("XXX Stop passive server[1]");
     manager.stopServer(1);
 
     System.out.println("XXX Stop active server[0]");
     manager.stopServer(0);
+
+    // start passive first this should mark the server db as dirty
+    System.out.println("XXX Start passive server[1] this should exit as dirty DB");
+    manager.startServer(1);
+    manager.waitFor(1);
 
     // clean up passive dirty db
     System.out.println("XXX Clean passive db dirty bit");
@@ -135,9 +148,14 @@ public class PassiveClrDirtyDbActivePassiveTest extends ActivePassiveTransparent
     System.out.println("XXX Start passive server[1] as active");
     manager.startServer(1);
     Assert.assertEquals(1, manager.getAndUpdateActiveIndex());
+    File client2Workspace = new File(getTempDirectory(), "l1-logs" + File.separator + "client2");
+    client2Workspace.mkdirs();
+    ExtraL1ProcessControl client2 = new ExtraL1ProcessControl("localhost", manager.getDsoPort(), TestApp.class,
+                                                              getConfigFileLocation(), Collections.EMPTY_LIST,
+                                                              client2Workspace, Collections.EMPTY_LIST);
 
-    client1.start();
-    Assert.assertEquals(0, client1.waitFor());
+    client2.start();
+    Assert.assertEquals(0, client2.waitFor());
   }
 
   private List<String> getTCPropertyJvmArgs() {

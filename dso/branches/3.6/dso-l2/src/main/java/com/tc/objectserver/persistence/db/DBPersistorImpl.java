@@ -59,8 +59,9 @@ public class DBPersistorImpl implements Persistor {
 
     open(env, logger);
     this.env = env;
-
-    sanityCheckAndClean(env, l2DataPath, logger);
+    if (!Boolean.getBoolean("skip.persistor.sanity.check")) {
+      sanityCheckAndClean(env, l2DataPath, logger);
+    }
 
     this.persistenceTransactionProvider = createPersistenceTransactionProvider(env);
     this.stringIndexPersistor = createStringIndexPersistor();

@@ -6,6 +6,7 @@ package com.tc.objectserver.storage.util;
 
 import com.tc.l2.ha.ClusterState;
 import com.tc.l2.state.StateManager;
+import com.tc.object.persistence.api.ClusterStatePersistentMapStore;
 import com.tc.objectserver.storage.api.DBEnvironment;
 import com.tc.objectserver.storage.api.PersistenceTransaction;
 import com.tc.objectserver.storage.api.PersistenceTransactionProvider;
@@ -58,8 +59,23 @@ public class SetDbClean extends BaseUtility {
       return;
     }
     tx.commit();
-
     String stateStr = entry.getValue();
+
+    entry = new TCDatabaseEntry<String, String>();
+    entry.setKey(ClusterStatePersistentMapStore.DBKEY_STATE);
+
+    tx = ptp.newTransaction();
+    status = db.get(entry, tx);
+
+    if (!Status.SUCCESS.equals(status)) {
+      log("Failed to read state!");
+      tx.commit();
+      env.close();
+      return;
+    }
+    tx.commit();
+    String cleanState = entry.getValue();
+
     if (stateStr == null) {
       log("Failed to set DB clean for empty state");
       env.close();
@@ -70,15 +86,25 @@ public class SetDbClean extends BaseUtility {
     switch (option) {
       case S:
         log("This server last staus was " + stateStr);
+        log("This server clean state " + cleanState);
         break;
       case C:
-        if (!StateManager.PASSIVE_STANDBY.equals(state)) {
-          log("Failed to set DB clean for " + state);
+        if (!StateManager.PASSIVE_STANDBY.equals(state)
+            && !cleanState.equals(ClusterStatePersistentMapStore.DB_STATE_DIRTY)) {
+          log("Failed to set DB clean for " + state + cleanState);
           env.close();
           return;
         }
         tx = ptp.newTransaction();
         status = db.put(ClusterState.getL2StateKey(), StateManager.ACTIVE_COORDINATOR.getName(), tx);
+        if (Status.SUCCESS.equals(status)) {
+          log("Active Coordinator status change success!");
+        } else {
+          log("Failed to change Active Coordinator status");
+        }
+        tx.commit();
+        tx = ptp.newTransaction();
+        status = db.put(ClusterStatePersistentMapStore.DBKEY_STATE, ClusterStatePersistentMapStore.DB_STATE_CLEAN, tx);
         if (Status.SUCCESS.equals(status)) {
           log("SetDbClean success!");
         } else {
