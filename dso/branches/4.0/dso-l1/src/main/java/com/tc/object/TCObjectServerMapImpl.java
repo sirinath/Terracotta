@@ -3,6 +3,8 @@
  */
 package com.tc.object;
 
+import static com.tc.server.VersionedServerEvent.DEFAULT_VERSION;
+
 import com.google.common.base.Preconditions;
 import com.tc.abortable.AbortedOperationException;
 import com.tc.exception.TCObjectNotFoundException;
@@ -41,8 +43,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static com.tc.server.VersionedServerEvent.DEFAULT_VERSION;
 
 public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjectServerMap<L> {
 
@@ -829,7 +829,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
 
   @Override
   protected boolean isEvictable() {
-    return true;
+    return false;
   }
 
   /**
