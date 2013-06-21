@@ -98,7 +98,14 @@ public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
     final L2ObjectStateImpl _l2State = l2State;
     this.transactionManager.callBackOnResentTxnsInSystemCompletion(new TxnsInSystemCompletionListener() {
       public void onCompletion() {
-        _l2State.moveToReadyToSyncState();
+        // We need to wait until the LWM passes the first relayed transaction. This will guarantee that
+        // the passive will not see a unrelayed resent transactions. See DEV-6476
+        transactionManager.callbackOnLowWaterMarkInSystemCompletion(new Runnable() {
+          @Override
+          public void run() {
+            _l2State.moveToReadyToSyncState();
+          }
+        });
       }
     });
     return true;

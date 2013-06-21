@@ -186,6 +186,7 @@ import com.tc.objectserver.handler.ClientLockStatisticsHandler;
 import com.tc.objectserver.handler.CommitTransactionChangeHandler;
 import com.tc.objectserver.handler.GarbageCollectHandler;
 import com.tc.objectserver.handler.GarbageDisposeHandler;
+import com.tc.objectserver.handler.LowWaterMarkCallbackHandler;
 import com.tc.objectserver.handler.GlobalTransactionIDBatchRequestHandler;
 import com.tc.objectserver.handler.InvalidateObjectsHandler;
 import com.tc.objectserver.handler.JMXEventsHandler;
@@ -936,11 +937,15 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
 
     final TransactionStore transactionStore = new TransactionStoreImpl(transactionPersistor,
                                                                        globalTransactionIDSequence);
+    final Stage lwmCallbackStage = stageManager
+        .createStage(ServerConfigurationContext.LOW_WATERMARK_CALLBACK_STAGE,
+                     new LowWaterMarkCallbackHandler(), 1, maxStageSize);
     final ServerGlobalTransactionManager gtxm = new ServerGlobalTransactionManagerImpl(sequenceValidator,
                                                                                        transactionStore,
                                                                                        transactionStorePTP,
                                                                                        gidSequenceProvider,
-                                                                                       globalTransactionIDSequence);
+                                                                                       globalTransactionIDSequence,
+                                                                                       lwmCallbackStage.getSink());
 
     final TransactionalStagesCoordinatorImpl txnStageCoordinator = new TransactionalStagesCoordinatorImpl(stageManager);
     final ServerTransactionSequencerImpl serverTransactionSequencerImpl = new ServerTransactionSequencerImpl();
