@@ -163,7 +163,7 @@ public class StageQueueImpl implements Sink {
   }
 
   private int hashCodeToArrayIndex(int hashcode, int arrayLength) {
-    return (hashcode % arrayLength);
+    return Math.abs(hashcode % arrayLength);
   }
 
   // Used for testing
