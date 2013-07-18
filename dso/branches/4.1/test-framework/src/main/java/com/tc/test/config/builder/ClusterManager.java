@@ -10,10 +10,6 @@ import org.eclipse.jetty.io.Buffer;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.terracotta.test.util.TestBaseUtil;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import com.tc.config.Loader;
 import com.tc.test.TestConfigUtil;
@@ -26,23 +22,17 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * @author Ludovic Orban
@@ -87,8 +77,9 @@ public class ClusterManager {
     this.tcConfig = tcConfig;
     this.tcConfigBuilder = new TcConfigBuilder(parsedDoc);
     this.workingDir = workingDir;
-    this.version = guessMavenArtifactVersion(getClass());
-    if (version == null) {
+    this.version = guessMavenArtifactVersion();
+    LOG.info("Guessed version: " + this.version);
+    if (this.version == null) {
       throw new IllegalStateException("cannot figure out version");
     }
   }
@@ -133,6 +124,7 @@ public class ClusterManager {
       }
       serverWorkingDir.mkdir();
       ExternalDsoServer externalDsoServer = new ExternalDsoServer(serverWorkingDir, tcConfigBuilder.newInputStream(), serverName);
+      externalDsoServer.addJvmArg("-Djava.awt.headless=true");
       externalDsoServer.addJvmArg("-Dcom.tc.management.war=" + war);
       externalDsoServer.addJvmArg("-XX:MaxDirectMemorySize=" + maxDirectMemorySize);
       for (String extraJvmArg : extraJvmArgs) {
@@ -226,63 +218,12 @@ public class ClusterManager {
     return new File(jarLocation).getParentFile().getName();
   }
 
-  public String findWarLocation(String gid, String aid, String ver) {
-    String m2Root = System.getProperty("user.home") + "/.m2/repository".replace('/', File.separatorChar);
-    if (System.getProperty("maven.repo.local") != null) {
-      m2Root = System.getProperty("maven.repo.local");
-      LOG.info("Found maven.repo.local defined as a system property! Using m2root=" + m2Root);
-    }
-
-    String warDir = m2Root + ("/" + gid.replace('.', '/') + "/" + aid + "/").replace('/', File.separatorChar) + ver;
-
-    List<String> files = Arrays.asList(new File(warDir).list(new FilenameFilter() {
-      @Override
-      public boolean accept(File dir, String name) {
-        return name.endsWith(".war") && !name.endsWith("-sources.war") && !name.endsWith("-tests.war");
+  public static String findWarLocation(String gid, String aid, String ver) {
+    return MavenArtifactFinder.findArtifactLocation(gid, aid, ver, null, "war");
       }
-    }));
-    if (files.isEmpty()) {
-      throw new AssertionError("No WAR file found in [" + warDir + "]");
-    }
-    Collections.sort(files);
 
-    // always take the last one of the sorted list, it should be the latest version
-    return warDir + File.separator + files.get(files.size() - 1);
-  }
-
-  private static String guessMavenArtifactVersion(Class<?> clazz) {
-    // e.g. /home/userXYZ/.m2/repository/org/terracotta/terracotta-toolkit-runtime/3.8.0-SNAPSHOT/terracotta-toolkit-runtime-3.8.0-SNAPSHOT.jar
-    String jar = TestBaseUtil.jarFor(clazz);
-    if (jar == null) {
-      throw new AssertionError("Cannot find JAR for class: " + clazz);
-    }
-
-    if (jar.endsWith(".jar")) {
-      String[] pathes = jar.split("\\/");
-      if (pathes.length > 2) {
-        return pathes[pathes.length - 2];
-      }
-      throw new AssertionError("Invalid JAR: " + jar);
-    } else {
-      // running from IDE? try to get the version from the pom file
-      try {
-        File fXmlFile = new File("pom.xml");
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-        Document doc = dBuilder.parse(fXmlFile);
-
-        NodeList childNodes = doc.getDocumentElement().getChildNodes();
-        for (int i=0;i<childNodes.getLength();i++) {
-          Node node = childNodes.item(i);
-          if ("version".equals(node.getNodeName())) {
-            return node.getTextContent();
-          }
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-      throw new AssertionError("cannot guess version");
-    }
+  public static String guessMavenArtifactVersion() throws IOException {
+    return MavenArtifactFinder.figureCurrentArtifactMavenVersion();
   }
 
   private void waitUntilTsaAgentInitialized(int port) throws Exception {
