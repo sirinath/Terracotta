@@ -34,6 +34,7 @@ public class ClusterMetaDataAfterNodeLeftTest extends TransparentTestBase {
   private int  port;
   private File configFile;
   private int  adminPort;
+  private int  groupPort;
 
   @Override
   protected Class getApplicationClass() {
@@ -45,7 +46,7 @@ public class ClusterMetaDataAfterNodeLeftTest extends TransparentTestBase {
     PortChooser pc = new PortChooser();
     port = pc.chooseRandomPort();
     adminPort = pc.chooseRandomPort();
-    int groupPort = pc.chooseRandomPort();
+    groupPort = pc.chooseRandomPort();
     configFile = getTempFile("config-file.xml");
     writeConfigFile();
 
@@ -65,7 +66,7 @@ public class ClusterMetaDataAfterNodeLeftTest extends TransparentTestBase {
 
   private synchronized void writeConfigFile() {
     try {
-      TerracottaConfigBuilder builder = createConfig(port, adminPort);
+      TerracottaConfigBuilder builder = createConfig(port, adminPort, groupPort);
       FileOutputStream out = new FileOutputStream(configFile);
       IOUtils.copy(new StringInputStream(builder.toString()), out);
       out.close();
@@ -74,11 +75,12 @@ public class ClusterMetaDataAfterNodeLeftTest extends TransparentTestBase {
     }
   }
 
-  public static TerracottaConfigBuilder createConfig(final int port, final int adminPort) {
+  public static TerracottaConfigBuilder createConfig(final int port, final int adminPort, final int groupPort) {
     TerracottaConfigBuilder out = new TerracottaConfigBuilder();
 
     out.getServers().getL2s()[0].setDSOPort(port);
     out.getServers().getL2s()[0].setJMXPort(adminPort);
+    out.getServers().getL2s()[0].setL2GroupPort(groupPort);
     out.getServers().getL2s()[0].setPersistenceMode(L2ConfigBuilder.PERSISTENCE_MODE_PERMANENT_STORE);
 
     InstrumentedClassConfigBuilder instrumented1 = new InstrumentedClassConfigBuilderImpl();
