@@ -167,7 +167,8 @@ public class ClientConnectionEstablisher {
 
       this.asyncReconnecting.set(true);
       boolean reconnectionRejected = false;
-      for (int i = 0; ((this.maxReconnectTries < 0) || (i < this.maxReconnectTries)) && !connected; i++) {
+      for (int i = 0; ((this.maxReconnectTries < 0) || (i < this.maxReconnectTries)) && !connected
+                      && !connectionEstablisher.isStopped(); i++) {
         ConnectionAddressIterator addresses = this.connAddressProvider.getIterator();
         while (addresses.hasNext() && !connected) {
 
@@ -245,7 +246,7 @@ public class ClientConnectionEstablisher {
     this.asyncReconnecting.set(true);
     try {
       boolean reconnectionRejected = false;
-      while (!connected) {
+      while (!connected && !connectionEstablisher.isStopped()) {
 
         if (reconnectionRejected) {
           if (reconnectionRejectedHandler.isRetryOnReconnectionRejected()) {
@@ -332,6 +333,20 @@ public class ClientConnectionEstablisher {
     }
   }
 
+  public void shutDown() {
+    quitReconnectAttempts();
+    boolean isInterrupted = false;
+    try {
+      connectionEstablisher.join();
+    } catch (InterruptedException e) {
+      LOGGER.warn(Thread.currentThread().getName()
+                   + " got interrupted while waiting for connectionEstablisher Thread to complete");
+      isInterrupted = true;
+    } finally {
+      Util.selfInterruptIfNeeded(isInterrupted);
+    }
+  }
+
   public void quitReconnectAttempts() {
     connectionEstablisher.stop();
     this.allowReconnects.set(false);
@@ -343,9 +358,17 @@ public class ClientConnectionEstablisher {
     private final AtomicBoolean               threadStarted      = new AtomicBoolean(false);
     private volatile boolean                  stopped            = false;
     private final Queue<ConnectionRequest>    connectionRequests = new LinkedList<ClientConnectionEstablisher.ConnectionRequest>();
+    private Thread                            connectionEstablisherThread;
 
     public AsyncReconnect(ClientConnectionEstablisher cce) {
       this.cce = cce;
+    }
+
+    public void join() throws InterruptedException {
+      if (connectionEstablisherThread != null) {
+        connectionEstablisherThread.join();
+      }
+
     }
 
     public boolean isStopped() {
@@ -385,6 +408,7 @@ public class ClientConnectionEstablisher {
         Thread thread = new Thread(this, RECONNECT_THREAD_NAME + "-" + cce.connAddressProvider.getGroupId());
         thread.setDaemon(true);
         thread.start();
+        connectionEstablisherThread = thread;
       }
     }
 
