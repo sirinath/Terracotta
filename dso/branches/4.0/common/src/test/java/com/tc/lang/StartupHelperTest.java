@@ -31,7 +31,11 @@ public class StartupHelperTest extends TestCase {
       }
     });
 
-    helper.startUp();
+    try {
+      helper.startUp();
+    } catch (RuntimeException e) {
+      //
+    }
 
     RuntimeException thrown = (RuntimeException) error.get();
     if (thrown == null) {
