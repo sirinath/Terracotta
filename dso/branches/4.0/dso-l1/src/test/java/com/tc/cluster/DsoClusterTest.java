@@ -416,9 +416,9 @@ public class DsoClusterTest extends TestCase {
     }
 
     @Override
-    public void nodeRejoinRejected(DsoClusterEvent event) {
+    public void nodeError(DsoClusterEvent event) {
       check();
-      events.add(event.getNode().getId() + " REJOIN REJECTED");
+      events.add(event.getNode().getId() + "NODE ERROR");
     }
 
     public void check() {
@@ -428,6 +428,7 @@ public class DsoClusterTest extends TestCase {
     public synchronized void reset() {
       events.clear();
     }
+
   }
 
   private static class TestEventListenerWithExceptions implements DsoClusterListener {
@@ -458,8 +459,8 @@ public class DsoClusterTest extends TestCase {
     }
 
     @Override
-    public void nodeRejoinRejected(DsoClusterEvent event) {
-      throw new RuntimeException("rejoined");
+    public void nodeError(DsoClusterEvent event) {
+      throw new RuntimeException("NODE ERROR");
     }
 
   }
