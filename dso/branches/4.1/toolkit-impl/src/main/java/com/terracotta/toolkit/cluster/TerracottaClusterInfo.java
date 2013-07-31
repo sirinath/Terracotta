@@ -162,8 +162,10 @@ public class TerracottaClusterInfo implements ClusterInfo {
     }
 
     @Override
-    public void nodeRejoinRejected(DsoClusterEvent event) {
-      listener.onClusterEvent(translateEvent(event, Type.NODE_ERROR, "Rejoin rejected"));
+    public void nodeError(DsoClusterEvent event) {
+      listener
+          .onClusterEvent(translateEvent(event, Type.NODE_ERROR,
+                                         "NODE_ERROR: Rejoin is not possible: Either Rejoin rejected or Rejoin not enabled"));
     }
 
     @Override
@@ -188,7 +190,7 @@ public class TerracottaClusterInfo implements ClusterInfo {
           return Type.OPERATIONS_DISABLED;
         case NODE_REJOINED:
           return Type.NODE_REJOINED;
-        case REJOIN_REJECTED:
+        case NODE_ERROR:
           return Type.NODE_ERROR;
       }
       throw new AssertionError("Unhandled event type: " + type);
@@ -207,6 +209,7 @@ public class TerracottaClusterInfo implements ClusterInfo {
         return false;
       }
     }
+
   }
 
   private static class ClusterEventImpl implements ClusterEvent {
