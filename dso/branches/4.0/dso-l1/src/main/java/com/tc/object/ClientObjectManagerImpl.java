@@ -368,8 +368,8 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
       ObjectLookupState removed = this.objectLatchStateMap.remove(state.getObjectID());
       if (removed != state) {
         // removed can be null if rejoin cleans up state during lookup.
-        if (removed.getSession() != currentSession) {
-          throw new PlatformRejoinException("lookup failed for ObjectID" + removed.getObjectID() + " due to rejoin");
+        if (state.getSession() != currentSession) {
+          throw new PlatformRejoinException("lookup failed for ObjectID" + state.getObjectID() + " due to rejoin");
         } else {
           throw new AssertionError("wrong removal of lookup state " + removed + " " + state);
         }
