@@ -177,7 +177,8 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
 
     stageManager.createStage(ServerConfigurationContext.OBJECTS_SYNC_SEND_STAGE,
                                                               new L2ObjectSyncSendHandler(objectStateManager,
-                                                                                          serverTransactionFactory), 1,
+ serverTransactionFactory),
+                             TCPropertiesImpl.getProperties().getInt("object.sync.send.concurrency", 10),
                                                               MAX_STAGE_SIZE).getSink();
 
     final L2ObjectSyncAckManager objectSyncAckManager = new L2ObjectSyncAckManagerImpl(transactionManager, groupManager);
