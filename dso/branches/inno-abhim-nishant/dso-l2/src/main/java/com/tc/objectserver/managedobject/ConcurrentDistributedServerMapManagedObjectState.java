@@ -33,8 +33,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import static com.tc.server.VersionedServerEvent.DEFAULT_VERSION;
-
 public class ConcurrentDistributedServerMapManagedObjectState extends PartialMapManagedObjectState implements
     EvictableMap {
 
@@ -105,12 +103,14 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
   public void dehydrate(final ObjectID objectID, final DNAWriter writer, final DNAType type) {
     if (type == DNAType.L2_SYNC) {
       // Write entire state info
+      long startTime = System.currentTimeMillis();
       dehydrateFields(writer);
       for (Object o : references.keySet()) {
         CDSMValue value = getValueForKey(o);
         writer.addLogicalAction(SerializationUtil.PUT, new Object[] {o, value.getObjectID(), value.getCreationTime(),
             value.getLastAccessedTime(), value.getTimeToIdle(), value.getTimeToLive()});
       }
+      LOGGER.info("took " + (System.currentTimeMillis() - startTime) + "to serialize CDSMState");
     } else if (type == DNAType.L1_FAULT) {
       // Don't fault the references
       dehydrateFields(writer);

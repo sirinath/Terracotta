@@ -67,6 +67,7 @@ public class L2ObjectSyncSendHandler extends AbstractEventHandler {
           throttleOnObjectSync();
           this.objectStateManager.syncMore(mosc.getNodeID());
         }
+        // logger.info("done processing for mosc "+ mosc);
       }
     } else if (context instanceof ServerTxnAckMessage) {
       final ServerTxnAckMessage txnMsg = (ServerTxnAckMessage) context;

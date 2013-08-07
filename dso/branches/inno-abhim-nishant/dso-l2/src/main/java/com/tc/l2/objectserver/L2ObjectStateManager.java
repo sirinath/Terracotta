@@ -30,7 +30,7 @@ public interface L2ObjectStateManager {
 
   public void registerForL2ObjectStateChangeEvents(L2ObjectStateListener listener);
 
-  public void initiateSync(NodeID nodeID, Runnable syncRunnable);
+  public void initiateSync(NodeID nodeID, Runnable syncRunnable, Runnable moreSyncRunnable);
 
   public void syncMore(NodeID nodeID);
 

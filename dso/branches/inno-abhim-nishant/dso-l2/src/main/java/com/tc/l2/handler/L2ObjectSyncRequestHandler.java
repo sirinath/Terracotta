@@ -8,54 +8,31 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
-import com.tc.io.TCByteBufferOutputStream;
-import com.tc.l2.api.L2Coordinator;
 import com.tc.l2.context.ManagedObjectSyncContext;
 import com.tc.l2.context.SyncObjectsRequest;
-import com.tc.l2.ha.L2HAZapNodeRequestProcessor;
 import com.tc.l2.objectserver.L2ObjectStateManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.NodeID;
-import com.tc.net.groups.GroupManager;
-import com.tc.object.ObjectID;
-import com.tc.object.dna.api.DNA.DNAType;
-import com.tc.object.dna.impl.ObjectStringSerializer;
-import com.tc.object.dna.impl.ObjectStringSerializerImpl;
-import com.tc.objectserver.api.ObjectManager;
-import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.util.ObjectIDSet;
-import com.tc.util.sequence.SequenceGenerator;
-import com.tc.util.sequence.SequenceGenerator.SequenceGeneratorException;
-
-import java.util.Iterator;
 
 public class L2ObjectSyncRequestHandler extends AbstractEventHandler {
 
-  private static final TCLogger      logger                          = TCLogging
-                                                                         .getLogger(L2ObjectSyncRequestHandler.class);
-  private static final int           L2_OBJECT_SYNC_MESSAGE_MAXSIZE  = TCPropertiesImpl
-                                                                         .getProperties()
-                                                                         .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_PASSIVE_SYNC_MESSAGE_MAXSIZE_MB) * 1024 * 1024;
-  private static final int           L2_OBJECT_SYNC_BATCH_SIZE       = TCPropertiesImpl
-                                                                         .getProperties()
-                                                                         .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_PASSIVE_SYNC_BATCH_SIZE);
+  private static final TCLogger      logger                        = TCLogging
+                                                                       .getLogger(L2ObjectSyncRequestHandler.class);
+  private static final int           L2_OBJECT_SYNC_BATCH_SIZE     = TCPropertiesImpl
+                                                                       .getProperties()
+                                                                       .getInt(TCPropertiesConsts.L2_OBJECTMANAGER_PASSIVE_SYNC_BATCH_SIZE);
 
-  private static final int           MAX_L2_OBJECT_SYNC_BATCH_SIZE   = 5000;
-  private static final int           MAX_L2_OBJECT_SYNC_MESSAGE_SIZE = 250 * 1024 * 1024;
-
-  private final SequenceGenerator    sequenceGenerator;
+  private static final int           MAX_L2_OBJECT_SYNC_BATCH_SIZE = 5000;
   private final L2ObjectStateManager l2ObjectStateMgr;
   private Sink                       sendSink;
-  private ObjectManager              objectManager;
-  private GroupManager               groupManager;
 
-  public L2ObjectSyncRequestHandler(final SequenceGenerator sequenceGenerator,
-                                    final L2ObjectStateManager objectStateManager) {
-    this.sequenceGenerator = sequenceGenerator;
+  private static final int           L2_OBJECT_SYNC_CONCURRENCY    = TCPropertiesImpl.getProperties()
+                                                                       .getInt("object.sync.concurrency", 10);
+
+  public L2ObjectSyncRequestHandler(final L2ObjectStateManager objectStateManager) {
     this.l2ObjectStateMgr = objectStateManager;
 
     if (L2_OBJECT_SYNC_BATCH_SIZE <= 0) {
@@ -64,14 +41,6 @@ public class L2ObjectSyncRequestHandler extends AbstractEventHandler {
     } else if (L2_OBJECT_SYNC_BATCH_SIZE > MAX_L2_OBJECT_SYNC_BATCH_SIZE) {
       logger.warn(TCPropertiesConsts.L2_OBJECTMANAGER_PASSIVE_SYNC_BATCH_SIZE + " set too high : "
                   + L2_OBJECT_SYNC_BATCH_SIZE);
-    }
-
-    if (L2_OBJECT_SYNC_MESSAGE_MAXSIZE <= 0) {
-      throw new AssertionError(TCPropertiesConsts.L2_OBJECTMANAGER_PASSIVE_SYNC_MESSAGE_MAXSIZE_MB
-                               + " cant be negative or 0");
-    } else if (L2_OBJECT_SYNC_MESSAGE_MAXSIZE > MAX_L2_OBJECT_SYNC_MESSAGE_SIZE) {
-      logger.warn(TCPropertiesConsts.L2_OBJECTMANAGER_PASSIVE_SYNC_MESSAGE_MAXSIZE_MB + " set too high : "
-                  + L2_OBJECT_SYNC_MESSAGE_MAXSIZE);
     }
   }
 
@@ -85,66 +54,33 @@ public class L2ObjectSyncRequestHandler extends AbstractEventHandler {
   }
 
   private void doSyncObjectsRequest(SyncObjectsRequest request) {
-    NodeID nodeID = request.getNodeID();
-    ManagedObjectSyncContext mosc = l2ObjectStateMgr.getSomeObjectsToSyncContext(nodeID, L2_OBJECT_SYNC_BATCH_SIZE);
-    if (mosc != null) {
-      doSyncObjectsDehydrate(mosc);
+    if (request.isInitial()) {
+      for (int i = 0; i < L2_OBJECT_SYNC_CONCURRENCY * 3; i++) {
+        if (!addSyncDehydrationContext(request)) {
+          break;
+        }
+      }
+    } else {
+      addSyncDehydrationContext(request);
     }
   }
 
-  private void doSyncObjectsDehydrate(ManagedObjectSyncContext context) {
-    final ManagedObjectSyncContext mosc = context;
-    ObjectIDSet oids = mosc.getRequestedObjectIDs();
-
-    try {
-      /**
-       * Note:: this sequence id is assigned before releasing any objects to ensure that transactions are not missed for
-       * object in flight for PASSIVE-UNINITIALIED L2.
-       */
-
-      mosc.setSequenceID(this.sequenceGenerator.getNextSequence(mosc.getNodeID()));
-    } catch (final SequenceGeneratorException e) {
-      logger.error("Error generating a sequence number ", e);
-      this.groupManager.zapNode(mosc.getNodeID(), L2HAZapNodeRequestProcessor.PROGRAM_ERROR,
-                                "Error sending objects." + L2HAZapNodeRequestProcessor.getErrorString(e));
-      return;
+  private boolean addSyncDehydrationContext(SyncObjectsRequest request) {
+    ManagedObjectSyncContext mosc = l2ObjectStateMgr.getSomeObjectsToSyncContext(request.getNodeID(),
+                                                                                 L2_OBJECT_SYNC_BATCH_SIZE);
+    if (mosc == null) {
+      logger.info("ingnoring request for node id " + request.getNodeID());
+      return false;
     }
-
-    final ObjectStringSerializer serializer = new ObjectStringSerializerImpl();
-    final TCByteBufferOutputStream out = new TCByteBufferOutputStream();
-    final ObjectIDSet synced = new ObjectIDSet();
-    final ObjectIDSet notSynced = new ObjectIDSet(oids);
-    final ObjectIDSet deletedOids = new ObjectIDSet();
-    final Iterator<ObjectID> i = notSynced.iterator();
-    for (; i.hasNext() && L2_OBJECT_SYNC_MESSAGE_MAXSIZE > (out.getBytesWritten() + serializer.getApproximateBytesWritten());) {
-      ManagedObject m = null;
-      try {
-        ObjectID oid = i.next();
-        i.remove();
-        m = objectManager.getObjectByIDReadOnly(oid);
-        if ( m != null ) {
-          m.toDNA(out, serializer, DNAType.L2_SYNC);
-          synced.add(oid);
-        } else {
-          deletedOids.add(oid);
-        }
-      } finally {
-        if (m != null) {
-          this.objectManager.releaseReadOnly(m);
-        }
-      }
-    }
-    mosc.setDehydratedBytes(synced, notSynced, out.toArray(), synced.size(), serializer, deletedOids);
+    // logger.info("Adding mosc for processing " + mosc + request);
     this.sendSink.add(mosc);
+    return mosc.hasMore();
   }
 
   @Override
   public void initialize(final ConfigurationContext context) {
     super.initialize(context);
     final ServerConfigurationContext oscc = (ServerConfigurationContext) context;
-    this.objectManager = oscc.getObjectManager();
-    this.sendSink = oscc.getStage(ServerConfigurationContext.OBJECTS_SYNC_SEND_STAGE).getSink();
-    final L2Coordinator l2Coordinator = oscc.getL2Coordinator();
-    this.groupManager = l2Coordinator.getGroupManager();
+    this.sendSink = oscc.getStage(ServerConfigurationContext.OBJECTS_SYNC_DEHYDRATE_STAGE).getSink();
   }
 }

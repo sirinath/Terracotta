@@ -10,12 +10,24 @@ public class SyncObjectsRequest implements EventContext {
 
   private final NodeID nodeID;
 
-  public SyncObjectsRequest(NodeID nodeID) {
+  private final boolean isInitial;
+
+  public SyncObjectsRequest(NodeID nodeID, boolean isInitial) {
     this.nodeID = nodeID;
+    this.isInitial = isInitial;
   }
   
   public NodeID getNodeID() {
     return nodeID;
+  }
+
+  public boolean isInitial() {
+    return isInitial;
+  }
+
+  @Override
+  public String toString() {
+    return "SyncObjectsRequest [nodeID=" + nodeID + ", isInitial=" + isInitial + "]";
   }
 
 }
