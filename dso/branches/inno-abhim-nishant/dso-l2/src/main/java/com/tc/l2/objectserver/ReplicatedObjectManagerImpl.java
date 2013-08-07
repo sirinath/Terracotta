@@ -57,33 +57,33 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, GroupMessageListener,
     L2ObjectStateListener, L2IndexStateListener {
 
-  private static final TCLogger              logger = TCLogging.getLogger(ReplicatedObjectManagerImpl.class);
+  private static final TCLogger           logger     = TCLogging.getLogger(ReplicatedObjectManagerImpl.class);
 
-  private final ObjectManager                objectManager;
-  private final GroupManager                 groupManager;
-  private final StateManager                 stateManager;
-  private final ServerTransactionManager     transactionManager;
-  private final Sink                         objectsSyncRequestSink;
-  private final Sink                         indexSyncRequestSink;
-  private final Sink                         transactionRelaySink;
-  private final SequenceGenerator            sequenceGenerator;
-  private final SequenceGenerator            indexSequenceGenerator;
-  private final GCMonitor                    gcMonitor;
-  private final boolean                      isCleanDB;
-  private final L2PassiveSyncStateManager    passiveSyncStateManager;
-  private final L2ObjectStateManager         l2ObjectStateManager;
-  private final Offheap                      offheapConfig;
+  private final ObjectManager             objectManager;
+  private final GroupManager              groupManager;
+  private final StateManager              stateManager;
+  private final ServerTransactionManager  transactionManager;
+  private final Sink                      objectsSyncRequestSink;
+  private final Sink                      indexSyncRequestSink;
+  private final Sink                      transactionRelaySink;
+  private final SequenceGenerator         sequenceGenerator;
+  private final SequenceGenerator         indexSequenceGenerator;
+  private final GCMonitor                 gcMonitor;
+  private final boolean                   isCleanDB;
+  private final L2PassiveSyncStateManager passiveSyncStateManager;
+  private final L2ObjectStateManager      l2ObjectStateManager;
+  private final Offheap                   offheapConfig;
 
-  private final AtomicReference<NodeID>      syncedFrom = new AtomicReference<NodeID>();
+  private final AtomicReference<NodeID>   syncedFrom = new AtomicReference<NodeID>();
 
   public ReplicatedObjectManagerImpl(final GroupManager groupManager, final StateManager stateManager,
                                      final L2PassiveSyncStateManager l2PassiveSyncStateManager,
-                                     L2ObjectStateManager l2ObjectStateManager,
-                                     final ObjectManager objectManager,
+                                     L2ObjectStateManager l2ObjectStateManager, final ObjectManager objectManager,
                                      final ServerTransactionManager transactionManager,
                                      final Sink objectsSyncRequestSink, final Sink indexSyncRequestSink,
                                      final Sink transactionRelaySink, final SequenceGenerator sequenceGenerator,
-                                     final SequenceGenerator indexSequenceGenerator, final boolean isCleanDB, final Offheap offheapConfig) {
+                                     final SequenceGenerator indexSequenceGenerator, final boolean isCleanDB,
+                                     final Offheap offheapConfig) {
     this.groupManager = groupManager;
     this.stateManager = stateManager;
     this.objectManager = objectManager;
@@ -127,8 +127,8 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
           } else if (StateManager.PASSIVE_UNINITIALIZED.equals(curState) && !msg.isCleanDB()) {
             logger.error("Syncing to passives which were restarted before active is not supported. msg : " + msg);
             this.groupManager.zapNode(msg.messageFrom(), L2HAZapNodeRequestProcessor.NODE_JOINED_WITH_DIRTY_DB,
-                "Passive : " + msg.messageFrom() + " was restarted before active." +
-                L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
+                                      "Passive : " + msg.messageFrom() + " was restarted before active."
+                                          + L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
           } else if (checkForSufficientResources(msg)) {
             nodeIDSyncingPassives.put(msg.messageFrom(), new SyncingPassiveValue(new ObjectIDSet(), curState));
           }
@@ -234,7 +234,6 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
   private void handleObjectListResponse(final NodeID nodeID, final ObjectListSyncMessage clusterMsg) {
     Assert.assertTrue(this.stateManager.isActiveCoordinator());
 
-
     if (!clusterMsg.isSyncAllowed() || !clusterMsg.isCleanDB()) {
       final StringBuilder error = new StringBuilder();
       if (!clusterMsg.isCleanDB()) {
@@ -249,15 +248,15 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
       // DEV-1944 : We don't want newly joined nodes to be syncing the Objects while the active is receiving the re-sent
       // transactions. If we do that there is a race where passive can apply already applied transactions twice.
       // XXX:: 3 passives - partial sync.
-      if (!checkForSufficientResources(clusterMsg)) {
-        return;   // Only check for sufficient resources on the new passive if it was shut down after the active and is not a candidate for zapping due to dirty db.
+      if (!checkForSufficientResources(clusterMsg)) { return; // Only check for sufficient resources on the new passive
+                                                              // if it was shut down after the active and is not a
+                                                              // candidate for zapping due to dirty db.
       }
       ReplicatedObjectManagerImpl.this.transactionManager
           .callBackOnResentTxnsInSystemCompletion(new TxnsInSystemCompletionListener() {
             @Override
             public void onCompletion() {
-              ReplicatedObjectManagerImpl.this.gcMonitor.add2L2StateManagerWhenGCDisabled(nodeID,
-                                                                                          new ObjectIDSet(),
+              ReplicatedObjectManagerImpl.this.gcMonitor.add2L2StateManagerWhenGCDisabled(nodeID, new ObjectIDSet(),
                                                                                           clusterMsg.getCurrentState());
             }
           });
@@ -274,13 +273,20 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
       this.passiveSyncStateManager.objectSyncComplete(nodeID);
       moveNodeToPassiveStandByIfPossible(nodeID);
     } else {
-      final Runnable syncRunnable = new Runnable() {
+      final Runnable initialSyncRunnable = new Runnable() {
         @Override
         public void run() {
-          objectsSyncRequestSink.add(new SyncObjectsRequest(nodeID));
+          objectsSyncRequestSink.add(new SyncObjectsRequest(nodeID, true));
         }
       };
-      this.l2ObjectStateManager.initiateSync(nodeID, syncRunnable);
+
+      final Runnable moreSyncRunnable = new Runnable() {
+        @Override
+        public void run() {
+          objectsSyncRequestSink.add(new SyncObjectsRequest(nodeID, false));
+        }
+      };
+      this.l2ObjectStateManager.initiateSync(nodeID, initialSyncRunnable, moreSyncRunnable);
     }
   }
 
@@ -371,17 +377,20 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
       transactionManager.callBackOnTxnsInSystemCompletion(new TxnsInSystemCompletionListener() {
         @Override
         public void onCompletion() {
-          // Handle requests multiple list requests from the same instance of the active. This could happen when the active
-          // first starts up. This node joining could trigger one object list request while the active running the sync() method
+          // Handle requests multiple list requests from the same instance of the active. This could happen when the
+          // active
+          // first starts up. This node joining could trigger one object list request while the active running the
+          // sync() method
           // will trigger the other.
-          boolean syncAllowed = syncedFrom.compareAndSet(null, clusterMsg.messageFrom()) || syncedFrom.get().equals(clusterMsg.messageFrom());
-          logger.info("Send response to Active's query : syncAllowed = " + syncAllowed + " isCleanDB="
-                      + isCleanDB + " currentState=" + clusterMsg.getCurrentState() + " offheapEnabled=" + offheapConfig.getEnabled() +
-                      " resource total=" + getResourceTotal());
+          boolean syncAllowed = syncedFrom.compareAndSet(null, clusterMsg.messageFrom())
+                                || syncedFrom.get().equals(clusterMsg.messageFrom());
+          logger.info("Send response to Active's query : syncAllowed = " + syncAllowed + " isCleanDB=" + isCleanDB
+                      + " currentState=" + clusterMsg.getCurrentState() + " offheapEnabled="
+                      + offheapConfig.getEnabled() + " resource total=" + getResourceTotal());
           try {
             groupManager.sendTo(nodeID, ObjectListSyncMessageFactory
                 .createObjectListSyncResponseMessage(clusterMsg, stateManager.getCurrentState(), syncAllowed,
-                    isCleanDB, offheapConfig.getEnabled(), getResourceTotal()));
+                                                     isCleanDB, offheapConfig.getEnabled(), getResourceTotal()));
           } catch (GroupException e) {
             logger.error("Failed to send object list response to the active.", e);
             throw new AssertionError(e);
@@ -413,24 +422,30 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
   }
 
   private boolean checkForSufficientResources(ObjectListSyncMessage response) {
-    if (response.getType() != ObjectListSyncMessage.RESPONSE) {
-      throw new AssertionError();
-    }
+    if (response.getType() != ObjectListSyncMessage.RESPONSE) { throw new AssertionError(); }
 
     // We don't want to allow a passive with less than the active's resources to join the cluster. That could lead
     // to the passive crashing randomly at some point in the future, or maybe even during passive sync.
     if (offheapConfig.getEnabled() && (!response.isOffheapEnabled() || getResourceTotal() > response.getResourceSize())) {
       groupManager.zapNode(response.messageFrom(), L2HAZapNodeRequestProcessor.INSUFFICIENT_RESOURCES,
-          "Node " + response.messageFrom() + " does not have enough offheap space to join the cluster. Required " + getResourceTotal() + " got " + response.getResourceSize());
+                           "Node " + response.messageFrom()
+                               + " does not have enough offheap space to join the cluster. Required "
+                               + getResourceTotal() + " got " + response.getResourceSize());
       return false;
-    } else if (!offheapConfig.getEnabled() && response.isOffheapEnabled() && getResourceTotal() > response.getResourceSize()) {
+    } else if (!offheapConfig.getEnabled() && response.isOffheapEnabled()
+               && getResourceTotal() > response.getResourceSize()) {
       // Allow an upgrade from heap to offheap in the passive
       groupManager.zapNode(response.messageFrom(), L2HAZapNodeRequestProcessor.INSUFFICIENT_RESOURCES,
-          "Node " + response.messageFrom() + " does not have enough offheap space to join the cluster. Required " + getResourceTotal() + " got " + response.getResourceSize());
+                           "Node " + response.messageFrom()
+                               + " does not have enough offheap space to join the cluster. Required "
+                               + getResourceTotal() + " got " + response.getResourceSize());
       return false;
-    } else if (!offheapConfig.getEnabled() && !response.isOffheapEnabled() && getResourceTotal() > response.getResourceSize()) {
+    } else if (!offheapConfig.getEnabled() && !response.isOffheapEnabled()
+               && getResourceTotal() > response.getResourceSize()) {
       groupManager.zapNode(response.messageFrom(), L2HAZapNodeRequestProcessor.INSUFFICIENT_RESOURCES,
-          "Node " + response.messageFrom() + " does not have enough heap space to join the cluster. Required " + getResourceTotal() + " got " + response.getResourceSize());
+                           "Node " + response.messageFrom()
+                               + " does not have enough heap space to join the cluster. Required " + getResourceTotal()
+                               + " got " + response.getResourceSize());
       return false;
     }
     return true;
@@ -441,7 +456,8 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     if (passiveSyncStateManager.getL2Count() > 0) {
       transactionRelaySink.add(transactionBatchContext);
     } else {
-      transactionManager.transactionsRelayed(transactionBatchContext.getSourceNodeID(), transactionBatchContext.getTransactionIDs());
+      transactionManager.transactionsRelayed(transactionBatchContext.getSourceNodeID(),
+                                             transactionBatchContext.getTransactionIDs());
     }
   }
 

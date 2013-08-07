@@ -4,6 +4,8 @@
  */
 package com.tc.l2.ha;
 
+import static com.tc.l2.ha.ClusterStateDBKeyNames.DATABASE_CREATION_TIMESTAMP_KEY;
+
 import com.tc.async.api.Sink;
 import com.tc.async.api.StageManager;
 import com.tc.async.impl.OrderedSink;
@@ -16,6 +18,7 @@ import com.tc.l2.handler.GroupEventsDispatchHandler;
 import com.tc.l2.handler.GroupEventsDispatchHandler.GroupEventsDispatcher;
 import com.tc.l2.handler.L2IndexSyncHandler;
 import com.tc.l2.handler.L2IndexSyncRequestHandler;
+import com.tc.l2.handler.L2ObjectSyncDehydrateHandler;
 import com.tc.l2.handler.L2ObjectSyncHandler;
 import com.tc.l2.handler.L2ObjectSyncRequestHandler;
 import com.tc.l2.handler.L2ObjectSyncSendHandler;
@@ -81,8 +84,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import static com.tc.l2.ha.ClusterStateDBKeyNames.DATABASE_CREATION_TIMESTAMP_KEY;
 
 public class L2HACoordinator implements L2Coordinator, GroupEventsListener, SequenceGeneratorListener {
 
@@ -180,10 +181,17 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
                                                               MAX_STAGE_SIZE).getSink();
 
     final L2ObjectSyncAckManager objectSyncAckManager = new L2ObjectSyncAckManagerImpl(transactionManager, groupManager);
+    stageManager
+        .createStage(ServerConfigurationContext.OBJECTS_SYNC_DEHYDRATE_STAGE,
+                             new L2ObjectSyncDehydrateHandler(this.sequenceGenerator, objectStateManager),
+                             TCPropertiesImpl.getProperties().getInt("object.sync.concurrency", 10), MAX_STAGE_SIZE)
+        .getSink();
+
     final Sink objectsSyncRequestSink = stageManager.createStage(ServerConfigurationContext.OBJECTS_SYNC_REQUEST_STAGE,
-                                                                 new L2ObjectSyncRequestHandler(this.sequenceGenerator,
+                                                                 new L2ObjectSyncRequestHandler(
                                                                                                 objectStateManager), 1,
                                                                  MAX_STAGE_SIZE).getSink();
+
     final Sink objectsSyncSink = stageManager.createStage(ServerConfigurationContext.OBJECTS_SYNC_STAGE,
                                                           new L2ObjectSyncHandler(serverTransactionFactory,
                                                                                   objectSyncAckManager,

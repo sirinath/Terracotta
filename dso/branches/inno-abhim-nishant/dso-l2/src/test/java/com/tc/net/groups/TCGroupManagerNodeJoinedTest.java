@@ -463,8 +463,8 @@ public class TCGroupManagerNodeJoinedTest extends TCTestCase {
     }
 
     @Override
-    public void handleThrowable(final Thread thread, final Throwable t) {
-      this.t = t;
+    public void handleThrowable(final Thread thread, final Throwable th) {
+      this.t = th;
       super.handleThrowable(thread, t);
     }
 

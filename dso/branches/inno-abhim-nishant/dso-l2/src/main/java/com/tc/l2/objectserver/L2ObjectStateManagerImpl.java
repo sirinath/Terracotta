@@ -14,7 +14,6 @@ import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TxnsInSystemCompletionListener;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
-import com.tc.util.Assert;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.State;
 import com.tc.util.concurrent.CopyOnWriteSequentialMap;
@@ -22,6 +21,7 @@ import com.tc.util.concurrent.ThrottledTaskExecutor;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -29,15 +29,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
 
-  private static final TCLogger          logger                 = TCLogging.getLogger(L2ObjectStateManagerImpl.class);
+  private static final TCLogger                                       logger                 = TCLogging
+                                                                                                 .getLogger(L2ObjectStateManagerImpl.class);
 
-  private final ObjectManager            objectManager;
-  private final CopyOnWriteSequentialMap<NodeID, L2ObjectStateImpl> nodes                  = new CopyOnWriteSequentialMap<NodeID, L2ObjectStateImpl>();
-  private final CopyOnWriteArrayList<L2ObjectStateListener>         listeners              = new CopyOnWriteArrayList<L2ObjectStateListener>();
-  private final ServerTransactionManager transactionManager;
+  private final ObjectManager                                         objectManager;
+  private final CopyOnWriteSequentialMap<NodeID, L2ObjectStateImpl>   nodes                  = new CopyOnWriteSequentialMap<NodeID, L2ObjectStateImpl>();
+  private final CopyOnWriteArrayList<L2ObjectStateListener>           listeners              = new CopyOnWriteArrayList<L2ObjectStateListener>();
+  private final ServerTransactionManager                              transactionManager;
   private final CopyOnWriteSequentialMap<NodeID, SyncExecutorContext> syncExecutorContextMap = new CopyOnWriteSequentialMap<NodeID, SyncExecutorContext>();
-  private final int                      syncMaxPendingMsgs;
-  private long                           currentSessionId       = 0;
+  private final int                                                   syncMaxPendingMsgs;
+  private long                                                        currentSessionId       = 0;
 
   public L2ObjectStateManagerImpl(final ObjectManager objectManager, final ServerTransactionManager transactionManager) {
     this.objectManager = objectManager;
@@ -140,23 +141,28 @@ public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
   }
 
   @Override
-  public void initiateSync(NodeID nodeID, Runnable syncRunnable) {
+  public void initiateSync(NodeID nodeID, Runnable initiateSyncRunnable, Runnable syncMoreRunnable) {
     ThrottledTaskExecutor throttledTaskExecutor = new ThrottledTaskExecutor(syncMaxPendingMsgs);
-    SyncExecutorContext passiveSyncContext = new SyncExecutorContext(throttledTaskExecutor, syncRunnable);
+    SyncExecutorContext passiveSyncContext = new SyncExecutorContext(throttledTaskExecutor, syncMoreRunnable);
     Object o = this.syncExecutorContextMap.put(nodeID, passiveSyncContext);
     if (o != null) {
       logger.warn("initiateSync: Passive Sync Context already available for " + nodeID);
     }
-    syncPassive(throttledTaskExecutor, syncRunnable);
+    syncPassive(throttledTaskExecutor, initiateSyncRunnable);
   }
 
   @Override
   public void syncMore(NodeID nodeID) {
-    SyncExecutorContext passiveSync = this.syncExecutorContextMap.get(nodeID);
-    if (passiveSync != null) {
-      syncPassive(passiveSync.getExecutor(), passiveSync.getRunnable());
+    final L2ObjectStateImpl l2State = this.nodes.get(nodeID);
+    if (l2State != null && l2State.hasMore()) {
+      SyncExecutorContext passiveSync = this.syncExecutorContextMap.get(nodeID);
+      if (passiveSync != null) {
+        syncPassive(passiveSync.getExecutor(), passiveSync.getRunnable());
+      } else {
+        logger.warn("syncMore: Passive Sync Context missing for " + nodeID);
+      }
     } else {
-      logger.warn("syncMore: Passive Sync Context missing for " + nodeID);
+      logger.warn("L2 State Object Not found for " + nodeID);
     }
   }
 
@@ -209,19 +215,18 @@ public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
 
   private final class L2ObjectStateImpl implements L2ObjectState {
 
-    private final NodeID             nodeID;
+    private final NodeID                        nodeID;
 
-    private ObjectIDSet              missingOids;
-    private Map                      missingRoots;
-    private Set<ObjectID>            existingOids;
+    private ObjectIDSet                         missingOids;
+    private Map                                 missingRoots;
+    private Set<ObjectID>                       existingOids;
 
-    private volatile State           state          = START;
+    private volatile State                      state   = START;
 
-    private ManagedObjectSyncContext syncingContext = null;
-
-    private int                      totalObjectsToSync;
-    private int                      totalObjectsSynced;
-    private final long               sessionId;
+    private int                                 totalObjectsToSync;
+    private int                                 totalObjectsSynced;
+    private final long                          sessionId;
+    private final Set<ManagedObjectSyncContext> moscSet = new HashSet<ManagedObjectSyncContext>();
 
     public L2ObjectStateImpl(final NodeID nodeID, final Set<ObjectID> oids, final long currentSessionId) {
       this.nodeID = nodeID;
@@ -229,19 +234,18 @@ public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
       this.sessionId = currentSessionId;
     }
 
-    private void close(final ManagedObjectSyncContext mosc) {
+    private synchronized void close(final ManagedObjectSyncContext mosc) {
       if (this.sessionId != mosc.getSessionId()) {
         logger.warn("An old request for object sync for " + this.nodeID + " is being ignored");
         return;
       }
-      if (mosc != this.syncingContext) { throw new AssertionError("expected: " + this.syncingContext + " actual: "
-                                                                  + mosc); }
-      this.syncingContext = null;
+      if (!moscSet.contains(mosc)) { throw new AssertionError("expected: " + mosc + " actual: " + mosc); }
       // NotSynchedOids are picked up first as its a stored set and thus prefetching that happened is not a waste.
       missingOids.addAll(mosc.getNotSynchedOids());
       totalObjectsSynced += mosc.getSynchedOids().size();
       totalObjectsSynced += mosc.getDeletedOids().size();
-      if (this.missingOids.isEmpty()) {
+      moscSet.remove(mosc);
+      if (this.missingOids.isEmpty() && moscSet.isEmpty()) {
         this.state = IN_SYNC_PENDING_NOTIFY;
         L2ObjectStateManagerImpl.this.transactionManager
             .callBackOnTxnsInSystemCompletion(new TxnsInSystemCompletionListener() {
@@ -253,23 +257,25 @@ public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
       }
     }
 
-    private ManagedObjectSyncContext getSomeObjectsToSyncContext(final int count) {
-      Assert.assertTrue(this.state == SYNC_STARTED);
-      Assert.assertNull(this.syncingContext);
+    private synchronized ManagedObjectSyncContext getSomeObjectsToSyncContext(final int count) {
+
       if (isRootsMissing()) { return getMissingRootsSynccontext(); }
+      if (!hasMore()) { return null; }
       final ObjectIDSet oids = new ObjectIDSet();
       addSomeMissingObjectIDsTo(oids, count);
-      this.syncingContext = new ManagedObjectSyncContext(this.nodeID, oids, !this.missingOids.isEmpty(),
-                                                         this.totalObjectsToSync, this.totalObjectsSynced,
-                                                         this.sessionId);
-      return this.syncingContext;
+      ManagedObjectSyncContext syncingContext = new ManagedObjectSyncContext(this.nodeID, oids,
+                                                                             !this.missingOids.isEmpty(),
+                                                                             this.totalObjectsToSync,
+                                                                             this.totalObjectsSynced, this.sessionId);
+      moscSet.add(syncingContext);
+      return syncingContext;
     }
 
     private void addSomeMissingObjectIDsTo(final ObjectIDSet oids, int count) {
       for (final Iterator<ObjectID> i = this.missingOids.iterator(); i.hasNext() && --count >= 0;) {
         oids.add(i.next());
-        i.remove();
       }
+      this.missingOids.removeAll(oids);
     }
 
     private ManagedObjectSyncContext getMissingRootsSynccontext() {
@@ -285,11 +291,18 @@ public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
         // Get some objects anyways
         addSomeMissingObjectIDsTo(oids, this.missingRoots.size());
       }
-      this.syncingContext = new ManagedObjectSyncContext(this.nodeID, new HashMap(this.missingRoots), oids,
-                                                         !this.missingOids.isEmpty(), this.totalObjectsToSync,
-                                                         this.totalObjectsSynced, this.sessionId);
+      ManagedObjectSyncContext syncingContext = new ManagedObjectSyncContext(this.nodeID,
+                                                                             new HashMap(this.missingRoots), oids,
+                                                                             !this.missingOids.isEmpty(),
+                                                                             this.totalObjectsToSync,
+                                                                             this.totalObjectsSynced, this.sessionId);
       this.missingRoots.clear();
-      return this.syncingContext;
+      moscSet.add(syncingContext);
+      return syncingContext;
+    }
+
+    private synchronized boolean hasMore() {
+      return !this.missingOids.isEmpty();
     }
 
     private boolean isRootsMissing() {
@@ -340,13 +353,13 @@ public class L2ObjectStateManagerImpl implements L2ObjectStateManager {
              + (this.missingOids != null ? "missing = " + this.missingOids.size() : "") + " state = " + this.state;
     }
 
-    private void moveToReadyToSyncState() {
+    private synchronized void moveToReadyToSyncState() {
       this.state = READY_TO_SYNC;
       final int missingObjects = computeDiff();
       fireMissingObjectsStateEvent(this.nodeID, missingObjects);
     }
 
-    private void moveToInSyncState() {
+    private synchronized void moveToInSyncState() {
       this.state = IN_SYNC;
       fireObjectSyncCompleteEvent(this.nodeID);
     }
