@@ -25,24 +25,16 @@ import com.tc.net.NodeID;
 import com.tc.net.ServerID;
 import com.tc.net.protocol.tcm.ChannelEvent;
 import com.tc.net.protocol.tcm.ChannelEventListener;
-import com.tc.net.protocol.tcm.MessageMonitor;
-import com.tc.net.protocol.tcm.NullMessageMonitor;
-import com.tc.net.protocol.tcm.TCMessageFactory;
-import com.tc.net.protocol.tcm.TCMessageFactoryImpl;
-import com.tc.net.protocol.tcm.TCMessageRouter;
-import com.tc.net.protocol.tcm.TCMessageRouterImpl;
 import com.tc.net.protocol.transport.NullConnectionPolicy;
 import com.tc.net.proxy.TCPProxy;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.dna.impl.ObjectStringSerializerImpl;
-import com.tc.object.session.NullSessionManager;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.objectserver.dgc.api.GarbageCollectionInfo;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
-import com.tc.util.CallableWaiter;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.PortChooser;
 import com.tc.util.TCCollections;
@@ -60,22 +52,18 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class TCGroupManagerImplTest extends TCTestCase {
 
   private final static String      LOCALHOST      = "localhost";
-  MessageMonitor                   monitor        = new NullMessageMonitor();
-  final NullSessionManager         sessionManager = new NullSessionManager();
-  final TCMessageFactory           msgFactory     = new TCMessageFactoryImpl(sessionManager, monitor);
-  final TCMessageRouter            msgRouter      = new TCMessageRouterImpl();
 
   private int                      ports[];
   private int                      groupPorts[];
   private TCGroupManagerImpl       groups[];
   private TestGroupMessageListener listeners[];
+  private TestGroupEventListener   groupEventListeners[];
   private Node                     nodes[];
 
   private void setupGroups(int n) throws Exception {
@@ -83,6 +71,7 @@ public class TCGroupManagerImplTest extends TCTestCase {
     groupPorts = new int[n];
     groups = new TCGroupManagerImpl[n];
     listeners = new TestGroupMessageListener[n];
+    groupEventListeners = new TestGroupEventListener[n];
     nodes = new Node[n];
 
     PortChooser pc = new PortChooser();
@@ -100,7 +89,8 @@ public class TCGroupManagerImplTest extends TCTestCase {
       ConfigurationContext context = new ConfigurationContextImpl(stageManager);
       stageManager.startAll(context, Collections.EMPTY_LIST);
       groups[i].setDiscover(new TCGroupMemberDiscoveryStatic(groups[i]));
-      groups[i].registerForGroupEvents(new TestGroupEventListener(groups[i]));
+      groupEventListeners[i] = new TestGroupEventListener(groups[i]);
+      groups[i].registerForGroupEvents(groupEventListeners[i]);
       System.out.println("Starting " + groups[i]);
       listeners[i] = new TestGroupMessageListener(2000);
     }
@@ -574,18 +564,10 @@ public class TCGroupManagerImplTest extends TCTestCase {
   }
 
   private void waitForMembersToJoin() throws Exception {
-    CallableWaiter.waitOnCallable(new Callable<Boolean>() {
-      @Override
-      public Boolean call() throws Exception {
-        int members = groups.length - 1;
-        for (final TCGroupManagerImpl group : groups) {
-          if (members != group.size()) {
-            return false;
-          }
-        }
-        return true;
-      }
-    });
+    int members = groups.length - 1;
+    for (TestGroupEventListener testGroupEventListener : groupEventListeners) {
+      testGroupEventListener.waitForJoinedCount(members);
+    }
   }
 
   private void checkMessagesOrdering(final TCGroupManagerImpl mgr1, final TestGroupMessageListener l1,
@@ -899,14 +881,23 @@ public class TCGroupManagerImplTest extends TCTestCase {
 
   private static class TestGroupEventListener implements GroupEventsListener {
     private final TCGroupManagerImpl manager;
+    private int joined = 0;
 
     TestGroupEventListener(TCGroupManagerImpl manager) {
       this.manager = manager;
     }
 
     @Override
-    public void nodeJoined(NodeID nodeID) {
+    public synchronized void nodeJoined(NodeID nodeID) {
+      joined++;
       System.out.println("XXX " + manager.getLocalNodeID() + " Node joined: " + nodeID);
+      notifyAll();
+    }
+
+    synchronized void waitForJoinedCount(int i) throws InterruptedException {
+      while (joined != i) {
+        wait();
+      }
     }
 
     @Override
