@@ -723,7 +723,7 @@
             <groupId>org.terracotta</groupId>
             <artifactId>maven-forge-plugin</artifactId>
             <configuration>
-              <__TC_listFile>${basedir}/checkshort.txt</__TC_listFile>
+              <listFile>${basedir}/checkshort.txt</listFile>
               <failIfNoTests>false</failIfNoTests>
             </configuration>
           </plugin>
