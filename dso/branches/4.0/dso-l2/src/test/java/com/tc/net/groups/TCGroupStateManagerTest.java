@@ -46,7 +46,7 @@ public class TCGroupStateManagerTest extends TCTestCase {
 
   public TCGroupStateManagerTest() {
     // MNK-448
-    timebombTest("2013-08-15");
+    //timebombTest("2013-08-15");
   }
 
   @Override
