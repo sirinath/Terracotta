@@ -17,13 +17,6 @@ public class TCTestCaseTest extends TCTestCase {
     }
   }
 
-  public TCTestCaseTest(String arg0) {
-    super(arg0);
-    if (Vm.isIBM()) {
-      disableTest();
-    }
-  }
-
   public void testHeapDump() throws IOException {
     if (Vm.isJDK16Compliant()) {
       assertEquals(0, getHprofs().length);
