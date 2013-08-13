@@ -473,7 +473,10 @@ public class TCTestCase extends TestCase {
         disableTest();
       }
     } catch (Exception e) {
-      throw new AssertionError(e);
+      System.out
+          .println("WARNING: test may fail because we are not able to determine the system memory and it may be < "
+                   + physicalMemory + " GB");
+      e.printStackTrace();
     }
   }
 
