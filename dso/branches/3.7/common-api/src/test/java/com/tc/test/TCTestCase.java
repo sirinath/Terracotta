@@ -36,6 +36,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
@@ -467,17 +469,29 @@ public class TCTestCase extends TestCase {
   @SuppressWarnings("restriction")
   protected void disableIfMemoryLowerThan(int physicalMemory) {
     try {
-      long gb = 1024 * 1024 * 1024;
-      MBeanServerConnection mbsc = ManagementFactory.getPlatformMBeanServer();
-      com.sun.management.OperatingSystemMXBean osMBean = ManagementFactory
-          .newPlatformMXBeanProxy(mbsc, ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME,
-                                  com.sun.management.OperatingSystemMXBean.class);
-      if (osMBean.getTotalPhysicalMemorySize() < physicalMemory * gb) {
+      if (getTotalPhysicalMemory() < physicalMemory) {
         disableTest();
       }
     } catch (Exception e) {
       throw new AssertionError(e);
     }
+  }
+
+  /**
+   * returns Total physical Memory in GB or throws Exception if it not able to determine the physical memory
+   */
+  public long getTotalPhysicalMemory() throws Exception {
+    long gb = 1024 * 1024 * 1024;
+    long totalAvailableMem = -1l;
+    Class clazz = Class.forName("com.sun.management.OperatingSystemMXBean");
+    MBeanServerConnection mbsc = ManagementFactory.getPlatformMBeanServer();
+    OperatingSystemMXBean osMBean = (OperatingSystemMXBean) ManagementFactory
+        .newPlatformMXBeanProxy(mbsc, ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME, clazz);
+    Method method = osMBean.getClass().getMethod("getTotalPhysicalMemorySize", new Class[] {});
+    long totalBytes = (Long) method.invoke(osMBean, (Object[]) null);
+    System.out.println("XXXXX total mem: " + totalBytes);
+    totalAvailableMem = totalBytes / gb;
+    return totalAvailableMem;
   }
 
   protected final ExecutionMode executionMode() {
