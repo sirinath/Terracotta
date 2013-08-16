@@ -23,6 +23,7 @@
   </licenses>
 
   <properties>
+    <group>system</group>
     <terracotta.core.version>4.1.0-SNAPSHOT</terracotta.core.version>
     <tc.core.artifactId>terracotta</tc.core.artifactId>
     <productKeyPath/>
