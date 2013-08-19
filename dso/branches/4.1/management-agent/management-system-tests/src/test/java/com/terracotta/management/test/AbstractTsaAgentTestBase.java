@@ -6,6 +6,7 @@ import net.sf.ehcache.config.Configuration;
 import net.sf.ehcache.config.TerracottaClientConfiguration;
 import net.sf.ehcache.config.TerracottaConfiguration;
 import org.apache.commons.io.IOUtils;
+import org.hamcrest.CoreMatchers;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -93,7 +94,8 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
     String ehCache = TestBaseUtil.jarFor(CacheManager.class);
     String slf4J = TestBaseUtil.jarFor(LoggerFactory.class);
     String commonsIo = TestBaseUtil.jarFor(IOUtils.class);
-    return makeClasspath(tk, common, expressRuntime, clientBase, l2Mbean, jsonParser, ehCache, slf4J, commonsIo);
+    String coreMatchers = TestBaseUtil.jarFor(CoreMatchers.class);
+    return makeClasspath(tk, common, expressRuntime, clientBase, l2Mbean, jsonParser, ehCache, slf4J, commonsIo, coreMatchers);
   }
 
   public abstract static class AbstractTsaClient extends AbstractClientBase {
