@@ -85,17 +85,10 @@
         <artifactId>maven-forge-plugin</artifactId>
         <executions>
           <execution>
-            <id>list-war</id>
-            <goals>
-              <goal>list-dependencies</goal>
-            </goals>
-            <phase>process-test-resources</phase>
+            <id>default-test</id>
+            <phase>integration-test</phase>
             <configuration>
-              <outputFile>${project.build.testOutputDirectory}/tsa-war-location.txt</outputFile>
-              <artifacts>
-                <artifact>org.terracotta:management-tsa-war:war:${project.version}</artifact>
-              </artifacts>
-              <resolveTransitively>false</resolveTransitively>
+              <skipTests>${skipTests}</skipTests>
             </configuration>
           </execution>
         </executions>
