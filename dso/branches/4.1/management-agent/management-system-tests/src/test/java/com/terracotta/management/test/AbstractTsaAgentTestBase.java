@@ -9,6 +9,7 @@ import net.sf.ehcache.config.TerracottaClientConfiguration;
 import net.sf.ehcache.config.TerracottaConfiguration;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.tools.ant.util.FileUtils;
 import org.hamcrest.CoreMatchers;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -32,16 +33,14 @@ import com.tc.util.runtime.Os;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -53,36 +52,41 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
   public AbstractTsaAgentTestBase(TestConfig testConfig) {
     super(testConfig);
 
-    String war = guessWarLocation();
-    testConfig.getL2Config().addExtraServerJvmArg("-Dcom.tc.management.war=" + war);
+    String warPath = fetchTsaWarLocation();
+    testConfig.getL2Config().addExtraServerJvmArg("-Dcom.tc.management.war=" + warPath);
     testConfig.getClientConfig().setParallelClients(false);
   }
 
-  private String guessWarLocation() {
-    String m2Root = System.getProperty("user.home") + "/.m2/repository".replace('/', File.separatorChar);
-    if (System.getProperty("maven.repo.local") != null) {
-      m2Root = System.getProperty("maven.repo.local");
-      System.out.println("Found maven.repo.local defined as a system property! Using m2root=" + m2Root);
+  private String fetchTsaWarLocation() {
+    InputStream in = null;
+    try {
+      in = AbstractTsaAgentTestBase.class.getResourceAsStream("/tsa-war-location.txt");
+      if (in == null) { throw new RuntimeException("Couldn't find resource file tsa-war-location.txt"); }
+      String warUrl = FileUtils.readFully(new InputStreamReader(in));
+      return urlToFile(warUrl);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } finally {
+      IOUtils.closeQuietly(in);
     }
-    String version = AbstractTsaClient.guessMavenArtifactVersion(ToolkitVersion.class);
+  }
 
-    String agentDir = m2Root + "/org/terracotta/management-tsa-war/".replace('/', File.separatorChar) + version;
-
-    List<String> files = Arrays.asList(new File(agentDir).list(new FilenameFilter() {
-      @Override
-      public boolean accept(File dir, String name) {
-        return name.endsWith(".war") && !name.endsWith("-sources.jar") && !name.endsWith("-tests.jar");
-      }
-    }));
-    if (files.isEmpty()) { throw new AssertionError("No agent WAR file found in [" + agentDir + "]"); }
-    Collections.sort(files);
-
-    // always take the last one of the sorted list, it should be the latest version
-    return agentDir + File.separator + files.get(files.size() - 1);
+  private static String urlToFile(String urlString) {
+    URL url = null;
+    File f;
+    try {
+      url = new URL(urlString);
+      f = new File(url.toURI());
+    } catch (MalformedURLException e) {
+      throw new RuntimeException(e);
+    } catch (URISyntaxException e) {
+      f = new File(url.getPath());
+    }
+    return f.getAbsolutePath();
   }
 
   @Override
-  protected String createClassPath(Class client) throws IOException {
+  protected String createClassPath(Class client) {
     String tk = TestBaseUtil.jarFor(ToolkitVersion.class);
     String common = TestBaseUtil.jarFor(Os.class);
     String expressRuntime = TestBaseUtil.jarFor(ToolkitFactory.class);
