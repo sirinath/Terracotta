@@ -1,10 +1,13 @@
 package com.terracotta.management.test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.config.CacheConfiguration;
 import net.sf.ehcache.config.Configuration;
 import net.sf.ehcache.config.TerracottaClientConfiguration;
 import net.sf.ehcache.config.TerracottaConfiguration;
+
 import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
@@ -34,9 +37,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-
 public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
 
   public AbstractTsaAgentTestBase(TestConfig testConfig) {
@@ -62,9 +62,7 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
         return name.endsWith(".war") && !name.endsWith("-sources.jar") && !name.endsWith("-tests.jar");
       }
     }));
-    if (files.isEmpty()) {
-      throw new AssertionError("No agent WAR file found in [" + agentDir + "]");
-    }
+    if (files.isEmpty()) { throw new AssertionError("No agent WAR file found in [" + agentDir + "]"); }
     Collections.sort(files);
 
     // always take the last one of the sorted list, it should be the latest version
@@ -95,23 +93,25 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
     String ehCache = TestBaseUtil.jarFor(CacheManager.class);
     String slf4J = TestBaseUtil.jarFor(LoggerFactory.class);
     String commonsIo = TestBaseUtil.jarFor(IOUtils.class);
-    return makeClasspath(expressRuntime, clientBase, l2Mbean, jsonParser, ehCache, slf4J, commonsIo);
+    String coreMatchers = TestBaseUtil.jarFor(CoreMatchers.class);
+    return makeClasspath(tk, common, expressRuntime, clientBase, l2Mbean, jsonParser, ehCache, slf4J, commonsIo,
+                         coreMatchers);
   }
 
   public abstract static class AbstractTsaClient extends AbstractClientBase {
-
 
     protected static final String TSA_TEST_CACHE = "tsaTest";
 
     @Override
     protected final void doTest() throws Throwable {
       // wait for the TSA agent to finish up initialization
-      boolean initSuccessful =  false;
+      boolean initSuccessful = false;
       System.out.println("Starting test for " + getTerracottaUrl());
       for (int i = 0; i < 10; i++) {
         try {
           for (int j = 0; j < getGroupData(0).getServerCount(); j++) {
-            httpGet("http://" + ConfigHelper.HOST + ":" + getGroupData(0).getTsaGroupPort(j) + "/tc-management-api/agents");
+            httpGet("http://" + ConfigHelper.HOST + ":" + getGroupData(0).getTsaGroupPort(j)
+                    + "/tc-management-api/agents");
           }
           initSuccessful = true;
           break;
@@ -126,7 +126,8 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
 
     protected abstract void doTsaTest() throws Throwable;
 
-    protected byte[] getTsaRawContent(String host, int port, String path, Map<String,String> headers) throws IOException {
+    protected byte[] getTsaRawContent(String host, int port, String path, Map<String, String> headers)
+        throws IOException {
       return httpRawGet("http://" + host + ":" + port + path, headers);
     }
 
@@ -134,10 +135,10 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
       String result = httpGet("http://" + host + ":" + port + path);
       System.out.println("Server ");
       System.out.println(result);
-      return (JSONArray)JSONValue.parse(result);
+      return (JSONArray) JSONValue.parse(result);
     }
 
-    protected byte[] httpRawGet(String urlString, Map<String,String> headers) throws IOException {
+    protected byte[] httpRawGet(String urlString, Map<String, String> headers) throws IOException {
       URL url = new URL(urlString);
       URLConnection urlConnection = url.openConnection();
 
@@ -195,9 +196,10 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
         httpConnection.setRequestProperty("Accept-Charset", charset);
         httpConnection.setRequestProperty("Content-Type", "application/json;charset=" + charset);
 
-        if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-          throw new RuntimeException("Failed : HTTP error code : " + httpConnection.getResponseCode());
-        }
+        if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK) { throw new RuntimeException(
+                                                                                                        "Failed : HTTP error code : "
+                                                                                                            + httpConnection
+                                                                                                                .getResponseCode()); }
 
         BufferedReader br = new BufferedReader(new InputStreamReader((httpConnection.getInputStream())));
 
@@ -217,7 +219,8 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
       super(args);
     }
 
-    protected CacheManager createCacheManager(String host, String port) {Configuration configuration = new Configuration();
+    protected CacheManager createCacheManager(String host, String port) {
+      Configuration configuration = new Configuration();
       TerracottaClientConfiguration terracottaClientConfiguration = new TerracottaClientConfiguration();
       terracottaClientConfiguration.url(host, port);
 
@@ -232,7 +235,91 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
 
       return new CacheManager(configuration);
     }
-  }
 
+    static String guessMavenArtifactVersion(Class<?> clazz) {
+      // e.g.
+      // /home/userXYZ/.m2/repository/org/terracotta/terracotta-toolkit-runtime/3.8.0-SNAPSHOT/terracotta-toolkit-runtime-3.8.0-SNAPSHOT.jar
+      String jar = TestBaseUtil.jarFor(clazz);
+      if (jar == null) { throw new AssertionError("Cannot find JAR for class: " + clazz); }
+
+      if (jar.endsWith(".jar")) {
+        String[] pathes = jar.split("\\/");
+        if (pathes.length > 2) { return pathes[pathes.length - 2]; }
+        throw new AssertionError("Invalid JAR: " + jar);
+      } else {
+        // running from IDE? try to get the version from the pom file
+        try {
+          File fXmlFile = new File("pom.xml");
+          DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+          DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+          Document doc = dBuilder.parse(fXmlFile);
+
+          NodeList childNodes = doc.getDocumentElement().getChildNodes();
+          for (int i = 0; i < childNodes.getLength(); i++) {
+            Node node = childNodes.item(i);
+            if ("version".equals(node.getNodeName())) { return node.getTextContent(); }
+          }
+        } catch (Exception e) {
+          // ignore
+        }
+        fail("cannot guess version");
+        return null; // make the compiler happy
+      }
+    }
+
+    protected boolean serverContainsAllOfThoseLogs(int group, int member, String... logs) throws IOException {
+      JSONArray logsArray = getTsaJSONArrayContent(ConfigHelper.HOST, getGroupData(group).getTsaGroupPort(member),
+                                                   "/tc-management-api/agents/logs");
+      boolean[] contains = new boolean[logs.length];
+
+      for (Object aLogsArray : logsArray) {
+        JSONObject o = (JSONObject) aLogsArray;
+        String message = (String) o.get("message");
+
+        for (int j = 0; j < logs.length; j++) {
+          contains[j] |= message.contains(logs[j]);
+        }
+
+        boolean allTrue = true;
+        for (boolean contain : contains) {
+          allTrue &= contain;
+        }
+        if (allTrue) { return true; }
+      }
+
+      return false;
+    }
+
+    protected boolean serverContainsAnyOfThoseLogs(int group, int member, String... logs) throws IOException {
+      JSONArray logsArray = getTsaJSONArrayContent(ConfigHelper.HOST, getGroupData(group).getTsaGroupPort(member),
+                                                   "/tc-management-api/agents/logs");
+      for (Object aLogsArray : logsArray) {
+        JSONObject o = (JSONObject) aLogsArray;
+        String message = (String) o.get("message");
+
+        for (String log : logs) {
+          if (message.contains(log)) { return true; }
+        }
+      }
+      return false;
+    }
+
+    protected void assertTrueWithin(long timeInMs, Callable<Boolean> callable) throws Exception {
+      Boolean success = false;
+
+      while (timeInMs > 0) {
+        success = callable.call();
+
+        if (success != null && success) {
+          break;
+        }
+
+        ThreadUtil.reallySleep(1000L);
+        timeInMs -= 1000L;
+      }
+
+      assertThat(success, is(true));
+    }
+  }
 
 }
