@@ -84,6 +84,11 @@ public abstract class AbstractTestBase extends TCTestCase {
     if (Boolean.getBoolean("com.tc.test.toolkit.devmode")) {
       testConfig.getClientConfig().addExtraClientJvmArg("-Dcom.tc.test.toolkit.devmode=true");
     }
+    // disable java awt pop-up for mac os x
+    testConfig.getClientConfig().addExtraClientJvmArg("-Djava.awt.headless=true");
+    testConfig.getL2Config().addExtraServerJvmArg("-Djava.awt.headless=true");
+    // testConfig.getClientConfig().addExtraClientJvmArg("-Dapple.awt.UIElement=true");
+    // testConfig.getL2Config().addExtraServerJvmArg("-Dapple.awt.UIElement=true");
   }
 
   /**
