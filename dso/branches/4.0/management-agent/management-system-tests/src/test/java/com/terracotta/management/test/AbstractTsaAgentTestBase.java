@@ -1,41 +1,43 @@
 package com.terracotta.management.test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.config.CacheConfiguration;
 import net.sf.ehcache.config.Configuration;
 import net.sf.ehcache.config.TerracottaClientConfiguration;
 import net.sf.ehcache.config.TerracottaConfiguration;
+
 import org.apache.commons.io.IOUtils;
+import org.hamcrest.CoreMatchers;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.slf4j.LoggerFactory;
 import org.terracotta.test.util.TestBaseUtil;
 import org.terracotta.tests.base.AbstractClientBase;
 import org.terracotta.tests.base.AbstractTestBase;
 import org.terracotta.toolkit.ToolkitFactory;
+import org.terracotta.util.ToolkitVersion;
 
 import com.tc.config.test.schema.ConfigHelper;
 import com.tc.management.beans.L2MBeanNames;
+import com.tc.test.config.builder.MavenArtifactFinder;
 import com.tc.test.config.model.TestConfig;
-import org.terracotta.util.ToolkitVersion;
+import com.tc.util.concurrent.ThreadUtil;
+import com.tc.util.runtime.Os;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import java.util.concurrent.Callable;
 
 public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
 
@@ -44,64 +46,42 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
 
     String war = guessWarLocation();
     testConfig.getL2Config().addExtraServerJvmArg("-Dcom.tc.management.war=" + war);
+    testConfig.getL2Config().addExtraServerJvmArg("-Djava.awt.headless=true");
+    testConfig.getClientConfig().setParallelClients(false);
+    testConfig.getClientConfig().addExtraClientJvmArg("-Djava.awt.headless=true");
   }
 
   private String guessWarLocation() {
-    String m2Root = System.getProperty("user.home") + "/.m2/repository".replace('/', File.separatorChar);
-    if (System.getProperty("maven.repo.local") != null) {
-      m2Root = System.getProperty("maven.repo.local");
-      System.out.println("Found maven.repo.local defined as a system property! Using m2root=" + m2Root);
-    }
-    String version = guessVersion();
-
-    String agentDir = m2Root + "/org/terracotta/management-tsa-war/".replace('/', File.separatorChar) + version;
-
-    List<String> files = Arrays.asList(new File(agentDir).list(new FilenameFilter() {
-      @Override
-      public boolean accept(File dir, String name) {
-        return name.endsWith(".war") && !name.endsWith("-sources.jar") && !name.endsWith("-tests.jar");
-      }
-    }));
-    if (files.isEmpty()) {
-      throw new AssertionError("No agent WAR file found in [" + agentDir + "]");
-    }
-    Collections.sort(files);
-
-    // always take the last one of the sorted list, it should be the latest version
-    return agentDir + File.separator + files.get(files.size() - 1);
-  }
-
-  private String guessVersion() {
-    // e.g. /home/userXYZ/.m2/repository/org/terracotta/terracotta-toolkit-runtime/3.8.0-SNAPSHOT/terracotta-toolkit-runtime-3.8.0-SNAPSHOT.jar
-    String toolkitJar = TestBaseUtil.jarFor(ToolkitVersion.class);
-    if (toolkitJar == null) {
-      throw new AssertionError("Cannot find toolkit JAR");
-    }
-
-    String[] pathes = toolkitJar.split("\\/");
-    if (pathes.length > 2) {
-      return pathes[pathes.length - 2];
-    }
-
-    throw new AssertionError("Invalid toolkit JAR: " + toolkitJar);
+    String version = AbstractTsaClient.guessMavenArtifactVersion();
+    return MavenArtifactFinder.findArtifactLocation("org.terracotta", "management-tsa-war", version, null, "war");
   }
 
   @Override
-  protected String createClassPath(Class client) throws IOException {
+  protected String createClassPath(Class client) {
+    String tk = TestBaseUtil.jarFor(ToolkitVersion.class);
+    String common = TestBaseUtil.jarFor(Os.class);
     String expressRuntime = TestBaseUtil.jarFor(ToolkitFactory.class);
+    String fs = TestBaseUtil.jarFor(com.terracotta.toolkit.api.TerracottaToolkitFactoryService.class);
+    String l1 = TestBaseUtil.jarFor(org.terracotta.toolkit.internal.TerracottaL1Instance.class);
     String clientBase = TestBaseUtil.jarFor(AbstractTsaAgentTestBase.class);
     String l2Mbean = TestBaseUtil.jarFor(L2MBeanNames.class);
     String jsonParser = TestBaseUtil.jarFor(JSONValue.class);
     String ehCache = TestBaseUtil.jarFor(CacheManager.class);
     String slf4J = TestBaseUtil.jarFor(LoggerFactory.class);
     String commonsIo = TestBaseUtil.jarFor(IOUtils.class);
-    return makeClasspath(expressRuntime, clientBase, l2Mbean, jsonParser, ehCache, slf4J, commonsIo);
+    String ehcache = TestBaseUtil.jarFor(Ehcache.class);
+    String coreMatchers = TestBaseUtil.jarFor(CoreMatchers.class);
+    return makeClasspath(tk, common, expressRuntime, fs, l1, clientBase, l2Mbean, jsonParser, ehCache, slf4J,
+            commonsIo, ehcache, coreMatchers);
   }
 
   public abstract static class AbstractTsaClient extends AbstractClientBase {
 
-
     protected static final String TSA_TEST_CACHE = "tsaTest";
+
+    protected String guessVersion() {
+      return guessMavenArtifactVersion();
+    }
 
     @Override
     protected final void doTest() throws Throwable {
@@ -186,7 +166,7 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
       return sb.toString();
     }
 
-    protected void httpPost(String urlString) throws IOException {
+    protected String httpPost(String urlString) throws IOException {
       HttpURLConnection httpConnection = (HttpURLConnection) new URL(urlString).openConnection();
       try {
         httpConnection.setRequestMethod("POST");
@@ -201,17 +181,29 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
 
         BufferedReader br = new BufferedReader(new InputStreamReader((httpConnection.getInputStream())));
 
-        String output;
+        StringBuilder sb = new StringBuilder();
         System.out.println("Output from Server .... \n");
+        String output;
         while ((output = br.readLine()) != null) {
-          System.out.println(output);
+          sb.append(output).append('\n');
         }
+        return sb.toString();
       } finally {
         httpConnection.disconnect();
       }
 
     }
 
+    protected void waitUntilServerAgentUp(int port) {
+      while (true) {
+        try {
+          httpGet("http://localhost:" + port + "/tc-management-api/agents");
+          break;
+        } catch (IOException e) {
+          ThreadUtil.reallySleep(1000);
+        }
+      }
+    }
 
     public AbstractTsaClient(String[] args) {
       super(args);
@@ -226,11 +218,73 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
       configuration.addDefaultCache(new CacheConfiguration("default", 100).eternal(false));
 
       CacheConfiguration cacheConfiguration = new CacheConfiguration(TSA_TEST_CACHE, 100).eternal(false)
-          .terracotta(new TerracottaConfiguration());
+              .terracotta(new TerracottaConfiguration());
 
       configuration.addCache(cacheConfiguration);
 
       return new CacheManager(configuration);
+    }
+
+    static String guessMavenArtifactVersion() {
+      try {
+        return MavenArtifactFinder.figureCurrentArtifactMavenVersion();
+      } catch (IOException ioe) {
+        throw new AssertionError("cannot guess version");
+      }
+    }
+
+    protected boolean serverContainsAllOfThoseLogs(int group, int member, String... logs) throws IOException {
+      JSONArray logsArray = getTsaJSONArrayContent(ConfigHelper.HOST, getGroupData(group).getTsaGroupPort(member), "/tc-management-api/agents/logs");
+      boolean[] contains = new boolean[logs.length];
+
+      for (Object aLogsArray : logsArray) {
+        JSONObject o = (JSONObject)aLogsArray;
+        String message = (String)o.get("message");
+
+        for (int j = 0; j < logs.length; j++) {
+          contains[j] |= message.contains(logs[j]);
+        }
+
+        boolean allTrue = true;
+        for (boolean contain : contains) {
+          allTrue &= contain;
+        }
+        if (allTrue) { return true; }
+      }
+
+      return false;
+    }
+
+    protected boolean serverContainsAnyOfThoseLogs(int group, int member, String... logs) throws IOException {
+      JSONArray logsArray = getTsaJSONArrayContent(ConfigHelper.HOST, getGroupData(group).getTsaGroupPort(member), "/tc-management-api/agents/logs");
+      for (Object aLogsArray : logsArray) {
+        JSONObject o = (JSONObject)aLogsArray;
+        String message = (String)o.get("message");
+
+        for (String log : logs) {
+          if (message.contains(log)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    protected void assertTrueWithin(long timeInMs, Callable<Boolean> callable) throws Exception {
+      Boolean success = false;
+
+      while (timeInMs > 0) {
+        success = callable.call();
+
+        if (success != null && success) {
+          break;
+        }
+
+        ThreadUtil.reallySleep(1000L);
+        timeInMs -= 1000L;
+      }
+
+      assertThat(success, is(true));
     }
   }
 

@@ -21,6 +21,7 @@ public class AgentsTest extends AbstractTsaAgentTestBase {
   public AgentsTest(TestConfig testConfig) {
     super(testConfig);
 
+    timebombTest("2013-09-15");
     testConfig.getGroupConfig().setMemberCount(MEMBER_COUNT);
 
     testConfig.getClientConfig().setClientClasses(new Class[]{AgentsTestClient.class});
