@@ -31,6 +31,8 @@ public class DiagnosticTest extends AbstractTsaAgentTestBase {
   public DiagnosticTest(TestConfig testConfig) {
     super(testConfig);
 
+    timebombTest("2013-09-15");
+
     testConfig.getGroupConfig().setMemberCount(MEMBER_COUNT);
 
     testConfig.getClientConfig().setClientClasses(new Class[]{DiagnosticThreadDumpTestClient.class, DiagnosticDGCTestClient.class});
