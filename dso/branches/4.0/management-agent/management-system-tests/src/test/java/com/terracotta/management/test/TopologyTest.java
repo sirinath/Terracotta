@@ -5,6 +5,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.containsString;
+import static org.junit.matchers.JUnitMatchers.either;
 
 import net.sf.ehcache.CacheManager;
 
@@ -69,7 +70,7 @@ public class TopologyTest extends AbstractTsaAgentTestBase {
         JSONObject clientEntity = (JSONObject)clientEntitiesArray.get(i);
 
         JSONObject attributes = (JSONObject)clientEntity.get("attributes");
-        assertThat((String) attributes.get("RemoteAddress"), containsString("localhost"));
+        assertThat((String) attributes.get("RemoteAddress"), either(containsString("localhost")).or(containsString("127.0.0.1")));
         assertThat(attributes.get("ClientID"), notNullValue());
       }
 
