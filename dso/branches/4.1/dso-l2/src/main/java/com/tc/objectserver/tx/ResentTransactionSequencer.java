@@ -84,7 +84,6 @@ public class ResentTransactionSequencer extends AbstractServerTransactionListene
     synchronized (this) {
       State lstate = this.state;
       switch (lstate) {
-        case PASS_THRU_PASSIVE:
         case PASS_THRU_ACTIVE:
           record = new TransactionBatchRecord(batchContext, false);
           record.process();
