@@ -26,6 +26,7 @@ import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.Assert;
+import com.tc.util.CallableWaiter;
 import com.tc.util.PortChooser;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 import com.tc.util.concurrent.QueueFactory;
@@ -37,6 +38,7 @@ import java.net.InetAddress;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 public class TCGroupManagerNodeJoinedTest extends TCTestCase {
 
@@ -45,114 +47,49 @@ public class TCGroupManagerNodeJoinedTest extends TCTestCase {
   private TCThreadGroup         threadGroup;
   private TCGroupManagerImpl[]  groupManagers;
   private MyListener[]          listeners;
-
-  public TCGroupManagerNodeJoinedTest() {
-    // disableAllUntil("2009-03-15");
-  }
+  private TestThrowableHandler  throwableHandler;
 
   @Override
   public void setUp() {
-    threadGroup = new TCThreadGroup(new ThrowableHandler(logger), "TCGroupManagerNodeJoinedTest");
+    throwableHandler = new TestThrowableHandler(logger);
+    threadGroup = new TCThreadGroup(throwableHandler, "TCGroupManagerNodeJoinedTest");
+  }
+
+  @Override
+  protected void tcTestCaseTearDown(final Throwable testException) throws Throwable {
+    super.tcTestCaseTearDown(testException);
+    throwableHandler.throwIfNecessary();
   }
 
   public void testNodejoinedTwoServers() throws Exception {
-    Thread throwableThread = new Thread(threadGroup, new Runnable() {
-      @Override
-      public void run() {
-        try {
-          nodesSetupAndJoined(2);
-        } catch (Exception e) {
-          throw new RuntimeException("testStateManagerTwoServers failed! " + e);
-        }
-      }
-    });
-    throwableThread.start();
-    throwableThread.join();
+    nodesSetupAndJoined(2);
   }
 
   public void testNoConnectionThreadLeak() throws Exception {
-    Thread testDEV3101NoL2Reconnect = new Thread(threadGroup, new Runnable() {
-      @Override
-      public void run() {
-        try {
-          nodesSetupAndJoined_DEV3101(2);
-        } catch (Exception e) {
-          throw new RuntimeException("DEV-3101 without L2 Reconnect failed: " + e);
-        }
-      }
-    });
-
-    testDEV3101NoL2Reconnect.start();
-    testDEV3101NoL2Reconnect.join();
+    nodesSetupAndJoined_DEV3101(2);
   }
 
   public void testNoConnectionThreadLeakOnL2Reconnect() throws Exception {
-    Thread testDEV3101WithL2Reconnect = new Thread(threadGroup, new Runnable() {
-      @Override
-      public void run() {
-        try {
-          TCPropertiesImpl.getProperties().setProperty(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_ENABLED, "true");
-          nodesSetupAndJoined_DEV3101(2);
-          TCPropertiesImpl.getProperties()
-              .setProperty(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_ENABLED, "false");
-        } catch (Exception e) {
-          throw new RuntimeException("DEV-3101 without L2 Reconnect failed: " + e);
-        }
-      }
-    });
-
-    testDEV3101WithL2Reconnect.start();
-    testDEV3101WithL2Reconnect.join();
+    TCPropertiesImpl.getProperties().setProperty(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_ENABLED, "true");
+    nodesSetupAndJoined_DEV3101(2);
+    TCPropertiesImpl.getProperties()
+        .setProperty(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_ENABLED, "false");
   }
 
   // Test for DEV-4870
   public void testNodeJoinAfterCloseMember() throws Exception {
-    Thread testAfterCloseMemberWithL2Reconnect = new Thread(threadGroup, new Runnable() {
-      @Override
-      public void run() {
-        try {
-          TCPropertiesImpl.getProperties().setProperty(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_ENABLED, "true");
-          nodesSetupAndJoinedAfterCloseMember(2);
-          TCPropertiesImpl.getProperties()
-              .setProperty(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_ENABLED, "false");
-        } catch (Exception e) {
-          throw new RuntimeException("DEV-3101 without L2 Reconnect failed: " + e);
-        }
-      }
-    });
-
-    testAfterCloseMemberWithL2Reconnect.start();
-    testAfterCloseMemberWithL2Reconnect.join();
+    TCPropertiesImpl.getProperties().setProperty(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_ENABLED, "true");
+    nodesSetupAndJoinedAfterCloseMember(2);
+    TCPropertiesImpl.getProperties()
+        .setProperty(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_ENABLED, "false");
   }
 
   public void testNodejoinedThreeServers() throws Exception {
-    Thread throwableThread = new Thread(threadGroup, new Runnable() {
-      @Override
-      public void run() {
-        try {
-          nodesSetupAndJoined(3);
-        } catch (Exception e) {
-          throw new RuntimeException("testStateManagerTwoServers failed! " + e);
-        }
-      }
-    });
-    throwableThread.start();
-    throwableThread.join();
+    nodesSetupAndJoined(3);
   }
 
   public void testNodejoinedSixServers() throws Exception {
-    Thread throwableThread = new Thread(threadGroup, new Runnable() {
-      @Override
-      public void run() {
-        try {
-          nodesSetupAndJoined(6);
-        } catch (Exception e) {
-          throw new RuntimeException("testStateManagerTwoServers failed! " + e);
-        }
-      }
-    });
-    throwableThread.start();
-    throwableThread.join();
+    nodesSetupAndJoined(6);
   }
 
   // -----------------------------------------------------------------------
@@ -193,13 +130,7 @@ public class TCGroupManagerNodeJoinedTest extends TCTestCase {
       NodesStore nodeStore = new NodesStoreImpl(nodeSet);
       groupManagers[i].join(allNodes[i], nodeStore);
     }
-    ThreadUtil.reallySleep(1000 * nodes);
-
-    // verification
-    for (int i = 0; i < nodes; ++i) {
-      // every node shall receive hello message from reset of nodes
-      assertEquals(nodes - 1, listeners[i].size());
-    }
+    waitForAllMessageCountsToReach(nodes - 1);
 
     System.out.println("VERIFIED");
     shutdown();
@@ -257,13 +188,7 @@ public class TCGroupManagerNodeJoinedTest extends TCTestCase {
       groupManagers[i].join(allNodes[i], nodeStore);
     }
 
-    ThreadUtil.reallySleep(5000 + 1000 * nodes);
-
-    // verification
-    for (int i = 0; i < nodes; ++i) {
-      // every node shall receive hello message from reset of nodes
-      assertEquals(nodes - 1, listeners[i].size());
-    }
+    waitForAllMessageCountsToReach(nodes - 1);
 
     ThreadUtil.reallySleep(5000);
 
@@ -277,13 +202,8 @@ public class TCGroupManagerNodeJoinedTest extends TCTestCase {
     proxy[0].stop();
     proxy[1].start();
 
-    ThreadUtil.reallySleep(5000 + 1000 * nodes);
+    waitForAllMessageCountsToReach(nodes);
 
-    // verification
-    for (int i = 0; i < nodes; ++i) {
-      // every node should have received one more hello message from reset of nodes
-      assertEquals(nodes, listeners[i].size());
-    }
     shutdown();
   }
 
@@ -335,16 +255,8 @@ public class TCGroupManagerNodeJoinedTest extends TCTestCase {
     for (int i = 0; i < nodes; ++i) {
       groupManagers[i].join(allNodes[i], nodeStore);
     }
-    ThreadUtil.reallySleep(2000 + 1000 * nodes);
 
-    // verification
-    for (int i = 0; i < nodes; ++i) {
-      // every node shall receive hello message from reset of nodes
-      while (nodes - 1 != listeners[i].size()) {
-        Thread.sleep(1000);
-        System.out.println("XXX waiting for msg receive");
-      }
-    }
+    waitForAllMessageCountsToReach(nodes - 1);
 
     System.out.println("XXX 1st verification done");
 
@@ -390,8 +302,11 @@ public class TCGroupManagerNodeJoinedTest extends TCTestCase {
     Thread[] allThreads = ThreadDumpUtil.getAllThreads();
     int count = 0;
     for (Thread t : allThreads) {
-      System.out.println("XXX " + t);
       if (t.getName().contains(absentThreadName)) {
+        System.out.println("XXX " + t);
+        for (StackTraceElement ste : t.getStackTrace()) {
+          System.out.println("   " + ste);
+        }
         count++;
       }
     }
@@ -449,6 +364,22 @@ public class TCGroupManagerNodeJoinedTest extends TCTestCase {
     public void nodeLeft(NodeID nodeID) {
       System.err.println("\n### " + gmNodeID + ": nodeLeft -> " + nodeID);
     }
+  }
+
+  private void waitForAllMessageCountsToReach(final int count) throws Exception {
+    CallableWaiter.waitOnCallable(new Callable<Boolean>() {
+      @Override
+      public Boolean call() throws Exception {
+        for (MyListener listener : listeners) {
+          if (listener.size() < count) {
+            return false;
+          } else if (listener.size() > count) {
+            throw new AssertionError("Exceeded the expected count. Expected " + count + " got " + listener.size());
+          }
+        }
+        return true;
+      }
+    });
   }
 
   private static final class MyListener implements GroupMessageListener {
@@ -512,4 +443,32 @@ public class TCGroupManagerNodeJoinedTest extends TCTestCase {
     }
   }
 
+  private static class TestThrowableHandler extends ThrowableHandler {
+    private volatile Throwable throwable;
+
+    /**
+     * Construct a new ThrowableHandler with a logger
+     *
+     * @param logger Logger
+     */
+    public TestThrowableHandler(final TCLogger logger) {
+      super(logger);
+    }
+
+    @Override
+    public void handleThrowable(final Thread thread, final Throwable t) {
+      this.throwable = t;
+      super.handleThrowable(thread, t);
+    }
+
+    void throwIfNecessary() throws Throwable {
+      if (throwable != null) { throw throwable;
+      }
+    }
+
+    @Override
+    protected synchronized void exit(final int status) {
+      // don't do a system.exit.
+    }
+  }
 }
