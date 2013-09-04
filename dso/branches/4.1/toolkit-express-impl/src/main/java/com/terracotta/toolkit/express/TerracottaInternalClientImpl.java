@@ -103,6 +103,9 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
 
   private void setSecretHackOMFG() {
     try {
+      // Let's make sure we even care about security stuff at all...
+      // if so, then check if the thing that cares is the BM Connector's TkSecurityManager
+      appClassLoader.loadClass("com.terracotta.management.keychain.KeyChain");
       final Class<?> omfg = appClassLoader.loadClass("net.sf.ehcache.thrift.server.tc.TkSecurityManager");
       final Field secret = omfg.getDeclaredField("SECRET");
       if(secret.getType() == byte[].class) {
