@@ -22,6 +22,7 @@ public class ApplicationTsa extends javax.ws.rs.core.Application {
     s.add(ShutdownResourceServiceImpl.class);
     s.add(TopologyResourceServiceImpl.class);
     s.add(IdentityAssertionResourceService.class);
+    s.add(JmxResourceServiceImpl.class);
 
     s.add(net.sf.ehcache.management.resource.services.CacheStatisticSamplesResourceServiceImpl.class);
     s.add(net.sf.ehcache.management.resource.services.CachesResourceServiceImpl.class);
