@@ -4,6 +4,9 @@
  */
 package com.tc.object;
 
+import bsh.EvalError;
+import bsh.Interpreter;
+
 import com.tc.abortable.AbortableOperationManager;
 import com.tc.async.api.SEDA;
 import com.tc.async.api.Sink;
@@ -181,7 +184,6 @@ import com.tc.util.ProductInfo;
 import com.tc.util.TCTimeoutException;
 import com.tc.util.ToggleableReferenceManager;
 import com.tc.util.UUID;
-import com.tc.util.concurrent.Runners;
 import com.tc.util.concurrent.TaskRunner;
 import com.tc.util.concurrent.ThreadUtil;
 import com.tc.util.runtime.LockInfoByThreadID;
@@ -207,9 +209,6 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import bsh.EvalError;
-import bsh.Interpreter;
 
 /**
  * This is the main point of entry into the DSO client.
@@ -300,7 +299,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     this.dsoClientBuilder = createClientBuilder();
     this.rejoinManager = rejoinManager;
     this.uuid = uuid;
-    this.taskRunner = Runners.newDefaultCachedScheduledTaskRunner(this.threadGroup);
+    this.taskRunner = manager.getTastRunner();
   }
 
   protected DSOClientBuilder createClientBuilder() {
