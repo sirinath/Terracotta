@@ -28,6 +28,7 @@ import com.tc.properties.TCProperties;
 import com.tc.search.SearchQueryResults;
 import com.tc.server.ServerEventType;
 import com.tc.util.VicariousThreadLocal;
+import com.tc.util.concurrent.TaskRunner;
 import com.tcclient.cluster.DsoNode;
 import com.terracottatech.search.NVPair;
 
@@ -40,10 +41,10 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class PlatformServiceImpl implements PlatformService {
-  private final Manager                           manager;
-  private volatile RejoinLifecycleEventController rejoinEventsController;
-  private final boolean                           rejoinEnabled;
-  private static final int                               BASE_COUNT  = 1;
+  private final Manager                                  manager;
+  private volatile RejoinLifecycleEventController        rejoinEventsController;
+  private final boolean                                  rejoinEnabled;
+  private static final int                               BASE_COUNT    = 1;
   private static final ThreadLocal<Map<Object, Integer>> lockIdToCount = new VicariousThreadLocal<Map<Object, Integer>>() {
                                                                          @Override
                                                                          protected Map<Object, Integer> initialValue() {
@@ -66,7 +67,7 @@ public class PlatformServiceImpl implements PlatformService {
   private void removeContext(Object lockId) {
     Map<Object, Integer> threadLocal = lockIdToCount.get();
     Integer count = threadLocal.get(lockId);
-    if(count != null) {
+    if (count != null) {
       if (count.intValue() == BASE_COUNT) {
         threadLocal.remove(lockId);
       } else {
@@ -270,6 +271,11 @@ public class PlatformServiceImpl implements PlatformService {
   }
 
   @Override
+  public void unregisterBeforeShutdownHook(Runnable hook) {
+    manager.unregisterBeforeShutdownHook(hook);
+  }
+
+  @Override
   public String getUUID() {
     return manager.getUUID();
   }
@@ -280,7 +286,7 @@ public class PlatformServiceImpl implements PlatformService {
                                          List<NVPair> aggregators, int maxResults, int batchSize, boolean waitForTxn)
       throws AbortedOperationException {
     return manager.executeQuery(cachename, queryStack, includeKeys, includeValues, attributeSet, sortAttributes,
-        aggregators, maxResults, batchSize, waitForTxn);
+                                aggregators, maxResults, batchSize, waitForTxn);
   }
 
   @Override
@@ -339,7 +345,13 @@ public class PlatformServiceImpl implements PlatformService {
     return manager.getRejoinCount();
   }
 
+  @Override
   public boolean isRejoinInProgress() {
     return manager.isRejoinInProgress();
+  }
+
+  @Override
+  public TaskRunner getTaskRunner() {
+    return this.manager.getTastRunner();
   }
 }

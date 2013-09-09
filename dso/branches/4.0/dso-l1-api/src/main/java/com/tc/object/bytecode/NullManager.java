@@ -28,6 +28,8 @@ import com.tc.properties.NullTCProperties;
 import com.tc.properties.TCProperties;
 import com.tc.search.SearchQueryResults;
 import com.tc.server.ServerEventType;
+import com.tc.util.concurrent.Runners;
+import com.tc.util.concurrent.TaskRunner;
 import com.terracottatech.search.NVPair;
 
 import java.lang.reflect.Field;
@@ -42,10 +44,10 @@ import javax.management.MBeanServer;
  */
 public class NullManager implements Manager {
 
-  public static final String                 CLASS                 = "com/tc/object/bytecode/NullManager";
-  public static final String                 TYPE                  = "L" + CLASS + ";";
+  public static final String   CLASS    = "com/tc/object/bytecode/NullManager";
+  public static final String   TYPE     = "L" + CLASS + ";";
 
-  private static final Manager               INSTANCE              = new NullManager();
+  private static final Manager INSTANCE = new NullManager();
 
   /**
    * Get instance of the null manager
@@ -356,6 +358,11 @@ public class NullManager implements Manager {
   }
 
   @Override
+  public void unregisterBeforeShutdownHook(Runnable beforeShutdownHook) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public MetaDataDescriptor createMetaDataDescriptor(String category) {
     throw new UnsupportedOperationException();
   }
@@ -435,7 +442,6 @@ public class NullManager implements Manager {
     throw new ImplementMe();
   }
 
-
   @Override
   public void addTransactionCompleteListener(TransactionCompleteListener listener) {
     //
@@ -455,7 +461,6 @@ public class NullManager implements Manager {
   public void throttlePutIfNecessary(final ObjectID object) {
     //
   }
-
 
   @Override
   public void beginAtomicTransaction(LockID lock, LockLevel level) {
@@ -490,5 +495,10 @@ public class NullManager implements Manager {
   @Override
   public boolean isRejoinInProgress() {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public TaskRunner getTastRunner() {
+    return Runners.newDefaultCachedScheduledTaskRunner();
   }
 }
