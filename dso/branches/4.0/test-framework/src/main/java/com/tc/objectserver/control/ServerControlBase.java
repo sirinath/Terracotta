@@ -10,6 +10,7 @@ import com.tc.management.beans.L2DumperMBean;
 import com.tc.management.beans.TCServerInfoMBean;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.Callable;
 
@@ -18,6 +19,7 @@ public abstract class ServerControlBase implements ServerControl {
   private final String               host;
   private final int                  tsaPort;
   private final ServerMBeanRetriever serverMBeanRetriever;
+  private static final int           SO_CONNECT_TIMEOUT = 10000;
 
   public ServerControlBase(String host, int tsaPort, int adminPort) {
     this.host = host;
@@ -28,21 +30,19 @@ public abstract class ServerControlBase implements ServerControl {
 
   @Override
   public boolean isRunning() {
-    Socket socket = null;
+    Socket socket = new Socket();
     try {
-      socket = new Socket(host, adminPort);
+      socket.connect(new InetSocketAddress(host, adminPort), SO_CONNECT_TIMEOUT);
       if (!socket.isConnected()) throw new AssertionError();
       return true;
     } catch (IOException e) {
       return false;
     } finally {
-      if (socket != null) {
         try {
           socket.close();
         } catch (IOException ioe) {
           // ignore
         }
-      }
     }
   }
 
