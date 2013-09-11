@@ -77,6 +77,7 @@ public class GroupServerManager {
 
   private final TestFailureListener testFailureCallback;
   private final boolean             renameDataDir         = false;
+  private volatile boolean          stopped               = false;
 
   private final class ServerExitCallback implements MonitoringServerControl.MonitoringServerControlExitCallback {
 
@@ -317,6 +318,12 @@ public class GroupServerManager {
     }
   }
 
+  public synchronized void stop() throws Exception {
+    stopped = true;
+    stopCrasher();
+    stopAllServers();
+  }
+
   public void stopServer(int index) throws Exception {
     stopServerInternal(index);
   }
@@ -439,8 +446,23 @@ public class GroupServerManager {
 
   private void closeJMXConnectors() {
     for (int i = 0; i < jmxConnectors.length; i++) {
-      closeJMXConnector(i);
-      ThreadUtil.reallySleep(100);
+      final int n = i;
+      // Close JMX connectors in a separate thread, to avoid test timeouts in case the server has already crashed
+      // and won't be coming back
+      Thread t = new Thread() {
+        @Override
+        public void run() {
+          closeJMXConnector(n);
+        }
+      };
+      t.setDaemon(true);
+      t.start();
+      // Wait if necessary up to 1 sec, for good measure
+      try {
+        t.join(1000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
     }
   }
 
@@ -478,6 +500,7 @@ public class GroupServerManager {
    * crash active server and wait for passive server to take over. If Passive is present.
    */
   public synchronized void crashActiveAndWaitForPassiveToTakeOver() throws Exception {
+    if (stopped) return;
     crashActive();
     if (expectedRunningServerCount() > 0) {
       // wait for passive to take over only If passive was running.
@@ -528,6 +551,7 @@ public class GroupServerManager {
   }
 
   public synchronized void crashRandomServer() throws Exception {
+    if (stopped) return;
 
     if (random == null) { throw new AssertionError("Random number generator was not set."); }
 
@@ -573,7 +597,7 @@ public class GroupServerManager {
   }
 
   public void restartLastCrashedServer() throws Exception {
-
+    if (stopped) return;
     debugPrintln("*****  restarting last crashed server");
 
     if (lastCrashedIndex >= 0) {
@@ -626,19 +650,19 @@ public class GroupServerManager {
   }
 
   public void waituntilPassiveStandBy() throws Exception {
-    while (!isPassiveStandBy()) {
+    while (!isPassiveStandBy() && !stopped) {
       Thread.sleep(1000);
     }
   }
 
   public void waituntilEveryPassiveStandBy() throws Exception {
-    while (!isEveryPassiveStandBy()) {
+    while (!isEveryPassiveStandBy() && !stopped) {
       Thread.sleep(1000);
     }
   }
 
   public void waitUntilActive() throws Exception {
-    while(!isActivePresent()) {
+    while (!isActivePresent() && !stopped) {
       Thread.sleep(1000);
     }
   }
@@ -782,7 +806,9 @@ public class GroupServerManager {
     if (crasherStarted.compareAndSet(false, true)) {
     if (!testConfig.getCrashConfig().getCrashMode().equals(ServerCrashMode.NO_CRASH)
         && !testConfig.getCrashConfig().getCrashMode().equals(ServerCrashMode.CUSTOMIZED_CRASH)) {
-      new Thread(serverCrasher).start();
+        Thread crasherThread = new Thread(serverCrasher);
+        crasherThread.setDaemon(true);
+        crasherThread.start();
       }
     } else {
       throw new AssertionError("server Crasher already started");
