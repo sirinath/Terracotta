@@ -318,7 +318,7 @@ public class GroupServerManager {
     }
   }
 
-  public void stop() throws Exception {
+  public synchronized void stop() throws Exception {
     stopped = true;
     stopCrasher();
     stopAllServers();
@@ -500,6 +500,7 @@ public class GroupServerManager {
    * crash active server and wait for passive server to take over. If Passive is present.
    */
   public synchronized void crashActiveAndWaitForPassiveToTakeOver() throws Exception {
+    if (stopped) return;
     crashActive();
     if (expectedRunningServerCount() > 0) {
       // wait for passive to take over only If passive was running.
@@ -590,6 +591,7 @@ public class GroupServerManager {
   }
 
   public synchronized void crashRandomServer() throws Exception {
+    if (stopped) return;
 
     if (random == null) { throw new AssertionError("Random number generator was not set."); }
 
@@ -635,7 +637,7 @@ public class GroupServerManager {
   }
 
   public void restartLastCrashedServer() throws Exception {
-
+    if (stopped) return;
     debugPrintln("*****  restarting last crashed server");
 
     if (lastCrashedIndex >= 0) {
@@ -844,7 +846,9 @@ public class GroupServerManager {
     if (crasherStarted.compareAndSet(false, true)) {
     if (!testConfig.getCrashConfig().getCrashMode().equals(ServerCrashMode.NO_CRASH)
         && !testConfig.getCrashConfig().getCrashMode().equals(ServerCrashMode.CUSTOMIZED_CRASH)) {
-      new Thread(serverCrasher).start();
+        Thread crasherThread = new Thread(serverCrasher);
+        crasherThread.setDaemon(true);
+        crasherThread.start();
       }
     } else {
       throw new AssertionError("server Crasher already started");
