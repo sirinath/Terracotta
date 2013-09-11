@@ -243,7 +243,7 @@ public class BulkLoadToolkitCache<K, V> implements ToolkitCacheImplInterface<K, 
   }
 
   private int now() {
-    return (int) System.currentTimeMillis() / 1000;
+    return (int) (System.currentTimeMillis() / 1000);
   }
 
   @Override
