@@ -78,6 +78,7 @@ import javax.management.InstanceNotFoundException;
 import javax.management.JMException;
 import javax.management.JMX;
 import javax.management.ListenerNotFoundException;
+import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
@@ -85,7 +86,6 @@ import javax.management.MalformedObjectNameException;
 import javax.management.Notification;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
-import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
 import javax.management.remote.JMXConnector;
@@ -824,21 +824,25 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
       Map<String, Map<String, String>> nodes = new HashMap<String, Map<String, String>>();
       Set<ObjectName> objectNames = mBeanServerConnection.queryNames(new ObjectName("net.sf.ehcache:type=RepositoryService,*"), null);
       for (final ObjectName objectName : objectNames) {
-        Map<String, String> attributes = callWithTimeout(new Callable<Map<String, String>>() {
-          @Override
-          public Map<String, String> call() throws Exception {
-            String version = (String)mBeanServerConnection.getAttribute(objectName, "Version");
-            String agency = (String)mBeanServerConnection.getAttribute(objectName, "Agency");
+        try {
+          Map<String, String> attributes = callWithTimeout(new Callable<Map<String, String>>() {
+            @Override
+            public Map<String, String> call() throws Exception {
+              String version = (String)mBeanServerConnection.getAttribute(objectName, "Version");
+              String agency = (String)mBeanServerConnection.getAttribute(objectName, "Agency");
 
-            Map<String, String> props = new HashMap<String, String>();
-            props.put("Version", version);
-            props.put("Agency", agency);
-            return props;
+              Map<String, String> props = new HashMap<String, String>();
+              props.put("Version", version);
+              props.put("Agency", agency);
+              return props;
+            }
+          }, objectName.toString());
+
+          if (attributes != null) {
+            nodes.put(objectName.getKeyProperty("node"), attributes);
           }
-        }, objectName.toString());
-
-        if (attributes != null) {
-          nodes.put(objectName.getKeyProperty("node"), attributes);
+        } catch (ExecutionException ee) {
+          LOG.warn("error collecting L1 agent node details of " + objectName, ee);
         }
       }
       return nodes;
@@ -1729,12 +1733,22 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
       if (query == null) {
         query = "*:*";
       }
-      Set<ObjectInstance> objectInstances = mBeanServerConnection.queryMBeans(new ObjectName(query), null);
-      for (ObjectInstance objectInstance : objectInstances) {
+      Set<ObjectName> objectNames = mBeanServerConnection.queryNames(new ObjectName(query), null);
+      for (ObjectName objectName : objectNames) {
+        List<MBeanEntity.AttributeEntity> attributeEntities = new ArrayList<MBeanEntity.AttributeEntity>();
+        MBeanAttributeInfo[] attributes = mBeanServerConnection.getMBeanInfo(objectName).getAttributes();
+        for (MBeanAttributeInfo attribute : attributes) {
+          MBeanEntity.AttributeEntity attributeEntity = new MBeanEntity.AttributeEntity();
+          attributeEntity.setType(attribute.getType());
+          attributeEntity.setName(attribute.getName());
+          attributeEntities.add(attributeEntity);
+        }
+
         MBeanEntity mBeanEntity = new MBeanEntity();
         mBeanEntity.setSourceId(sourceId);
         mBeanEntity.setVersion(this.getClass().getPackage().getImplementationVersion());
-        mBeanEntity.setObjectName(objectInstance.getObjectName().toString());
+        mBeanEntity.setObjectName(objectName.toString());
+        mBeanEntity.setAttributes(attributeEntities.toArray(new MBeanEntity.AttributeEntity[0]));
 
         mbeanEntities.add(mBeanEntity);
       }
