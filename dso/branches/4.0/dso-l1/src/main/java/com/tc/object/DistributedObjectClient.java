@@ -710,7 +710,6 @@ public class DistributedObjectClient extends SEDA implements TCClient {
 
     final List<ClientHandshakeCallback> clientHandshakeCallbacks = new ArrayList<ClientHandshakeCallback>();
     clientHandshakeCallbacks.add(this.lockManager);
-    clientHandshakeCallbacks.add(this.objectManager);
     clientHandshakeCallbacks.add(remoteObjectManager);
     clientHandshakeCallbacks.add(remoteServerMapManager);
     clientHandshakeCallbacks.add(searchRequestManager);
@@ -719,6 +718,9 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     clientHandshakeCallbacks.add(this.clusterMetaDataManager);
     clientHandshakeCallbacks.add(teh);
     clientHandshakeCallbacks.add(serverEventListenerManager);
+    // ClientObjectManager should be the last one sothat isRejoinInProgress flag of TCObjectSelfStoreImpl has been reset
+    // in RemoteServerMapManager.initializeHandshake()
+    clientHandshakeCallbacks.add(this.objectManager);
     final ProductInfo pInfo = ProductInfo.getInstance();
     final Collection<ClearableCallback> clearCallbacks = new ArrayList<ClearableCallback>();
     clearCallbacks.add(stageManager);

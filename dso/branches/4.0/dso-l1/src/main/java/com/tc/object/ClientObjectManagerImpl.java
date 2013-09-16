@@ -1303,6 +1303,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
       @Override
       public void run() {
         while (true) {
+          ObjectID objectID = null;
           try {
             if (isStopRequested()) { return; }
 
@@ -1310,11 +1311,14 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
                 .remove(POLL_TIME);
 
             if (wor != null) {
-              final ObjectID objectID = wor.getObjectID();
+              objectID = wor.getObjectID();
               reap(objectID);
             }
           } catch (final InterruptedException e) {
             return;
+          } catch(final PlatformRejoinException e) {
+            staticLogger.info("Ignoring " + PlatformRejoinException.class.getSimpleName() + " while reaping oid "
+                              + objectID, e);
           }
         }
       }
