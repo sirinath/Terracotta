@@ -128,8 +128,8 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager {
                                                                                   isEnterpriseClient());
     notifyCallbackOnHandshake(remoteNode, handshakeMessage);
     notifyTransitionComplete();
-
-    this.logger.debug("Sending handshake message...");
+    this.logger.info("Sending handshake message with oids " + handshakeMessage.getObjectIDs().size() + " validate "
+                     + handshakeMessage.getObjectIDsToValidate().size());
     handshakeMessage.send();
   }
 
@@ -268,11 +268,11 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager {
 
   @Override
   public void reset() {
-    for (ClientHandshakeCallback c : callBacks) {
-      c.cleanup();
-    }
     for (ClearableCallback clearable : clearCallbacks) {
       clearable.cleanup();
+    }
+    for (ClientHandshakeCallback c : callBacks) {
+      c.cleanup();
     }
   }
 
@@ -285,6 +285,8 @@ public class ClientHandshakeManagerImpl implements ClientHandshakeManager {
   private void notifyCallbackOnHandshake(final NodeID remote, final ClientHandshakeMessage handshakeMessage) {
     for (ClientHandshakeCallback c : this.callBacks) {
       c.initializeHandshake(this.cidp.getClientID(), remote, handshakeMessage);
+      // this.logger.debug(c.getClass().getName() + " oids " + handshakeMessage.getObjectIDs().size() + " validate "
+      // + handshakeMessage.getObjectIDsToValidate().size());
     }
   }
 
