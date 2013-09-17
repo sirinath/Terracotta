@@ -3,8 +3,6 @@
  */
 package com.terracotta.toolkit.collections.map;
 
-import static com.terracotta.toolkit.config.ConfigUtil.distributeInStripes;
-
 import org.terracotta.toolkit.ToolkitObjectType;
 import org.terracotta.toolkit.ToolkitRuntimeException;
 import org.terracotta.toolkit.cache.ToolkitCacheListener;
@@ -44,6 +42,7 @@ import com.tc.platform.PlatformService;
 import com.tc.server.ServerEvent;
 import com.tc.server.ServerEventType;
 import com.tc.server.VersionedServerEvent;
+import com.terracotta.toolkit.TerracottaToolkit;
 import com.terracotta.toolkit.abortable.ToolkitAbortableOperationException;
 import com.terracotta.toolkit.bulkload.LocalBufferedMap.Value;
 import com.terracotta.toolkit.cluster.TerracottaClusterInfo;
@@ -63,11 +62,15 @@ import com.terracotta.toolkit.config.UnclusteredConfiguration;
 import com.terracotta.toolkit.config.cache.InternalCacheConfigurationType;
 import com.terracotta.toolkit.object.DestroyApplicator;
 import com.terracotta.toolkit.object.ToolkitObjectStripe;
+import com.terracotta.toolkit.object.serialization.SerializationStrategy;
+import com.terracotta.toolkit.object.serialization.SerializedMapValue;
+import com.terracotta.toolkit.object.serialization.SerializedMapValueParameters;
 import com.terracotta.toolkit.search.SearchFactory;
 import com.terracotta.toolkit.search.SearchableEntity;
 import com.terracotta.toolkit.type.DistributedClusteredObjectLookup;
 import com.terracotta.toolkit.type.DistributedToolkitType;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -85,6 +88,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.terracotta.toolkit.config.ConfigUtil.distributeInStripes;
 
 public class AggregateServerMap<K, V> implements DistributedToolkitType<InternalToolkitMap<K, V>>,
     ToolkitCacheImplInterface<K, V>, ConfigChangeListener, ValuesResolver<K, V>, SearchableEntity,
@@ -807,7 +812,7 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
   @Override
   public void putVersioned(K key, V value, long version) {
     putVersioned(key, value, version, timeSource.nowInSeconds(), ToolkitConfigFields.NO_MAX_TTI_SECONDS,
-                 ToolkitConfigFields.NO_MAX_TTL_SECONDS);
+        ToolkitConfigFields.NO_MAX_TTL_SECONDS);
   }
 
   @Override
@@ -820,7 +825,7 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
   @Override
   public V put(K key, V value) {
     return put(key, value, timeSource.nowInSeconds(), ToolkitConfigFields.NO_MAX_TTI_SECONDS,
-               ToolkitConfigFields.NO_MAX_TTL_SECONDS);
+        ToolkitConfigFields.NO_MAX_TTL_SECONDS);
   }
 
   @Override
@@ -880,26 +885,46 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
         // Catch throwable here since the eviction listener will ultimately call user code.
         // That way we do not cause an unhandled exception to be thrown in a stage thread, bringing
         // down the L1.
-        LOGGER.error("Cache listener threw an exception.", t);
+        LOGGER.error("Cache listener threw an exception", t);
       }
     }
   }
 
   private void doHandleVersionUpdates(final VersionedServerEvent event) {
-    for (VersionUpdateListener listener : versionUpdateListeners) {
-      try {
-        switch (event.getType()) {
-          case PUT_LOCAL:
-            listener.onLocalPut(event.getKey(), event.getValue(), event.getVersion());
-            break;
-          case REMOVE_LOCAL:
-            listener.onLocalRemove(event.getKey(), event.getVersion());
-            break;
-        }
-      } catch (Exception e) {
-        LOGGER.error("Cache mutation listener threw an exception.", e);
+    final Object key = event.getKey();
+    final long version = event.getVersion();
+    final ServerEventType type = event.getType();
+
+    try {
+      switch (type) {
+        case PUT_LOCAL:
+          final V value = deserializeValue(key, event.getValue());
+          for (final VersionUpdateListener<K, V> listener : versionUpdateListeners) {
+            listener.onLocalPut((K) key, value, version);
+          }
+          break;
+        case REMOVE_LOCAL:
+          for (final VersionUpdateListener<K, V> listener : versionUpdateListeners) {
+            listener.onLocalRemove((K) key, version);
+          }
+          break;
       }
+    } catch (Exception e) {
+      throw new RuntimeException("Cache version update listener threw an exception", e);
     }
+  }
+
+  private V deserializeValue(final Object key, final byte[] value) throws IOException, ClassNotFoundException {
+    final int now = new SystemTimeSource().nowInSeconds();
+    final SerializedMapValueParameters<V> params = new SerializedMapValueParameters<V>()
+        .createTime(now).lastAccessedTime(now).serialized(value);
+    final SerializationStrategy serializationStrategy = platformService
+        .lookupRegisteredObjectByName(TerracottaToolkit.TOOLKIT_SERIALIZER_REGISTRATION_NAME,
+            SerializationStrategy.class);
+    final boolean compressionEnabled = serverMaps[0].isCompressionEnabled();
+
+    return (V) new SerializedMapValue(params).getDeserializedValue(
+        serializationStrategy, compressionEnabled, localCacheStore, key, false);
   }
 
   private static class AggregateServerMapIterator<E> implements Iterator<E> {
