@@ -31,8 +31,6 @@ public class DiagnosticTest extends AbstractTsaAgentTestBase {
   public DiagnosticTest(TestConfig testConfig) {
     super(testConfig);
 
-    timebombTest("2013-09-15");
-
     testConfig.getGroupConfig().setMemberCount(MEMBER_COUNT);
 
     testConfig.getClientConfig().setClientClasses(new Class[]{DiagnosticThreadDumpTestClient.class, DiagnosticDGCTestClient.class});
@@ -79,7 +77,7 @@ public class DiagnosticTest extends AbstractTsaAgentTestBase {
           put("Accept", "application/zip");
         }};
         byte[] bytes = getTsaRawContent(ConfigHelper.HOST, getGroupData(0).getTsaGroupPort(serverIndex),
-            "/tc-management-api/agents/diagnostics/threadDump", headers);
+            "/tc-management-api/agents/diagnostics/threadDumpArchive", headers);
 
         ZipInputStream zipInputStream = new ZipInputStream(new ByteArrayInputStream(bytes));
 
