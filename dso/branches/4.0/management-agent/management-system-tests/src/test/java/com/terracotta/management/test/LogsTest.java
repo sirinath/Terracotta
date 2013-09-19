@@ -24,7 +24,6 @@ public class LogsTest extends AbstractTsaAgentTestBase {
   public LogsTest(TestConfig testConfig) {
     super(testConfig);
 
-    timebombTest("2013-09-15");
     testConfig.getGroupConfig().setMemberCount(MEMBER_COUNT);
 
     testConfig.getClientConfig().setClientClasses(new Class[]{LogsTestClient.class});
@@ -38,7 +37,7 @@ public class LogsTest extends AbstractTsaAgentTestBase {
 
     @Override
     protected void doTsaTest() throws Throwable {
-      long testStart = System.currentTimeMillis();
+      long testStart = System.currentTimeMillis() - 15000;
 
       createLogEvents();
 
