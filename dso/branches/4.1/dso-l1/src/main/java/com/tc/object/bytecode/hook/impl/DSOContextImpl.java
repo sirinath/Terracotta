@@ -92,7 +92,7 @@ public class DSOContextImpl implements DSOContext {
   }
 
   public byte[] getSecret() {
-    return SecretProvider.getSecret();
+    return securityInfo.isSecure() ? SecretProvider.getSecret() : null;
   }
 
   private void startToolkitConfigurator() throws Exception {
