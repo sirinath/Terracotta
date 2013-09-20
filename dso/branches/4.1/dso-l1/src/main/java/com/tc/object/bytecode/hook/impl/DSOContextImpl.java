@@ -91,7 +91,7 @@ public class DSOContextImpl implements DSOContext {
     return AbstractClientFactory.getFactory().createClientSecurityManager(env);
   }
 
-  public byte[] getSecret(String foo) {
+  public byte[] getSecret() {
     return securityInfo.isSecure() ? SecretProvider.getSecret() : null;
   }
 
