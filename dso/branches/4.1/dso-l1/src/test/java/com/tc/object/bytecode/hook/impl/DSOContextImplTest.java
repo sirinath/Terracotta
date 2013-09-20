@@ -17,10 +17,9 @@ public class DSOContextImplTest {
 
   @Test
   public void testAccessorToSecretIsThere() {
-    final Method getSecret;
     try {
       // see com.terracotta.toolkit.express.TerracottaInternalClientImpl.setSecretHackOMFG()
-      getSecret = DSOContextImpl.class.getDeclaredMethod("getSecret");
+      final Method getSecret = DSOContextImpl.class.getDeclaredMethod("getSecret");
       assertThat(Modifier.isPublic(getSecret.getModifiers()), is(true));
       assertThat(getSecret.getReturnType(), sameInstance((Object) byte[].class));
     } catch (NoSuchMethodException e) {
