@@ -1,12 +1,6 @@
 package com.terracotta.management.test;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
-
 import net.sf.ehcache.CacheManager;
-
 import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -16,10 +10,13 @@ import com.tc.test.config.model.TestConfig;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertThat;
 
 /**
  * DiagnosticTest
@@ -73,11 +70,8 @@ public class DiagnosticTest extends AbstractTsaAgentTestBase {
 
     private void testZippedGroupThreadDump() throws IOException {
       for (int serverIndex = 0; serverIndex < MEMBER_COUNT; serverIndex++) {
-        Map<String, String> headers = new HashMap<String, String>() {{
-          put("Accept", "application/zip");
-        }};
         byte[] bytes = getTsaRawContent(ConfigHelper.HOST, getGroupData(0).getTsaGroupPort(serverIndex),
-            "/tc-management-api/agents/diagnostics/threadDumpArchive", headers);
+            "/tc-management-api/agents/diagnostics/threadDumpArchive");
 
         ZipInputStream zipInputStream = new ZipInputStream(new ByteArrayInputStream(bytes));
 

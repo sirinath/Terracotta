@@ -106,8 +106,8 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
 
     protected abstract void doTsaTest() throws Throwable;
 
-    protected byte[] getTsaRawContent(String host, int port, String path, Map<String,String> headers) throws IOException {
-      return httpRawGet("http://" + host + ":" + port + path, headers);
+    protected byte[] getTsaRawContent(String host, int port, String path) throws IOException {
+      return httpRawGet("http://" + host + ":" + port + path, null);
     }
 
     protected JSONArray getTsaJSONArrayContent(String host, int port, String path) throws IOException {
@@ -137,6 +137,7 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
       }
 
       baos.close();
+      inputStream.close();
       return baos.toByteArray();
     }
 
