@@ -35,7 +35,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -119,7 +118,8 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
 
     protected byte[] httpRawGet(String urlString, Map<String,String> headers) throws IOException {
       URL url = new URL(urlString);
-      URLConnection urlConnection = url.openConnection();
+      HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
+      urlConnection.addRequestProperty("Connection", "close");
 
       if (headers != null) {
         for (Map.Entry<String, String> entry : headers.entrySet()) {
@@ -143,7 +143,11 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
 
     protected String httpGet(String urlString) throws IOException {
       URL url = new URL(urlString);
-      InputStream inputStream = url.openStream();
+      HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
+      urlConnection.addRequestProperty("Connection", "close");
+      urlConnection.addRequestProperty("Accept", "application/json");
+
+      InputStream inputStream = urlConnection.getInputStream();
 
       StringBuilder sb = new StringBuilder();
       BufferedReader bufferedReader = null;
@@ -173,6 +177,7 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
         httpConnection.setRequestMethod("POST");
         httpConnection.setDoOutput(true); // Triggers POST.
         String charset = "UTF-8";
+        httpConnection.addRequestProperty("Connection", "close");
         httpConnection.setRequestProperty("Accept-Charset", charset);
         httpConnection.setRequestProperty("Content-Type", "application/json;charset=" + charset);
 
