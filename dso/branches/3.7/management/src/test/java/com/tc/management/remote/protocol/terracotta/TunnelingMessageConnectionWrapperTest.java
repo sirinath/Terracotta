@@ -28,7 +28,7 @@ public class TunnelingMessageConnectionWrapperTest extends TCTestCase {
     Thread[] initialThreads = ThreadDumpUtil.getAllThreads();
     MessageChannel mockChanel = Mockito.mock(MessageChannel.class);
     final CountDownLatch messageSendLatch = new CountDownLatch(1);
-    Mockito.when(mockChanel.createMessage((TCMessageType) Matchers.any())).then(new Answer<TCMessage>() {
+    Mockito.when(mockChanel.createMessage((TCMessageType) Matchers.any())).thenAnswer(new Answer<TCMessage>() {
 
       @Override
       public TCMessage answer(InvocationOnMock invocation) throws Throwable {
