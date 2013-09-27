@@ -17,15 +17,17 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.session.SessionID;
 import com.tc.test.TCTestCase;
 import com.tc.util.concurrent.ThreadUtil;
-import com.tc.util.runtime.ThreadDumpUtil;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.util.concurrent.CountDownLatch;
 
 import javax.management.remote.message.Message;
 
 public class TunnelingMessageConnectionWrapperTest extends TCTestCase {
   public void testClose() throws Exception {
-    Thread[] initialThreads = ThreadDumpUtil.getAllThreads();
+    ThreadMXBean bean = ManagementFactory.getThreadMXBean();
+    int initialThreads = bean.getThreadCount();
     MessageChannel mockChanel = Mockito.mock(MessageChannel.class);
     final CountDownLatch messageSendLatch = new CountDownLatch(1);
     Mockito.when(mockChanel.createMessage((TCMessageType) Matchers.any())).thenAnswer(new Answer<TCMessage>() {
@@ -49,9 +51,9 @@ public class TunnelingMessageConnectionWrapperTest extends TCTestCase {
     messageSendLatch.await();
     connection.close();
     ThreadUtil.reallySleep(2000);
-    Thread[] finalThreads = ThreadDumpUtil.getAllThreads();
-    if (finalThreads.length > initialThreads.length) {
-      System.out.println(ThreadDumpUtil.getThreadDump());
+    int finalThreads = bean.getThreadCount();
+    if (finalThreads > initialThreads) {
+      bean.dumpAllThreads(bean.isObjectMonitorUsageSupported(), bean.isSynchronizerUsageSupported());
       Assert.fail();
     }
   }
