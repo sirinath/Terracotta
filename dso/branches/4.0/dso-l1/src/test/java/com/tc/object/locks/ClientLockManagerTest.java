@@ -34,6 +34,7 @@ import com.tc.object.session.SessionProvider;
 import com.tc.object.session.TestSessionManager;
 import com.tc.test.TCTestCase;
 import com.tc.util.Assert;
+import com.tc.util.CallableWaiter;
 import com.tc.util.concurrent.NoExceptionLinkedQueue;
 import com.tc.util.concurrent.Runners;
 import com.tc.util.concurrent.TaskRunner;
@@ -51,6 +52,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 public class ClientLockManagerTest extends TCTestCase {
   private ClientLockManagerImpl                  lockManager;
@@ -119,10 +121,12 @@ public class ClientLockManagerTest extends TCTestCase {
     threadManager.setThreadID(threadID1);
     clientLockManagerImpl.lock(lockID1, LockLevel.WRITE);
     clientLockManagerImpl.unlock(lockID1, LockLevel.WRITE);
-
-    ThreadUtil.reallySleep(400);
-
-    assertEquals(0, clientLockManagerImpl.runLockGc());
+    CallableWaiter.waitOnCallable(new Callable<Boolean>() {
+      @Override
+      public Boolean call() {
+        return clientLockManagerImpl.getAllLockContexts().isEmpty();
+      }
+    });
 
     // now change the timeout to a much higher number
     testClientLockManagerConfig.setTimeoutInterval(Long.MAX_VALUE);
@@ -131,7 +135,7 @@ public class ClientLockManagerTest extends TCTestCase {
 
     clientLockManagerImpl.unlock(lockID1, LockLevel.WRITE);
 
-    assertEquals(1, clientLockManagerImpl.runLockGc());
+    assertEquals(1, clientLockManagerImpl.getAllLockContexts().size());
   }
 
   public void testRunGCWithAHeldLock() throws Exception {
