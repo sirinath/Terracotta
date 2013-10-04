@@ -49,8 +49,7 @@ public class ClientConnectionEstablisher {
   private final TCConnectionManager         connManager;
   private final AtomicBoolean               asyncReconnecting     = new AtomicBoolean(false);
   private final AtomicBoolean               allowReconnects       = new AtomicBoolean(true);
-
-  private volatile AsyncReconnect           connectionEstablisher;
+  private volatile AsyncReconnect           asyncReconnect;
 
   private final ReconnectionRejectedHandler reconnectionRejectedHandler;
 
@@ -73,7 +72,7 @@ public class ClientConnectionEstablisher {
     this.maxReconnectTries = maxReconnectTries;
     this.timeout = timeout;
     this.reconnectionRejectedHandler = reconnectionRejectedHandler;
-    this.connectionEstablisher = new AsyncReconnect(this);
+    this.asyncReconnect = new AsyncReconnect(this);
 
     if (maxReconnectTries == 0) {
       this.desc = "none";
@@ -86,7 +85,8 @@ public class ClientConnectionEstablisher {
   }
 
   public void reset() {
-    this.connectionEstablisher = new AsyncReconnect(this);
+    quitReconnectAttempts();
+    this.asyncReconnect = new AsyncReconnect(this);
   }
 
   /**
@@ -167,9 +167,10 @@ public class ClientConnectionEstablisher {
 
       this.asyncReconnecting.set(true);
       boolean reconnectionRejected = false;
-      for (int i = 0; ((this.maxReconnectTries < 0) || (i < this.maxReconnectTries)) && !connected; i++) {
+      for (int i = 0; ((this.maxReconnectTries < 0) || (i < this.maxReconnectTries)) && !connected
+                      && isReconnectBetweenL2s(); i++) {
         ConnectionAddressIterator addresses = this.connAddressProvider.getIterator();
-        while (addresses.hasNext() && !connected) {
+        while (addresses.hasNext() && !connected && isReconnectBetweenL2s()) {
 
           if (reconnectionRejected) {
             if (reconnectionRejectedHandler.isRetryOnReconnectionRejected()) {
@@ -233,6 +234,11 @@ public class ClientConnectionEstablisher {
     }
   }
 
+  // TRUE for L2, for L1 only if not stopped
+  private boolean isReconnectBetweenL2s() {
+    return reconnectionRejectedHandler.isRetryOnReconnectionRejected() || !asyncReconnect.isStopped();
+  }
+
   private void restoreConnection(ClientMessageTransport cmt, TCSocketAddress sa, long timeoutMillis,
                                  RestoreConnectionCallback callback) throws MaxConnectionsExceededException {
     final long deadline = System.currentTimeMillis() + timeoutMillis;
@@ -245,7 +251,7 @@ public class ClientConnectionEstablisher {
     this.asyncReconnecting.set(true);
     try {
       boolean reconnectionRejected = false;
-      while (!connected) {
+      while (!connected && isReconnectBetweenL2s()) {
 
         if (reconnectionRejected) {
           if (reconnectionRejectedHandler.isRetryOnReconnectionRejected()) {
@@ -317,24 +323,31 @@ public class ClientConnectionEstablisher {
   }
 
   private void putConnectionRequest(ConnectionRequest request) {
-    if (!this.allowReconnects.get() || connectionEstablisher.isStopped()) {
+
+    // we should ignore adding any connection request if allowReconnects is false and
+    // either this code is running for l2 or this CCE thread is not marked stopped
+    if (!this.allowReconnects.get() || asyncReconnect.isStopped()) {
       LOGGER.info("Ignoring connection request: " + request + " as allowReconnects: " + allowReconnects.get()
-                  + ", connectionEstablisher.isStopped(): " + connectionEstablisher.isStopped());
+                  + ", asyncReconnect.isStopped(): " + asyncReconnect.isStopped());
       return;
     }
 
     // Allow the async thread reconnects/restores only when cmt was connected atleast once
     if (request.getClientMessageTransport() != null && request.getClientMessageTransport().wasOpened()) {
-      connectionEstablisher.startThreadIfNecessary();
-      this.connectionEstablisher.putConnectionRequest(request);
+      asyncReconnect.startThreadIfNecessary();
+      this.asyncReconnect.putConnectionRequest(request);
     } else {
       LOGGER.info("Ignoring connection request as transport was not connected even once");
     }
   }
 
   public void quitReconnectAttempts() {
-    connectionEstablisher.stop();
-    this.allowReconnects.set(false);
+    if (allowReconnects.compareAndSet(true, false)) {
+      asyncReconnect.stop();
+      if (!isReconnectBetweenL2s()) {
+        this.asyncReconnect.waitforTermination();
+      }
+    }
   }
 
   static class AsyncReconnect implements Runnable {
@@ -343,6 +356,7 @@ public class ClientConnectionEstablisher {
     private final AtomicBoolean               threadStarted      = new AtomicBoolean(false);
     private volatile boolean                  stopped            = false;
     private final Queue<ConnectionRequest>    connectionRequests = new LinkedList<ClientConnectionEstablisher.ConnectionRequest>();
+    private Thread                            connectionEstablisherThread;
 
     public AsyncReconnect(ClientConnectionEstablisher cce) {
       this.cce = cce;
@@ -350,6 +364,24 @@ public class ClientConnectionEstablisher {
 
     public boolean isStopped() {
       return stopped;
+    }
+
+    private void waitforTermination() {
+      synchronized (this) {
+        connectionRequests.clear();
+      }
+      boolean isInterrupted = false;
+      try {
+        if (Thread.currentThread() != connectionEstablisherThread && connectionEstablisherThread != null) {
+          connectionEstablisherThread.interrupt();
+          connectionEstablisherThread.join();
+        }
+      } catch (InterruptedException e) {
+        LOGGER.warn("Got interrupted while waiting for connectionEstablisherThread to complete");
+        isInterrupted = true;
+      } finally {
+        Util.selfInterruptIfNeeded(isInterrupted);
+      }
     }
 
     public synchronized void stop() {
@@ -385,6 +417,7 @@ public class ClientConnectionEstablisher {
         Thread thread = new Thread(this, RECONNECT_THREAD_NAME + "-" + cce.connAddressProvider.getGroupId());
         thread.setDaemon(true);
         thread.start();
+        connectionEstablisherThread = thread;
       }
     }
 
