@@ -28,7 +28,6 @@ import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.GroupMessageListener;
 import com.tc.net.groups.GroupResponse;
-import com.tc.object.ObjectID;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.context.DGCResultContext;
 import com.tc.objectserver.dgc.api.GarbageCollectionInfo;
@@ -46,13 +45,14 @@ import com.tc.util.sequence.SequenceGenerator.SequenceGeneratorException;
 import com.terracottatech.config.Offheap;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, GroupMessageListener,
     L2ObjectStateListener, L2IndexStateListener {
@@ -74,7 +74,7 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
   private final L2ObjectStateManager         l2ObjectStateManager;
   private final Offheap                      offheapConfig;
 
-  private final AtomicReference<NodeID>      syncedFrom = new AtomicReference<NodeID>();
+  private final AtomicBoolean                syncStarted = new AtomicBoolean();
 
   public ReplicatedObjectManagerImpl(final GroupManager groupManager, final StateManager stateManager,
                                      final L2PassiveSyncStateManager l2PassiveSyncStateManager,
@@ -109,37 +109,39 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
    * returns nobody is allowed to join the cluster with existing objects.
    */
   @Override
-  public void sync() {
+  public synchronized void sync() {
     try {
       final GroupResponse gr = this.groupManager.sendAllAndWaitForResponse(ObjectListSyncMessageFactory
           .createObjectListSyncRequestMessage());
-      final Map<NodeID, SyncingPassiveValue> nodeIDSyncingPassives = new LinkedHashMap<NodeID, SyncingPassiveValue>();
+      final Map<NodeID, PassiveSyncState> nodeIDSyncingPassives = new LinkedHashMap<NodeID, PassiveSyncState>();
       for (GroupMessage groupMessage : gr.getResponses()) {
-        final ObjectListSyncMessage msg = (ObjectListSyncMessage) groupMessage;
+        final ObjectListSyncMessage msg = (ObjectListSyncMessage)groupMessage;
         if (msg.getType() == ObjectListSyncMessage.RESPONSE) {
           State curState = msg.getCurrentState();
-          // Zap all uninitialized passives joining with # of objects > 0
-          if (StateManager.PASSIVE_UNINITIALIZED.equals(curState) && !msg.isSyncAllowed()) {
+          if (gcMonitor.isPassiveSyncedOrSyncing(msg.messageFrom())) {
+            logger.info("Passive " + msg.messageFrom() + " is already syncing.");
+          } else if (StateManager.PASSIVE_UNINITIALIZED.equals(curState) && !msg.isSyncAllowed()) {
+            // Zap all uninitialized passives joining with # of objects > 0
             logger.error("Syncing to partially synced passives not supported, msg: " + msg);
             this.groupManager.zapNode(msg.messageFrom(), L2HAZapNodeRequestProcessor.PARTIALLY_SYNCED_PASSIVE_JOINED,
-                                      "Passive : " + msg.messageFrom() + " joined in partially synced state. "
-                                          + L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
+                "Passive : " + msg.messageFrom() + " joined in partially synced state. "
+                + L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
           } else if (StateManager.PASSIVE_UNINITIALIZED.equals(curState) && !msg.isCleanDB()) {
             logger.error("Syncing to passives which were restarted before active is not supported. msg : " + msg);
             this.groupManager.zapNode(msg.messageFrom(), L2HAZapNodeRequestProcessor.NODE_JOINED_WITH_DIRTY_DB,
                 "Passive : " + msg.messageFrom() + " was restarted before active." +
                 L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
           } else if (checkForSufficientResources(msg)) {
-            nodeIDSyncingPassives.put(msg.messageFrom(), new SyncingPassiveValue(new ObjectIDSet(), curState));
+            nodeIDSyncingPassives.put(msg.messageFrom(), new PassiveSyncState(curState));
           }
         } else {
           logger.error("Received wrong response for ObjectListSyncMessage Request  from " + msg.messageFrom()
                        + " : msg : " + msg);
           this.groupManager.zapNode(msg.messageFrom(),
-                                    L2HAZapNodeRequestProcessor.PROGRAM_ERROR,
-                                    "Recd wrong response from : " + msg.messageFrom()
-                                        + " for ObjectListSyncMessage Request"
-                                        + L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
+              L2HAZapNodeRequestProcessor.PROGRAM_ERROR,
+              "Recd wrong response from : " + msg.messageFrom()
+              + " for ObjectListSyncMessage Request"
+              + L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
         }
       }
 
@@ -200,7 +202,7 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
       return;
     }
     this.objectManager.getGarbageCollector().deleteGarbage(new DGCResultContext(gcedOids, gcMsg.getGCInfo()));
-    getGCMonitor().garbageCollectorCycleCompleted(gcMsg.getGCInfo(), TCCollections.EMPTY_OBJECT_ID_SET);
+    gcMonitor.garbageCollectorCycleCompleted(gcMsg.getGCInfo(), TCCollections.EMPTY_OBJECT_ID_SET);
   }
 
   private void handleClusterObjectMessage(final NodeID nodeID, final ObjectListSyncMessage clusterMsg) {
@@ -231,20 +233,26 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
                               error + L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
   }
 
-  private void handleObjectListResponse(final NodeID nodeID, final ObjectListSyncMessage clusterMsg) {
+  private synchronized void handleObjectListResponse(final NodeID nodeID, final ObjectListSyncMessage clusterMsg) {
     Assert.assertTrue(this.stateManager.isActiveCoordinator());
 
+    if (gcMonitor.isPassiveSyncedOrSyncing(nodeID)) {
+      logger.info("Sync for passive node " + nodeID + " has already been initiated. Ignoring second request.");
+      return;
+    }
 
-    if (!clusterMsg.isSyncAllowed() || !clusterMsg.isCleanDB()) {
-      final StringBuilder error = new StringBuilder();
-      if (!clusterMsg.isCleanDB()) {
-        error.append("Node with a stale Database is trying to join the cluster. isCleanDB: " + clusterMsg.isCleanDB());
-      } else {
-        error.append("Node joined after being partially synced with another active.");
-      }
-      logger.error(error.toString() + " Forcing node to Quit !!");
+    if (StateManager.PASSIVE_STANDBY.equals(clusterMsg.getCurrentState())) {
+      logger.error("Node " + nodeID + " joined as " + StateManager.PASSIVE_STANDBY + " without a sync.");
       this.groupManager.zapNode(nodeID, L2HAZapNodeRequestProcessor.NODE_JOINED_WITH_DIRTY_DB,
-                                error + L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
+                                "Already passive standby. " + L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
+    } else if (!clusterMsg.isSyncAllowed()) {
+      logger.error("Node " + nodeID +" has declared that it is not allowed to sync. Zapping it so it can rejoin.");
+      this.groupManager.zapNode(nodeID, L2HAZapNodeRequestProcessor.NODE_JOINED_WITH_DIRTY_DB,
+          "Already synced once. " + L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
+    } else if (!clusterMsg.isCleanDB()) {
+      logger.error("Node " + nodeID +" does not have a clean db. Zapping it so it can rejoin.");
+      this.groupManager.zapNode(nodeID, L2HAZapNodeRequestProcessor.NODE_JOINED_WITH_DIRTY_DB,
+          "Dirty db " + L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
     } else {
       // DEV-1944 : We don't want newly joined nodes to be syncing the Objects while the active is receiving the re-sent
       // transactions. If we do that there is a race where passive can apply already applied transactions twice.
@@ -252,20 +260,12 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
       if (!checkForSufficientResources(clusterMsg)) {
         return;   // Only check for sufficient resources on the new passive if it was shut down after the active and is not a candidate for zapping due to dirty db.
       }
-      ReplicatedObjectManagerImpl.this.transactionManager
-          .callBackOnResentTxnsInSystemCompletion(new TxnsInSystemCompletionListener() {
-            @Override
-            public void onCompletion() {
-              ReplicatedObjectManagerImpl.this.gcMonitor.add2L2StateManagerWhenGCDisabled(nodeID,
-                                                                                          new ObjectIDSet(),
-                                                                                          clusterMsg.getCurrentState());
-            }
-          });
+      gcMonitor.addL2StateOnTransactionCompletion(nodeID, clusterMsg.getCurrentState());
     }
   }
 
-  private boolean add2L2StateManager(final NodeID nodeID, final State currentState, final Set<ObjectID> oids) {
-    return this.passiveSyncStateManager.addL2(nodeID, oids, currentState);
+  private boolean add2L2StateManager(final NodeID nodeID, final State currentState) {
+    return passiveSyncStateManager.addL2(nodeID, currentState);
   }
 
   @Override
@@ -374,9 +374,9 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
           // Handle requests multiple list requests from the same instance of the active. This could happen when the active
           // first starts up. This node joining could trigger one object list request while the active running the sync() method
           // will trigger the other.
-          boolean syncAllowed = syncedFrom.compareAndSet(null, clusterMsg.messageFrom()) || syncedFrom.get().equals(clusterMsg.messageFrom());
+          boolean syncAllowed = syncStarted.compareAndSet(false, true);
           logger.info("Send response to Active's query : syncAllowed = " + syncAllowed + " isCleanDB="
-                      + isCleanDB + " currentState=" + clusterMsg.getCurrentState() + " offheapEnabled=" + offheapConfig.getEnabled() +
+                      + isCleanDB + " currentState=" + stateManager.getCurrentState() + " offheapEnabled=" + offheapConfig.getEnabled() +
                       " resource total=" + getResourceTotal());
           try {
             groupManager.sendTo(nodeID, ObjectListSyncMessageFactory
@@ -445,22 +445,24 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     }
   }
 
-  private static final SyncingPassiveValue ADDED = new SyncingPassiveValue();
+  private static final PassiveSyncState ADDED = new PassiveSyncState();
+  private static final PassiveSyncState WAITING_FOR_TXN = new PassiveSyncState();
 
-  public final class GCMonitor extends GarbageCollectorEventListenerAdapter {
+  final class GCMonitor extends GarbageCollectorEventListenerAdapter {
 
     boolean                          disabled        = false;
-    Map<NodeID, SyncingPassiveValue> syncingPassives = new HashMap<NodeID, SyncingPassiveValue>();
+    final Map<NodeID, PassiveSyncState> syncingPassives = new HashMap<NodeID, PassiveSyncState>();
+    final Set<NodeID> syncedPassives = new HashSet<NodeID>();
 
     @Override
     public void garbageCollectorCycleCompleted(final GarbageCollectionInfo info, final ObjectIDSet toDeleted) {
-      Map<NodeID, SyncingPassiveValue> toAdd = null;
+      Map<NodeID, PassiveSyncState> toAdd = null;
       notifyGCResultToPassives(info, toDeleted);
       boolean havePassivesToSync = false;
       synchronized (this) {
-        if (this.syncingPassives.isEmpty()) { return; }
-        toAdd = new LinkedHashMap<NodeID, SyncingPassiveValue>();
-        for (Entry<NodeID, SyncingPassiveValue> e : this.syncingPassives.entrySet()) {
+        if (syncingPassives.isEmpty()) { return; }
+        toAdd = new LinkedHashMap<NodeID, PassiveSyncState>();
+        for (Entry<NodeID, PassiveSyncState> e : syncingPassives.entrySet()) {
           if (e.getValue() != ADDED) {
             final NodeID nodeID = e.getKey();
             logger.info("DGC Completed : Starting scheduled passive sync for " + nodeID);
@@ -475,6 +477,20 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
         assertGCDisabled();
         add2L2StateManager(toAdd);
       }
+    }
+
+    synchronized boolean isPassiveSyncedOrSyncing(NodeID nodeID) {
+      return syncingPassives.containsKey(nodeID) || syncedPassives.contains(nodeID);
+    }
+
+    synchronized void addL2StateOnTransactionCompletion(final NodeID nodeID, final State state) {
+      syncingPassives.put(nodeID, WAITING_FOR_TXN);
+      transactionManager.callBackOnResentTxnsInSystemCompletion(new TxnsInSystemCompletionListener() {
+        @Override
+        public void onCompletion() {
+          add2L2StateManagerWhenGCDisabled(nodeID, state);
+        }
+      });
     }
 
     private void notifyGCResultToPassives(final GarbageCollectionInfo gcInfo, final ObjectIDSet deleted) {
@@ -496,11 +512,11 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
           });
     }
 
-    private void add2L2StateManager(final Map<NodeID, SyncingPassiveValue> toAdd) {
-      for (Entry<NodeID, SyncingPassiveValue> e : toAdd.entrySet()) {
+    private void add2L2StateManager(final Map<NodeID, PassiveSyncState> toAdd) {
+      for (Entry<NodeID, PassiveSyncState> e : toAdd.entrySet()) {
         final NodeID nodeID = e.getKey();
-        final SyncingPassiveValue value = e.getValue();
-        if (!ReplicatedObjectManagerImpl.this.add2L2StateManager(nodeID, value.getCurrentState(), value.getOids())) {
+        final PassiveSyncState value = e.getValue();
+        if (!ReplicatedObjectManagerImpl.this.add2L2StateManager(nodeID, value.getCurrentState())) {
           logger.warn(nodeID + " is already added to L2StateManager, clearing our internal data structures.");
           syncCompleteFor(nodeID);
         }
@@ -523,26 +539,26 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
       if (!this.disabled) { throw new AssertionError("DGC is not disabled"); }
     }
 
-    public void add2L2StateManagerWhenGCDisabled(final NodeID nodeID, final Set<ObjectID> oids, final State currentState) {
+    public void add2L2StateManagerWhenGCDisabled(final NodeID nodeID, final State currentState) {
       boolean toAdd = false;
       synchronized (this) {
         disableGCIfPossible();
-        if (this.syncingPassives.containsKey(nodeID)) {
+        if (syncingPassives.containsKey(nodeID) && syncingPassives.get(nodeID) != WAITING_FOR_TXN) {
           logger.warn("Not adding " + nodeID + " since it is already present in syncingPassives : "
                       + this.syncingPassives.keySet());
           return;
         }
         if (this.disabled) {
-          this.syncingPassives.put(nodeID, ADDED);
+          syncingPassives.put(nodeID, ADDED);
           toAdd = true;
         } else {
           logger
               .info("Couldnt disable DGC, probably because DGC is currently running. So scheduling passive sync up for later after DGC completion");
-          this.syncingPassives.put(nodeID, new SyncingPassiveValue(oids, currentState));
+          syncingPassives.put(nodeID, new PassiveSyncState(currentState));
         }
       }
       if (toAdd) {
-        if (!ReplicatedObjectManagerImpl.this.add2L2StateManager(nodeID, currentState, oids)) {
+        if (!ReplicatedObjectManagerImpl.this.add2L2StateManager(nodeID, currentState)) {
           logger.warn(nodeID + " is already added to L2StateManager, clearing our internal data structures.");
           syncCompleteFor(nodeID);
         }
@@ -550,14 +566,15 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     }
 
     public synchronized void clear(final NodeID nodeID) {
-      final Object val = this.syncingPassives.remove(nodeID);
+      final Object val = syncingPassives.remove(nodeID);
       if (val != null) {
         enableGCIfNecessary();
       }
+      syncedPassives.remove(nodeID);
     }
 
     private void enableGCIfNecessary() {
-      if (this.syncingPassives.isEmpty() && this.disabled) {
+      if (syncingPassives.isEmpty() && disabled) {
         logger.info("Reenabling DGC as all passive are synced up");
         ReplicatedObjectManagerImpl.this.objectManager.getGarbageCollector().enableGC();
         this.disabled = false;
@@ -565,16 +582,17 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     }
 
     public synchronized void syncCompleteFor(final NodeID nodeID) {
-      final Object val = this.syncingPassives.remove(nodeID);
+      final Object val = syncingPassives.remove(nodeID);
       // value could be null if the node disconnects before fully synching up.
-      Assert.assertTrue(val == ADDED || val == null);
+      Assert.assertTrue(val == WAITING_FOR_TXN || val == ADDED || val == null);
       if (val != null) {
+        syncedPassives.add(nodeID);
         Assert.assertTrue(this.disabled);
         enableGCIfNecessary();
       }
     }
 
-    public void disableAndAdd2L2StateManager(final Map<NodeID, SyncingPassiveValue> nodeID2ObjectIDs) {
+    public void disableAndAdd2L2StateManager(final Map<NodeID, PassiveSyncState> nodeID2ObjectIDs) {
       synchronized (this) {
         if (nodeID2ObjectIDs.size() > 0 && !this.disabled) {
           logger.info("Disabling DGC since " + nodeID2ObjectIDs.size() + " passives [" + nodeID2ObjectIDs.keySet()
@@ -582,13 +600,13 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
           disableGC();
           assertGCDisabled();
         }
-        for (final Iterator<Entry<NodeID, SyncingPassiveValue>> i = nodeID2ObjectIDs.entrySet().iterator(); i.hasNext();) {
-          final Entry<NodeID, SyncingPassiveValue> e = i.next();
+        for (final Iterator<Entry<NodeID, PassiveSyncState>> i = nodeID2ObjectIDs.entrySet().iterator(); i.hasNext();) {
+          final Entry<NodeID, PassiveSyncState> e = i.next();
           final NodeID nodeID = e.getKey();
           // XXX: syncingPassives can contain the node and still not ADDED state as the DGC was not disabled. They
           // contain syncingPassiveValue. So, you are missing to sync them here.
-          if (!this.syncingPassives.containsKey(nodeID)) {
-            this.syncingPassives.put(nodeID, ADDED);
+          if (!syncingPassives.containsKey(nodeID)) {
+            syncingPassives.put(nodeID, ADDED);
           } else {
             logger.info("Removing " + nodeID
                         + " from the list to add to L2ObjectStateManager since its present in syncingPassives : "
@@ -601,21 +619,15 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     }
   }
 
-  private static class SyncingPassiveValue {
-    protected final Set<ObjectID> oids;
+  private static class PassiveSyncState {
     protected final State         currentState;
 
-    public SyncingPassiveValue() {
-      this(TCCollections.EMPTY_OBJECT_ID_SET, new State("NO_STATE"));
+    public PassiveSyncState() {
+      this(new State("NO_STATE"));
     }
 
-    public SyncingPassiveValue(Set<ObjectID> oids, State currentState) {
-      this.oids = oids;
+    public PassiveSyncState(State currentState) {
       this.currentState = currentState;
-    }
-
-    public Set<ObjectID> getOids() {
-      return oids;
     }
 
     public State getCurrentState() {
@@ -623,10 +635,4 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     }
 
   }
-
-  // strictly for tests
-  public GCMonitor getGCMonitor() {
-    return this.gcMonitor;
-  }
-
 }
