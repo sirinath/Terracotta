@@ -256,13 +256,13 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                              final DGCSequenceProvider dgcSequenceProvider,
                                              final SequenceGenerator indexSequenceGenerator,
                                              final ObjectIDSequence objectIDSequence, final Offheap offheapConfig,
-                                             int electionTimeInSecs) {
+                                             int electionTimeInSecs, final String initialState) {
     return new L2HACoordinator(consoleLogger, server, stageManager, groupCommsManager, persistentMapStore,
                                objectManager, indexHACoordinator, l2PassiveSyncStateManager, l2ObjectStateManager,
                                l2IndexStateManager, transactionManager, gtxm, weightGeneratorFactory,
                                configurationSetupManager, recycler, this.thisGroupID, stripeStateManager,
                                serverTransactionFactory, dgcSequenceProvider, indexSequenceGenerator, objectIDSequence,
-                               offheapConfig, electionTimeInSecs);
+                               offheapConfig, electionTimeInSecs, initialState);
   }
 
   @Override
