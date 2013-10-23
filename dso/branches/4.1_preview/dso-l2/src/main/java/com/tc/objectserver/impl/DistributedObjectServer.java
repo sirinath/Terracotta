@@ -32,6 +32,7 @@ import com.tc.io.TCFile;
 import com.tc.io.TCFileImpl;
 import com.tc.io.TCRandomFileAccessImpl;
 import com.tc.l2.api.L2Coordinator;
+import com.tc.l2.ha.ClusterStateDBKeyNames;
 import com.tc.l2.ha.HASettingsChecker;
 import com.tc.l2.ha.StripeIDStateManagerImpl;
 import com.tc.l2.ha.WeightGeneratorFactory;
@@ -530,6 +531,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     }
 
     persistor = serverBuilder.createPersistor(restartable, configSetupManager.commonl2Config().dataPath(), l2State);
+    String initialState = persistor.getPersistentStateStore().get(ClusterStateDBKeyNames.L2_STATE_KEY);
     dumpHandler.registerForDump(new CallbackDumpAdapter(persistor));
     persistor.start();
 
@@ -1020,7 +1022,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                   dgcSequenceProvider, indexSequenceGenerator,
                                                                   objectIDSequence, l2DSOConfig.getOffheap(),
                                                                   configSetupManager.getActiveServerGroupForThisL2()
-                                                                      .getElectionTimeInSecs());
+                                                                      .getElectionTimeInSecs(), initialState);
     this.l2Coordinator.getStateManager().registerForStateChangeEvents(this.l2State);
     this.l2Coordinator.getStateManager().registerForStateChangeEvents(this.indexHACoordinator);
     this.l2Coordinator.getStateManager().registerForStateChangeEvents(this.l2Coordinator);
