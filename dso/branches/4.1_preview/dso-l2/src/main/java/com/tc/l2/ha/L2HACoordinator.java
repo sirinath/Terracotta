@@ -106,7 +106,7 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
   private final L2PassiveSyncStateManager                 l2PassiveSyncStateManager;
   private final L2ObjectStateManager                      l2ObjectStateManager;
   private boolean                                         isCleanDB;
-  private final PersistentMapStore                        persistentStateStore;
+  private final String                                    initialState;
 
   public L2HACoordinator(final TCLogger consoleLogger, final DistributedObjectServer server,
                          final StageManager stageManager, final GroupManager groupCommsManager,
@@ -122,7 +122,7 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
                          final ServerTransactionFactory serverTransactionFactory,
                          DGCSequenceProvider dgcSequenceProvider, SequenceGenerator indexSequenceGenerator,
                          final ObjectIDSequence objectIDSequence, final Offheap offheapConfig,
-                         int electionTimInSecs) {
+                         int electionTimInSecs, final String initialState) {
     this.consoleLogger = consoleLogger;
     this.server = server;
     this.groupManager = groupCommsManager;
@@ -131,7 +131,7 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
     this.l2PassiveSyncStateManager = l2PassiveSyncStateManager;
     this.indexSequenceGenerator = indexSequenceGenerator;
     this.l2ObjectStateManager = l2ObjectStateManager;
-    this.persistentStateStore = persistentStateStore;
+    this.initialState = initialState;
 
     init(stageManager, persistentStateStore, l2ObjectStateManager, l2IndexStateManager, objectManager,
          indexHACoordinator, transactionManager, gtxm, weightGeneratorFactory, recycler, stripeIDStateManager,
@@ -300,7 +300,7 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
   }
 
   private State getStateBeforeRestart() {
-    String stateStr = persistentStateStore.get(ClusterStateDBKeyNames.L2_STATE_KEY);
+    String stateStr = initialState;
 
     return stateStr == null /* case when Server is started for the first time */
     ? null : new State(stateStr);

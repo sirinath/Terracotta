@@ -148,7 +148,7 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                       ServerTransactionFactory serverTransactionFactory,
                                       DGCSequenceProvider dgcSequenceProvider,
                                       SequenceGenerator indexSequenceGenerator, ObjectIDSequence objectIDSequence,
-                                      final Offheap offheapConfig, int electionTimeInSecs);
+                                      final Offheap offheapConfig, int electionTimeInSecs, final String initialState);
 
   L2Management createL2Management(TCServerInfoMBean tcServerInfoMBean, LockStatisticsMonitor lockStatisticsMBean,
                                   L2ConfigurationSetupManager configSetupManager,
