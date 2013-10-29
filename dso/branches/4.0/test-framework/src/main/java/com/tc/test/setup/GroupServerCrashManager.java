@@ -50,14 +50,14 @@ public class GroupServerCrashManager implements Runnable {
             debug("about to crash active servers in all groups");
             serverManager.crashActiveAndWaitForPassiveToTakeOver();
             debug("about to restart last crashed servers in all groups");
-            serverManager.restartLastCrashedServer();
           } else if (getCrashConfig().getCrashMode().equals(ServerCrashMode.RANDOM_SERVER_CRASH)) {
             debug("about to crash server");
             serverManager.crashRandomServer();
             debug("about to restart crashed server");
+          }
+          if (!done) {
             serverManager.restartLastCrashedServer();
           }
-
           crashCount++;
         } catch (Exception e) {
           debug("Error occured while crashing/restarting server");
