@@ -78,6 +78,7 @@ public class GroupServerManager {
   private final TestFailureListener testFailureCallback;
   private final boolean             renameDataDir         = false;
   private volatile boolean          stopped               = false;
+  private Thread                    crasherThread;
 
   private final class ServerExitCallback implements MonitoringServerControl.MonitoringServerControlExitCallback {
 
@@ -809,9 +810,9 @@ public class GroupServerManager {
 
   public void startCrasher() {
     if (crasherStarted.compareAndSet(false, true)) {
-    if (!testConfig.getCrashConfig().getCrashMode().equals(ServerCrashMode.NO_CRASH)
-        && !testConfig.getCrashConfig().getCrashMode().equals(ServerCrashMode.CUSTOMIZED_CRASH)) {
-        Thread crasherThread = new Thread(serverCrasher);
+      if (!testConfig.getCrashConfig().getCrashMode().equals(ServerCrashMode.NO_CRASH)
+          && !testConfig.getCrashConfig().getCrashMode().equals(ServerCrashMode.CUSTOMIZED_CRASH)) {
+        crasherThread = new Thread(serverCrasher);
         crasherThread.setDaemon(true);
         crasherThread.start();
       }
@@ -820,8 +821,11 @@ public class GroupServerManager {
     }
   }
 
-  public void stopCrasher() {
+  public void stopCrasher() throws InterruptedException {
     this.serverCrasher.stop();
+    if (!testConfig.getCrashConfig().getCrashMode().equals(ServerCrashMode.NO_CRASH)) {
+      crasherThread.join();
+    }
   }
 
   public synchronized void closeTsaProxyOnActiveServer() {
