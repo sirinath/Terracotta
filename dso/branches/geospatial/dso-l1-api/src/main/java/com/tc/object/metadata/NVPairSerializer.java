@@ -15,12 +15,14 @@ import com.terracottatech.search.AbstractNVPair.DoubleNVPair;
 import com.terracottatech.search.AbstractNVPair.EnumNVPair;
 import com.terracottatech.search.AbstractNVPair.FloatNVPair;
 import com.terracottatech.search.AbstractNVPair.IntNVPair;
+import com.terracottatech.search.AbstractNVPair.LatLongNVPair;
 import com.terracottatech.search.AbstractNVPair.LongNVPair;
 import com.terracottatech.search.AbstractNVPair.NullNVPair;
 import com.terracottatech.search.AbstractNVPair.ShortNVPair;
 import com.terracottatech.search.AbstractNVPair.SqlDateNVPair;
 import com.terracottatech.search.AbstractNVPair.StringNVPair;
 import com.terracottatech.search.AbstractNVPair.ValueIdNVPair;
+import com.terracottatech.search.LatLongCoordinate;
 import com.terracottatech.search.NVPair;
 import com.terracottatech.search.ValueID;
 import com.terracottatech.search.ValueType;
@@ -93,6 +95,10 @@ public class NVPairSerializer {
       case VALUE_ID:
         out.writeLong(((ValueIdNVPair) nvPair).getValue().toLong());
         return;
+      case LATLONGCOORDINATE:
+        out.writeDouble(((LatLongNVPair)nvPair).getLatLongCoordinate().getLat());
+        out.writeDouble(((LatLongNVPair) nvPair).getLatLongCoordinate().getLon());
+        return;
     }
 
     throw new AssertionError("Unknown type: " + type);
@@ -139,6 +145,8 @@ public class NVPairSerializer {
         return new StringNVPair(name, new String(serializer.readStringBytes(in), "UTF-8"));
       case VALUE_ID:
         return new ValueIdNVPair(name, new ValueID(in.readLong()));
+      case LATLONGCOORDINATE:
+        return new LatLongNVPair(name, new LatLongCoordinate(in.readDouble(), in.readDouble()));
     }
 
     throw new AssertionError("Unknown type: " + type);

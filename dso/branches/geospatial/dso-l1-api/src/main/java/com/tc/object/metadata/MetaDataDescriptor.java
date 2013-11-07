@@ -4,6 +4,7 @@
 package com.tc.object.metadata;
 
 import com.tc.object.ObjectID;
+import com.terracottatech.search.LatLongCoordinate;
 import com.terracottatech.search.NVPair;
 
 import java.util.Date;
@@ -45,6 +46,8 @@ public interface MetaDataDescriptor {
   void add(String name, Object value);
 
   void add(String name, ObjectID value);
+
+  void add(String name, LatLongCoordinate value);
 
   void addNull(String name);
 
