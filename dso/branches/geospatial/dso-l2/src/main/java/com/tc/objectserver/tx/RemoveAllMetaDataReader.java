@@ -16,6 +16,7 @@ import com.terracottatech.search.AbstractNVPair.EnumNVPair;
 import com.terracottatech.search.AbstractNVPair.IntNVPair;
 import com.terracottatech.search.AbstractNVPair.StringNVPair;
 import com.terracottatech.search.AbstractNVPair.ValueIdNVPair;
+import com.terracottatech.search.LatLongCoordinate;
 import com.terracottatech.search.NVPair;
 import com.terracottatech.search.SearchCommand;
 import com.terracottatech.search.SearchMetaData;
@@ -270,6 +271,12 @@ public class RemoveAllMetaDataReader implements MetaDataReader {
       public void remove() {
         throw new UnsupportedOperationException();
       }
+    }
+
+    @Override
+    public void add(String name, LatLongCoordinate value) {
+      throw new UnsupportedOperationException();
+
     }
 
   }

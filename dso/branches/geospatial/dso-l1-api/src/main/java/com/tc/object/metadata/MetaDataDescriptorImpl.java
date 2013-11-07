@@ -11,6 +11,7 @@ import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.util.ClassUtils;
 import com.terracottatech.search.AbstractNVPair;
 import com.terracottatech.search.AbstractNVPair.EnumNVPair;
+import com.terracottatech.search.LatLongCoordinate;
 import com.terracottatech.search.NVPair;
 import com.terracottatech.search.ValueID;
 import com.terracottatech.search.ValueType;
@@ -181,6 +182,7 @@ public class MetaDataDescriptorImpl implements MetaDataDescriptorInternal {
     metaDatas.add(new AbstractNVPair.ValueIdNVPair(name, new ValueID(value.toLong())));
   }
 
+
   @Override
   public void addNull(String name) {
     metaDatas.add(new AbstractNVPair.NullNVPair(name));
@@ -265,6 +267,11 @@ public class MetaDataDescriptorImpl implements MetaDataDescriptorInternal {
         }
         case VALUE_ID: {
           add(name, (ObjectID) value);
+          break;
+        }
+        case LATLONGCOORDINATE: {
+          add(name, (LatLongCoordinate) value);
+          break;
         }
       }
 
@@ -297,8 +304,15 @@ public class MetaDataDescriptorImpl implements MetaDataDescriptorInternal {
     map.put(java.sql.Date.class, ValueType.SQL_DATE);
     map.put(byte[].class, ValueType.BYTE_ARRAY);
     map.put(ObjectID.class, ValueType.VALUE_ID);
+    map.put(LatLongCoordinate.class, ValueType.LATLONGCOORDINATE);
 
     TYPES = map;
+  }
+
+  @Override
+  public void add(String name, LatLongCoordinate value) {
+    metaDatas.add(new AbstractNVPair.LatLongNVPair(name, value));
+
   }
 
 }
