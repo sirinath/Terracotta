@@ -3,6 +3,8 @@
  */
 package com.terracotta.toolkit.meta;
 
+import org.terracotta.toolkit.search.geospatial.LatLongCoordinate;
+
 import com.terracottatech.search.SearchMetaData;
 
 import java.util.Date;
@@ -43,6 +45,9 @@ public interface MetaData {
   void add(String name, Object val);
 
   void set(SearchMetaData name, Object newValue);
+  
+
+  void add(SearchMetaData name, LatLongCoordinate value);
 
   Map<String, Object> getMetaDatas();
 

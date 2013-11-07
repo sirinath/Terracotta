@@ -4,6 +4,8 @@
 package com.terracotta.toolkit.meta;
 
 
+import org.terracotta.toolkit.search.geospatial.LatLongCoordinate;
+
 import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.platform.PlatformService;
 import com.terracottatech.search.NVPair;
@@ -120,7 +122,16 @@ public class MetaDataImpl implements MetaData {
 
   @Override
   public void add(String name, Object val) {
+    if (val instanceof LatLongCoordinate) {
+      LatLongCoordinate value = (LatLongCoordinate) val;
+      val = new com.terracottatech.search.LatLongCoordinate(value.getLat(), value.getLon());
+    }
     mdd.add(name, val);
+  }
+
+  @Override
+  public void add(SearchMetaData name, LatLongCoordinate value) {
+    mdd.add(name.toString(), new com.terracottatech.search.LatLongCoordinate(value.getLat(), value.getLon()));
   }
 
 }
