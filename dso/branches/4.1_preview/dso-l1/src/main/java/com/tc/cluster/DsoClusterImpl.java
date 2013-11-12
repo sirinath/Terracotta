@@ -24,7 +24,6 @@ import com.tc.util.Assert;
 import com.tc.util.Util;
 import com.tcclient.cluster.ClusterInternalEventsContext;
 import com.tcclient.cluster.ClusterNodeStatus;
-import com.tcclient.cluster.ClusterNodeStatus.ClusterNodeStateType;
 import com.tcclient.cluster.DsoClusterInternal;
 import com.tcclient.cluster.DsoClusterInternalEventsGun;
 import com.tcclient.cluster.DsoNode;
@@ -93,16 +92,14 @@ public class DsoClusterImpl implements DsoClusterInternal, DsoClusterInternalEve
     boolean added = listeners.addIfAbsent(listener);
 
     if (added) {
-      DsoClusterEvent event = new DsoClusterEventImpl(currentNode);
-      ClusterNodeStateType state = nodeStatus.getState();
-      if (state.isNodeLeft()) {
-        fireEvent(DsoClusterEventType.NODE_LEFT, event, listener);
+      if (nodeStatus.getState().isNodeLeft()) {
+        fireEvent(DsoClusterEventType.NODE_LEFT, new DsoClusterEventImpl(currentNode), listener);
       } else {
-        if (state.isNodeJoined()) {
-          fireEvent(DsoClusterEventType.NODE_JOIN, event, listener);
+        if (nodeStatus.getState().isNodeJoined()) {
+          fireEvent(DsoClusterEventType.NODE_JOIN, new DsoClusterEventImpl(currentNode), listener);
         }
-        if (state.areOperationsEnabled()) {
-          fireEvent(DsoClusterEventType.OPERATIONS_ENABLED, event, listener);
+        if (nodeStatus.getState().areOperationsEnabled()) {
+          fireEvent(DsoClusterEventType.OPERATIONS_ENABLED, new DsoClusterEventImpl(currentNode), listener);
         }
       }
     }
