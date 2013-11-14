@@ -1544,7 +1544,7 @@ public class ServerMap<K, V> extends AbstractTCToolkitObject implements Internal
       try {
         bytes = ((String) key).getBytes("UTF-8");
       } catch (Exception e) {
-        hash = key.hashCode();
+        return key.hashCode();
       }
       for (byte b : bytes) {
         hash ^= b;
