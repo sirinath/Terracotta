@@ -3,23 +3,23 @@ A. SETTING JAVA_HOME
 ----------------------------------------------------
 To start the services, you have to set your JAVA_HOME in conf/wrapper-tsa.conf, ie.
 
-set.JAVA_HOME=C:\Java\jdk1.7.0_21
+set.JAVA_HOME=C:/Java/jdk1.7.0_21
 
-NOTE: Wrapper doesn't read your JAVA_HOME from environment. If you don't want to set it in the configuration file,
+NOTE: Wrapper doesn't read your JAVA_HOME from environment. For Windows, if you don't want to set it in the configuration file,
 please comment it out and set JAVA_HOME in the registry instead.
 
 
 
 B. CONFIGURATION FILES
 ----------------------------------------------------
-For TSA, you will need 1 configuration file
+1. For TSA, you will need 1 configuration file
 
 conf/tc-config.xml
 
 Please overwrite this file with your own. If you want to change the file name, you can modify the
 name in wrapper configuration.
 
-The TSA conf/wrapper-tsa.conf will need to know which server you want to start. So modify this line:
+2. The TSA conf/wrapper-tsa.conf will need to know which server you want to start. So modify this line:
 
 set.SERVER_NAME=server0 
 
@@ -28,7 +28,7 @@ to the one in your tc-config.xml
 
 C. PERMISSION
 ----------------------------------------------------
-The services will be controlled by an Administrators users so you have to confirm for every action 
+The services will be controlled by an Administrators user so you have to confirm for every action 
 (install, start, stop, remove, etc). 
 
 Incidentally, the "wrapper" folder will need to have read/write permission for Administrators user.
