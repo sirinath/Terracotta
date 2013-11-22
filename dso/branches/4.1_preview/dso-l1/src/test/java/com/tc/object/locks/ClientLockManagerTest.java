@@ -62,20 +62,23 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+
 public class ClientLockManagerTest extends TCTestCase {
   private ClientLockManagerImpl                  lockManager;
   private TestRemoteLockManager                  rmtLockManager;
   private TestSessionManager                     sessionManager;
   private ManualThreadIDManager                  threadManager;
 
-  private final TCThreadGroup                    threadGroup =
-      new TCThreadGroup(new ThrowableHandler(TCLogging.getLogger(ClientLockManagerTest.class)));
-  private final TaskRunner                       taskRunner =
-      Runners.newSingleThreadScheduledTaskRunner(threadGroup);
+  private final TCThreadGroup                    threadGroup                 = new TCThreadGroup(
+                                                                                                 new ThrowableHandler(
+                                                                                                                      TCLogging
+                                                                                                                          .getLogger(ClientLockManagerTest.class)));
+  private final TaskRunner                       taskRunner                  = Runners
+                                                                                 .newSingleThreadScheduledTaskRunner(threadGroup);
 
   private static final AbortableOperationManager ABORTABLE_OPERATION_MANAGER = new NullAbortableOperationManager();
 
-  private final GroupID                          gid                       = new GroupID(0);
+  private final GroupID                          gid                         = new GroupID(0);
 
   public ClientLockManagerTest() {
     //
@@ -127,11 +130,8 @@ public class ClientLockManagerTest extends TCTestCase {
   public void testRunGC() throws Exception {
     NullClientLockManagerConfig testClientLockManagerConfig = new NullClientLockManagerConfig(100);
 
-    final ClientLockManagerImpl clientLockManagerImpl = new ClientLockManagerImpl(
-                                                                                  new NullTCLogger(),
-                                                                                  sessionManager,
-                                                                                  rmtLockManager,
-                                                                                  threadManager,
+    final ClientLockManagerImpl clientLockManagerImpl = new ClientLockManagerImpl(new NullTCLogger(), sessionManager,
+                                                                                  rmtLockManager, threadManager,
                                                                                   testClientLockManagerConfig,
                                                                                   ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER,
                                                                                   ABORTABLE_OPERATION_MANAGER,
@@ -175,11 +175,8 @@ public class ClientLockManagerTest extends TCTestCase {
   public void testRunGCWithAHeldLock() throws Exception {
     NullClientLockManagerConfig testClientLockManagerConfig = new NullClientLockManagerConfig(100);
 
-    final ClientLockManagerImpl clientLockManagerImpl = new ClientLockManagerImpl(
-                                                                                  new NullTCLogger(),
-                                                                                  sessionManager,
-                                                                                  rmtLockManager,
-                                                                                  threadManager,
+    final ClientLockManagerImpl clientLockManagerImpl = new ClientLockManagerImpl(new NullTCLogger(), sessionManager,
+                                                                                  rmtLockManager, threadManager,
                                                                                   testClientLockManagerConfig,
                                                                                   ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER,
                                                                                   ABORTABLE_OPERATION_MANAGER,
@@ -960,10 +957,7 @@ public class ClientLockManagerTest extends TCTestCase {
     final ThreadIDMap threadIDMap = new ThreadIDMapImpl();
     final SessionManager session = new TestSessionManager();
     final TestRemoteLockManager remote = new TestRemoteLockManager(sessionManager);
-    final ClientLockManager clientLockManager = new ClientLockManagerImpl(
-                                                                          new NullTCLogger(),
-                                                                          session,
-                                                                          remote,
+    final ClientLockManager clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), session, remote,
                                                                           new ThreadIDManagerImpl(threadIDMap),
                                                                           new NullClientLockManagerConfig(),
                                                                           ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER,
@@ -1089,13 +1083,13 @@ public class ClientLockManagerTest extends TCTestCase {
 
     if (!threadDump.contains("require JRE-1.5 or greater")) {
       Assert.eval("The text \"LOCKED : [StringLockID(Locky2)]\" should be present in the thread dump",
-          threadDump.contains("LOCKED : [StringLockID(Locky2)]"));
+                  threadDump.contains("LOCKED : [StringLockID(Locky2)]"));
 
       Assert.eval("The text \"LOCKED : [StringLockID(Locky3)]\" should be present in the thread dump",
-          threadDump.contains("LOCKED : [StringLockID(Locky3)]"));
+                  threadDump.contains("LOCKED : [StringLockID(Locky3)]"));
 
       Assert.eval("The text \"WAITING TO LOCK: [StringLockID(Locky0)]\" should be present in the thread dump",
-          threadDump.contains("WAITING TO LOCK: [StringLockID(Locky0)]"));
+                  threadDump.contains("WAITING TO LOCK: [StringLockID(Locky0)]"));
 
       Assert.eval(threadDump.contains("LOCKED : [StringLockID(Locky1), StringLockID(Locky0), StringLockID(Locky0)]"));
     }
@@ -1127,10 +1121,7 @@ public class ClientLockManagerTest extends TCTestCase {
     final ThreadIDMap threadIDMap = new ThreadIDMapImpl();
     final SessionManager session = new TestSessionManager();
     final TestRemoteLockManager remote = new TestRemoteLockManager(sessionManager);
-    final ClientLockManager clientLockManager = new ClientLockManagerImpl(
-                                                                          new NullTCLogger(),
-                                                                          session,
-                                                                          remote,
+    final ClientLockManager clientLockManager = new ClientLockManagerImpl(new NullTCLogger(), session, remote,
                                                                           new ThreadIDManagerImpl(threadIDMap),
                                                                           new NullClientLockManagerConfig(),
                                                                           ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER,
@@ -1300,11 +1291,8 @@ public class ClientLockManagerTest extends TCTestCase {
   public void testLockRecallHandlerNotUseBatching() throws Exception {
     NullClientLockManagerConfig testClientLockManagerConfig = new NullClientLockManagerConfig(Integer.MAX_VALUE);
 
-    final ClientLockManagerImpl clientLockManagerImpl = new ClientLockManagerImpl(
-                                                                                  new NullTCLogger(),
-                                                                                  sessionManager,
-                                                                                  rmtLockManager,
-                                                                                  threadManager,
+    final ClientLockManagerImpl clientLockManagerImpl = new ClientLockManagerImpl(new NullTCLogger(), sessionManager,
+                                                                                  rmtLockManager, threadManager,
                                                                                   testClientLockManagerConfig,
                                                                                   ClientLockStatManager.NULL_CLIENT_LOCK_STAT_MANAGER,
                                                                                   ABORTABLE_OPERATION_MANAGER,
@@ -1439,5 +1427,44 @@ public class ClientLockManagerTest extends TCTestCase {
         throw new RuntimeException(e);
       }
     }
+  }
+
+  public void testMultipleReadFlushAndWriteLockWhenReadFlushInProgress() throws Exception {
+    // test for ENG-351 and ENG-422
+    rmtLockManager.setAutoFlushing(false);
+    rmtLockManager.makeLocksGreedy();
+    LockID id = new StringLockID("myTestLock");
+    final ThreadID threadID1 = new ThreadID(1);
+    // thread 1 calls read lock
+    threadManager.setThreadID(threadID1);
+    lockManager.lock(id, LockLevel.READ);
+
+    final ThreadID threadID2 = new ThreadID(2);
+    // thread 2 calls read lock and lock is recalled
+    threadManager.setThreadID(threadID2);
+    lockManager.lock(id, LockLevel.READ);
+    lockManager.recall(null, sessionManager.sessionID, id, ServerLockLevel.WRITE, -1);
+    lockManager.unlock(id, LockLevel.READ);
+    threadManager.setThreadID(threadID1);
+    lockManager.unlock(id, LockLevel.READ);
+    // try write lock should fail as flush in progress
+    final AtomicBoolean flushFailed = new AtomicBoolean(false);
+    Thread flushThread = new Thread("Async Flush Thread") {
+      @Override
+      public void run() {
+        try {
+          ThreadUtil.reallySleep(4000);
+        rmtLockManager.flushPendingLocks();
+        } catch (Throwable t) {
+          t.printStackTrace();
+          flushFailed.set(true);
+        }
+      }
+    };
+    flushThread.start();
+    lockManager.lock(id, LockLevel.WRITE);
+    lockManager.unlock(id, LockLevel.WRITE);
+    flushThread.join();
+    Assert.assertFalse(flushFailed.get());
   }
 }
