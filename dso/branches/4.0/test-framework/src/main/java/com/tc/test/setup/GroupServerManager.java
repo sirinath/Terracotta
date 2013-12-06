@@ -114,8 +114,8 @@ public class GroupServerManager {
 
   }
 
-  public GroupServerManager(GroupsData groupData, TestConfig testConfig, File tempDir, File javaHome,
-                            File tcConfigFile, final TestFailureListener testFailureCallback) throws Exception {
+  GroupServerManager(GroupsData groupData, TestConfig testConfig, File tempDir, File javaHome, File tcConfigFile,
+                     final TestFailureListener testFailureCallback) throws Exception {
     this.groupData = groupData;
     this.testFailureCallback = testFailureCallback;
     this.serverControl = new ServerControl[groupData.getServerCount()];
@@ -657,7 +657,12 @@ public class GroupServerManager {
     }
   }
 
-  public void waituntilEveryPassiveStandBy() throws Exception {
+  void waituntilPassiveStandByIfNecessary() throws Exception {
+    if (expectedRunningServerCount() == 1) { return; }
+    waituntilPassiveStandBy();
+  }
+
+  void waituntilEveryPassiveStandBy() throws Exception {
     while (!isEveryPassiveStandBy() && !stopped) {
       Thread.sleep(1000);
     }
@@ -810,7 +815,7 @@ public class GroupServerManager {
     if (crasherStarted.compareAndSet(false, true)) {
       if (!testConfig.getCrashConfig().getCrashMode().equals(ServerCrashMode.NO_CRASH)
           && !testConfig.getCrashConfig().getCrashMode().equals(ServerCrashMode.CUSTOMIZED_CRASH)) {
-        crasherThread = new Thread(serverCrasher);
+        crasherThread = new Thread(serverCrasher, "server-crasher");
         crasherThread.setDaemon(true);
         crasherThread.start();
       }
