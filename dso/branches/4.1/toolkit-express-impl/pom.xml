@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.terracotta</groupId>
     <artifactId>build-parent</artifactId>
-    <version>4.1.0</version>
+    <version>4.1.0-SNAPSHOT</version>
     <relativePath>../build-parent</relativePath>
   </parent>
 
@@ -23,6 +23,18 @@
       <groupId>org.terracotta.toolkit</groupId>
       <artifactId>terracotta-toolkit-api-internal</artifactId>
       <version>${toolkit-api-internal.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.terracotta</groupId>
+      <artifactId>security-keychain</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.terracotta.license</groupId>
+      <artifactId>terracotta-license</artifactId>
     </dependency>
     <dependency>
       <!-- XXX: This should really be a dependency on the core TC Client API -->
