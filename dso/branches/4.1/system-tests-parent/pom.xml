@@ -24,8 +24,8 @@
 
   <properties>
     <group>system</group>
-    <tcmaven.version>1.12.0-SNAPSHOT</tcmaven.version>
-    <terracotta.core.version>4.2.0-SNAPSHOT</terracotta.core.version>
+    <tcmaven.version>1.11.0-SNAPSHOT</tcmaven.version>
+    <terracotta.core.version>4.1.0-SNAPSHOT</terracotta.core.version>
     <tc.core.artifactId>terracotta</tc.core.artifactId>
     <productKeyPath/>
     <ee.license>-Dcom.tc.productkey.path=${productKeyPath}</ee.license>
