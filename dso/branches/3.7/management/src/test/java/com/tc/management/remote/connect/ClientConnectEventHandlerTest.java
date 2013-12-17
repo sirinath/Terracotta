@@ -19,6 +19,7 @@ import com.tc.management.remote.protocol.terracotta.TunnelingMessageConnection;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
+import com.tc.statistics.StatisticsGateway;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,8 +46,16 @@ public class ClientConnectEventHandlerTest {
   private JMXConnector                                         jmxConnector;
   @Mock
   private ClientBeanBag                                        clientBeanBag;
+  @Mock
+  private StatisticsGateway                                    statisticsGateway;
+
+  private ClientConnectEventHandlerforTest                     clientConnectEventHandler;
 
   private final class ClientConnectEventHandlerforTest extends ClientConnectEventHandler {
+    private ClientConnectEventHandlerforTest(final StatisticsGateway statisticsGateway) {
+      super(statisticsGateway);
+    }
+
     @Override
     protected JMXConnector getJmxConnector(JMXServiceURL serviceURL, Map environment) {
       return jmxConnector;
@@ -63,8 +72,6 @@ public class ClientConnectEventHandlerTest {
     }
   }
 
-  private final ClientConnectEventHandlerforTest clientConnectEventHandler = new ClientConnectEventHandlerforTest();
-
   @Before
   public void setUp() throws Throwable {
     MockitoAnnotations.initMocks(this);
@@ -79,6 +86,7 @@ public class ClientConnectEventHandlerTest {
                                            Matchers.any());
     channelIdToJmxConnector = new ConcurrentHashMap<ChannelID, JMXConnector>();
     channelIdToMsgConnection = new ConcurrentHashMap<ChannelID, TunnelingMessageConnection>();
+    clientConnectEventHandler = new ClientConnectEventHandlerforTest(statisticsGateway);
   }
 
   @Test
