@@ -10,13 +10,11 @@ import com.tc.async.api.Sink;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.protocol.tcm.MessageChannel;
-import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.net.DSOChannelManagerEventListener;
 import com.tc.util.Assert;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
-import javax.management.remote.message.Message;
 
 public class ClientTunnelingEventHandler extends AbstractEventHandler implements DSOChannelManagerEventListener {
 
@@ -75,22 +73,12 @@ public class ClientTunnelingEventHandler extends AbstractEventHandler implements
   }
 
   private void routeTunneledMessage(final JmxRemoteTunnelMessage messageEnvelope) {
-    final Message message = messageEnvelope.getTunneledMessage();
-    final MessageChannel channel = messageEnvelope.getChannel();
-    final TunnelingMessageConnection tmc;
+    JMXConnectStateMachine state = (JMXConnectStateMachine) messageEnvelope.getChannel().getAttachment(STATE_ATTACHMENT);
 
-    JMXConnectStateMachine state = (JMXConnectStateMachine) channel.getAttachment(STATE_ATTACHMENT);
-    tmc = state.getTunnelingMessageConnection();
-
-    if (tmc != null) {
-      tmc.incomingNetworkMessage(message);
+    if (state != null) {
+      state.incomingNetworkMessage(messageEnvelope);
     } else {
-      logger.warn("Received tunneled JMX message with no associated message connection,"
-                  + " sending close() to remote JMX server");
-      final JmxRemoteTunnelMessage closeMessage = (JmxRemoteTunnelMessage) channel
-          .createMessage(TCMessageType.JMXREMOTE_MESSAGE_CONNECTION_MESSAGE);
-      closeMessage.setCloseConnection();
-      closeMessage.send();
+      logger.warn("No jmx connect state present for channel " + messageEnvelope.getChannelID());
     }
   }
 
