@@ -9,36 +9,28 @@ import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.net.DSOChannelManagerEventListener;
 import com.tc.util.Assert;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
-import javax.management.remote.JMXConnector;
 import javax.management.remote.message.Message;
 
 public class ClientTunnelingEventHandler extends AbstractEventHandler implements DSOChannelManagerEventListener {
 
-  private static final TCLogger                                      logger = TCLogging
-                                                                                .getLogger(ClientTunnelingEventHandler.class);
+  public static final String    STATE_ATTACHMENT = ClientTunnelingEventHandler.class.getName() + ".STATE_ATTACHMENT";
 
-  private final ConcurrentMap<ChannelID, JMXConnector>               channelIdToJmxConnector;
-  private final ConcurrentMap<ChannelID, TunnelingMessageConnection> channelIdToMsgConnection;
-  private final MBeanServer                                          l2MBeanServer;
-  private final Object                                               sinkLock;
-  private Sink                                                       connectStageSink;
-  private Sink                                                       disconnectStageSink;
+  private static final TCLogger logger           = TCLogging.getLogger(ClientTunnelingEventHandler.class);
+
+  private final MBeanServer     l2MBeanServer;
+  private final Object          sinkLock;
+  private Sink                  connectStageSink;
+  private Sink                  disconnectStageSink;
 
   public ClientTunnelingEventHandler() {
     l2MBeanServer = MBeanServerFactory.findMBeanServer(null).get(0);
-    channelIdToJmxConnector = new ConcurrentHashMap<ChannelID, JMXConnector>();
-    channelIdToMsgConnection = new ConcurrentHashMap<ChannelID, TunnelingMessageConnection>();
     sinkLock = new Object();
   }
 
@@ -67,23 +59,28 @@ public class ClientTunnelingEventHandler extends AbstractEventHandler implements
   }
 
   private void connectToL1JmxServer(final L1JmxReady readyMessage) {
-    logger.info("L1[" + readyMessage.getChannelID()
-                + "] notified us that their JMX server is now available");
-    EventContext msg = new L1ConnectionMessage.Connecting(l2MBeanServer, readyMessage.getChannel(), readyMessage
-        .getUUID(), readyMessage.getTunneledDomains(), channelIdToJmxConnector, channelIdToMsgConnection);
+    logger.info("L1[" + readyMessage.getChannelID() + "] notified us that their JMX server is now available");
+    setupJMXStateMachine(readyMessage.getChannel());
+
+    EventContext msg = new L1ConnectionMessage.Connecting(l2MBeanServer, readyMessage.getChannel(),
+                                                          readyMessage.getUUID(), readyMessage.getTunneledDomains());
     synchronized (sinkLock) {
       if (connectStageSink == null) { throw new AssertionError("ConnectStageSink was not set."); }
       connectStageSink.add(msg);
     }
   }
 
+  private static void setupJMXStateMachine(MessageChannel channel) {
+    channel.addAttachment(STATE_ATTACHMENT, new JMXConnectStateMachine(), false);
+  }
+
   private void routeTunneledMessage(final JmxRemoteTunnelMessage messageEnvelope) {
     final Message message = messageEnvelope.getTunneledMessage();
     final MessageChannel channel = messageEnvelope.getChannel();
-    final ChannelID channelID = channel.getChannelID();
     final TunnelingMessageConnection tmc;
 
-    tmc = channelIdToMsgConnection.get(channelID);
+    JMXConnectStateMachine state = (JMXConnectStateMachine) channel.getAttachment(STATE_ATTACHMENT);
+    tmc = state.getTunnelingMessageConnection();
 
     if (tmc != null) {
       tmc.incomingNetworkMessage(message);
@@ -97,13 +94,17 @@ public class ClientTunnelingEventHandler extends AbstractEventHandler implements
     }
   }
 
+  @Override
   public void channelCreated(final MessageChannel channel) {
     // DEV-16: Instead of immediately interrogating an L1's JMX server as soon as it connects, we wait for the L1 client
     // to send us a 'L1JmxReady' network message to avoid a startup race condition
   }
 
+  @Override
   public void channelRemoved(final MessageChannel channel) {
-    EventContext msg = new L1ConnectionMessage.Disconnecting(channel, channelIdToJmxConnector, channelIdToMsgConnection);
+    EventContext msg = new L1ConnectionMessage.Disconnecting(channel);
+    setupJMXStateMachine(channel);
+
     synchronized (sinkLock) {
       if (disconnectStageSink == null) { throw new AssertionError("DisconnectStageSink was not set."); }
       disconnectStageSink.add(msg);

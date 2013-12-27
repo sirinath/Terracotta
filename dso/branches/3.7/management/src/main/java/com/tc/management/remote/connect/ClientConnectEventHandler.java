@@ -10,9 +10,10 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.remote.protocol.ProtocolProvider;
 import com.tc.management.remote.protocol.terracotta.ClientProvider;
+import com.tc.management.remote.protocol.terracotta.ClientTunnelingEventHandler;
+import com.tc.management.remote.protocol.terracotta.JMXConnectStateMachine;
 import com.tc.management.remote.protocol.terracotta.L1ConnectionMessage;
 import com.tc.management.remote.protocol.terracotta.TunneledDomainsChanged;
-import com.tc.management.remote.protocol.terracotta.TunnelingMessageConnection;
 import com.tc.net.TCSocketAddress;
 import com.tc.net.protocol.tcm.ChannelID;
 import com.tc.net.protocol.tcm.MessageChannel;
@@ -47,6 +48,7 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
   }
 
   private static final class ConnectorClosedFilter implements NotificationFilter {
+    @Override
     public boolean isNotificationEnabled(final Notification notification) {
       boolean enabled = false;
       if (notification instanceof JMXConnectionNotification) {
@@ -64,6 +66,7 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
       this.bag = bag;
     }
 
+    @Override
     final public void handleNotification(final Notification notification, final Object context) {
       bag.unregisterBeans();
     }
@@ -100,17 +103,20 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
   }
 
   private void addJmxConnection(final L1ConnectionMessage msg) {
+    LOGGER.info("addJmxConnection(" + msg.getChannel().getChannelID() + ")");
+
     final MessageChannel channel = msg.getChannel();
     final TCSocketAddress remoteAddress = channel != null ? channel.getRemoteAddress() : null;
-    if (remoteAddress == null) { return; }
+    if (remoteAddress == null) {
+      LOGGER.error("Not adding JMX connection for " + (channel == null ? "null" : channel.getChannelID())
+                   + ". remoteAddress=" + remoteAddress);
+      return;
+    }
 
     final MBeanServer l2MBeanServer = msg.getMBeanServer();
-    final ConcurrentMap<ChannelID, JMXConnector> channelIdToJmxConnector = msg.getChannelIdToJmxConnector();
-    final ConcurrentMap<ChannelID, TunnelingMessageConnection> channelIdToMsgConnector = msg
-        .getChannelIdToMsgConnector();
 
     synchronized (clientBeanBags) {
-      if (!channelIdToJmxConnector.containsKey(channel.getChannelID())) {
+      if (!clientBeanBags.containsKey(channel.getChannelID())) {
         JMXServiceURL serviceURL;
         try {
           serviceURL = new JMXServiceURL("terracotta", remoteAddress.getAddress().getHostAddress(),
@@ -123,7 +129,6 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
         Map environment = new HashMap();
         ProtocolProvider.addTerracottaJmxProvider(environment);
         environment.put(ClientProvider.JMX_MESSAGE_CHANNEL, channel);
-        environment.put(ClientProvider.CONNECTION_LIST, channelIdToMsgConnector);
         environment.put("jmx.remote.x.request.timeout", Long.valueOf(Long.MAX_VALUE));
         environment.put("jmx.remote.x.client.connection.check.period", Long.valueOf(0));
         environment.put("jmx.remote.x.server.connection.timeout", Long.valueOf(Long.MAX_VALUE));
@@ -148,14 +153,11 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
                            e);
             }
           }
-
         } catch (IOException ioe) {
-          LOGGER.error("Unable to create tunneled JMX connection to the DSO client on host["
-                           + channel.getRemoteAddress() + "], this DSO client will not show up in monitoring tools!!",
-                       ioe);
+          LOGGER.info("Unable to create tunneled JMX connection to the DSO client on host["
+                       + channel.getRemoteAddress() + "], this DSO client will not show up in monitoring tools!!");
           return;
         }
-        channelIdToJmxConnector.put(channel.getChannelID(), jmxConnector);
       } else {
         LOGGER.warn("We are trying to create a new tunneled JMX connection but already have one for channel["
                     + channel.getRemoteAddress() + "], ignoring new connection message");
@@ -176,34 +178,14 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
 
   private void removeJmxConnection(final L1ConnectionMessage msg) {
     final MessageChannel channel = msg.getChannel();
-    ConcurrentMap<ChannelID, JMXConnector> channelIdToJmxConnector = msg.getChannelIdToJmxConnector();
-    ConcurrentMap<ChannelID, TunnelingMessageConnection> channelIdToMsgConnector = msg.getChannelIdToMsgConnector();
 
-    try {
-      final TunnelingMessageConnection tmc = channelIdToMsgConnector.remove(channel.getChannelID());
-      if (tmc != null) {
-        tmc.close();
-      }
-    } catch (Throwable t) {
-      LOGGER.error("unhandled exception closing TunnelingMessageConnection for " + channel, t);
-    }
+    clientBeanBags.remove(channel.getChannelID());
 
-    try {
-      final JMXConnector jmxConnector = channelIdToJmxConnector.remove(channel.getChannelID());
-      clientBeanBags.remove(channel.getChannelID());
-      if (jmxConnector != null) {
-        statisticsGateway.removeStatisticsAgent(channel.getChannelID());
+    JMXConnectStateMachine state = (JMXConnectStateMachine) channel
+        .getAttachment(ClientTunnelingEventHandler.STATE_ATTACHMENT);
 
-        try {
-          jmxConnector.close();
-        } catch (IOException ioe) {
-          LOGGER.debug("Unable to close JMX connector to DSO client[" + channel + "]", ioe);
-        }
-      } else {
-        LOGGER.debug("DSO client channel closed without a corresponding tunneled JMX connection");
-      }
-    } catch (Throwable t) {
-      LOGGER.error("unhandled exception closing JMX connector for " + channel, t);
+    if (state.disconnect()) {
+      statisticsGateway.removeStatisticsAgent(channel.getChannelID());
     }
   }
 }
