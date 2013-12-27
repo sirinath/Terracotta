@@ -186,10 +186,10 @@ import com.tc.objectserver.handler.ClientLockStatisticsHandler;
 import com.tc.objectserver.handler.CommitTransactionChangeHandler;
 import com.tc.objectserver.handler.GarbageCollectHandler;
 import com.tc.objectserver.handler.GarbageDisposeHandler;
-import com.tc.objectserver.handler.LowWaterMarkCallbackHandler;
 import com.tc.objectserver.handler.GlobalTransactionIDBatchRequestHandler;
 import com.tc.objectserver.handler.InvalidateObjectsHandler;
 import com.tc.objectserver.handler.JMXEventsHandler;
+import com.tc.objectserver.handler.LowWaterMarkCallbackHandler;
 import com.tc.objectserver.handler.ManagedObjectFaultHandler;
 import com.tc.objectserver.handler.ManagedObjectFlushHandler;
 import com.tc.objectserver.handler.ManagedObjectRequestHandler;
@@ -1099,13 +1099,11 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     final Stage jmxEventsStage = stageManager.createStage(ServerConfigurationContext.JMX_EVENTS_STAGE,
                                                           new JMXEventsHandler(appEvents), 1, maxStageSize);
 
+    ClientConnectEventHandler clientConnectEventHandler = new ClientConnectEventHandler(this.statisticsGateway);
     final Stage jmxRemoteConnectStage = stageManager.createStage(ServerConfigurationContext.JMXREMOTE_CONNECT_STAGE,
-                                                                 new ClientConnectEventHandler(this.statisticsGateway),
-                                                                 1, maxStageSize);
-
+                                                                 clientConnectEventHandler, 1, maxStageSize);
     final Stage jmxRemoteDisconnectStage = stageManager
-        .createStage(ServerConfigurationContext.JMXREMOTE_DISCONNECT_STAGE,
-                     new ClientConnectEventHandler(this.statisticsGateway), 1, maxStageSize);
+        .createStage(ServerConfigurationContext.JMXREMOTE_DISCONNECT_STAGE, clientConnectEventHandler, 1, maxStageSize);
 
     cteh.setStages(jmxRemoteConnectStage.getSink(), jmxRemoteDisconnectStage.getSink());
     final Stage jmxRemoteTunnelStage = stageManager.createStage(ServerConfigurationContext.JMXREMOTE_TUNNEL_STAGE,
