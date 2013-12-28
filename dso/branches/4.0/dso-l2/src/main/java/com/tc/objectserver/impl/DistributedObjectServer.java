@@ -6,6 +6,9 @@ package com.tc.objectserver.impl;
 
 import org.apache.commons.io.FileUtils;
 
+import bsh.EvalError;
+import bsh.Interpreter;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.tc.async.api.PostInit;
@@ -172,6 +175,7 @@ import com.tc.objectserver.dgc.impl.GarbageCollectionInfoPublisherImpl;
 import com.tc.objectserver.dgc.impl.MarkAndSweepGarbageCollector;
 import com.tc.objectserver.event.InClusterServerEventNotifier;
 import com.tc.objectserver.event.ServerEventBatcher;
+import com.tc.objectserver.event.ServerEventPublisher;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManagerImpl;
 import com.tc.objectserver.handler.ApplyTransactionChangeHandler;
@@ -204,7 +208,6 @@ import com.tc.objectserver.handler.TransactionLookupHandler;
 import com.tc.objectserver.handler.TransactionLowWaterMarkHandler;
 import com.tc.objectserver.handler.ValidateObjectsHandler;
 import com.tc.objectserver.handshakemanager.ServerClientHandshakeManager;
-import com.tc.objectserver.event.ServerEventPublisher;
 import com.tc.objectserver.l1.api.ClientStateManager;
 import com.tc.objectserver.l1.impl.ClientObjectReferenceSet;
 import com.tc.objectserver.l1.impl.ClientStateManagerImpl;
@@ -294,9 +297,6 @@ import java.util.Timer;
 import javax.management.MBeanServer;
 import javax.management.NotCompliantMBeanException;
 import javax.management.remote.JMXConnectorServer;
-
-import bsh.EvalError;
-import bsh.Interpreter;
 
 /**
  * Startup and shutdown point. Builds and starts the server
@@ -849,7 +849,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     toInit.add(this.searchRequestManager);
 
     this.serverMapRequestManager = this.serverBuilder
-        .createServerMapRequestManager(this.objectManager, channelManager, respondToServerTCMapStage.getSink(),prefetchStage.getSink(), 
+        .createServerMapRequestManager(this.objectManager, channelManager, respondToServerTCMapStage.getSink(),prefetchStage.getSink(),
                                         this.clientStateManager, channelStats);
     this.dumpHandler.registerForDump(new CallbackDumpAdapter(this.serverMapRequestManager));
 
@@ -874,7 +874,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     int applyStageThreads = L2Utils.getOptimalApplyStageWorkerThreads(restartable);
     stageManager.createStage(ServerConfigurationContext.APPLY_CHANGES_STAGE,
                              new ApplyTransactionChangeHandler(instanceMonitor, this.transactionManager, this.serverMapEvictor, persistor
-                                 .getPersistenceTransactionProvider(), taskRunner, serverEventPublisher), applyStageThreads, 1, -1);    
+                                 .getPersistenceTransactionProvider(), taskRunner, serverEventPublisher), applyStageThreads, 1, -1);
 
     txnStageCoordinator.lookUpSinks();
     
@@ -903,12 +903,11 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     final Stage jmxEventsStage = stageManager.createStage(ServerConfigurationContext.JMX_EVENTS_STAGE,
         new JMXEventsHandler(appEvents), 1, maxStageSize);
 
+    ClientConnectEventHandler clientConnectEventHandler = new ClientConnectEventHandler();
     final Stage jmxRemoteConnectStage = stageManager.createStage(ServerConfigurationContext.JMXREMOTE_CONNECT_STAGE,
-        new ClientConnectEventHandler(), 1, maxStageSize);
-
+                                                                 clientConnectEventHandler, 1, maxStageSize);
     final Stage jmxRemoteDisconnectStage = stageManager
-        .createStage(ServerConfigurationContext.JMXREMOTE_DISCONNECT_STAGE, new ClientConnectEventHandler(), 1,
-            maxStageSize);
+        .createStage(ServerConfigurationContext.JMXREMOTE_DISCONNECT_STAGE, clientConnectEventHandler, 1, maxStageSize);
 
     cteh.setStages(jmxRemoteConnectStage.getSink(), jmxRemoteDisconnectStage.getSink());
     final Stage jmxRemoteTunnelStage = stageManager.createStage(ServerConfigurationContext.JMXREMOTE_TUNNEL_STAGE,
