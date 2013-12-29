@@ -16,7 +16,7 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.statistics.StatisticsGateway;
 
 public class ClientConnectEventHandler extends AbstractEventHandler {
-  private static final TCLogger   LOGGER = TCLogging.getLogger(ClientConnectEventHandler.class);
+  private static final TCLogger LOGGER = TCLogging.getLogger(ClientConnectEventHandler.class);
 
   private final StatisticsGateway statisticsGateway;
 
@@ -58,7 +58,9 @@ public class ClientConnectEventHandler extends AbstractEventHandler {
     JMXConnectStateMachine state = (JMXConnectStateMachine) channel
         .getAttachment(ClientTunnelingEventHandler.STATE_ATTACHMENT);
 
-    state.disconnect();
+    if (state != null) {
+      state.disconnect();
+    }
     statisticsGateway.removeStatisticsAgent(channel.getChannelID());
   }
 
