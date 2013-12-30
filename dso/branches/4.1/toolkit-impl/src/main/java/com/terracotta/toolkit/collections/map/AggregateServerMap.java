@@ -515,6 +515,9 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
 
   @Override
   public void destroy() {
+    // Wait due to search index destroy working globally across all segments only once,
+    // therefore allowing for races between pending txns and index destroy
+    if (attributeExtractor != null) waitForAllCurrentTransactionsToComplete();
     for (InternalToolkitMap serverMap : serverMaps) {
       serverMap.destroy();
     }
