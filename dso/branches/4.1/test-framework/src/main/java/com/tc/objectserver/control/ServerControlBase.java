@@ -39,11 +39,11 @@ public abstract class ServerControlBase implements ServerControl {
       System.err.println("Socket connect to " + host + ":" + adminPort + " failed because of " + e.getMessage());
       return false;
     } finally {
-        try {
-          socket.close();
-        } catch (IOException ioe) {
-          // ignore
-        }
+      try {
+        socket.close();
+      } catch (IOException ioe) {
+        // ignore
+      }
     }
   }
 
