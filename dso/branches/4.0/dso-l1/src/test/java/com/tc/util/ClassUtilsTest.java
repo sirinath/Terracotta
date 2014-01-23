@@ -373,6 +373,15 @@ public class ClassUtilsTest extends TestCase {
       throw new ImplementMe();
     }
 
+    @Override
+    public Object __tc_getmanagedfield(String name) {
+      throw new ImplementMe();
+    }
+
+    @Override
+    public void __tc_setmanagedfield(String name, Object value) {
+      throw new ImplementMe();
+    }
   }
 
   private static class InstrumentedExtendsBootJarNotInstrumented extends OutputStream implements TransparentAccess {
@@ -392,6 +401,15 @@ public class ClassUtilsTest extends TestCase {
       throw new ImplementMe();
     }
 
+    @Override
+    public Object __tc_getmanagedfield(String name) {
+      throw new ImplementMe();
+    }
+
+    @Override
+    public void __tc_setmanagedfield(String name, Object value) {
+      throw new ImplementMe();
+    }
   }
 
   private static class InstrumentedExtendsRegularNotInstrumented extends Pojo implements TransparentAccess {
@@ -405,6 +423,15 @@ public class ClassUtilsTest extends TestCase {
       throw new ImplementMe();
     }
 
+    @Override
+    public Object __tc_getmanagedfield(String name) {
+      throw new ImplementMe();
+    }
+
+    @Override
+    public void __tc_setmanagedfield(String name, Object value) {
+      throw new ImplementMe();
+    }
   }
 
 }

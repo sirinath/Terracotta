@@ -80,6 +80,16 @@ public class TCObjectImplTest extends BaseDSOTestCase {
       }
     }
 
+    @Override
+    public Object __tc_getmanagedfield(final String name) {
+      throw new ImplementMe();
+    }
+
+    @Override
+    public void __tc_setmanagedfield(final String name, final Object value) {
+      throw new ImplementMe();
+    }
+
   }
 
   public class TestTCClass implements TCClass {

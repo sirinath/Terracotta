@@ -7,8 +7,10 @@ package com.tc.object;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.object.applicator.BaseApplicator;
+import com.tc.object.applicator.ArrayApplicator;
 import com.tc.object.applicator.ChangeApplicator;
+import com.tc.object.applicator.LiteralTypesApplicator;
+import com.tc.object.applicator.PhysicalApplicator;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.TransparencyClassSpec;
@@ -67,7 +69,8 @@ public class TCClassFactoryImpl implements TCClassFactory {
                                     this.fieldFactory, this, objectManager, clazz,
                                     getLogicalSuperClassWithDefaultConstructor(clazz),
                                     this.config.getLogicalExtendingClassName(className),
-                                    this.config.isLogical(className), this.config.isUseNonDefaultConstructor(clazz),
+                                    this.config.isLogical(className),
+                                    this.config.isUseNonDefaultConstructor(clazz),
                                     this.config.useResolveLockWhenClearing(clazz),
                                     this.config.getPostCreateMethodIfDefined(className),
                                     this.config.getPreCreateMethodIfDefined(className));
@@ -111,11 +114,17 @@ public class TCClassFactoryImpl implements TCClassFactory {
   }
 
   @Override
-  public ChangeApplicator createApplicatorFor(final TCClass clazz) {
+  public ChangeApplicator createApplicatorFor(final TCClass clazz, final boolean indexed) {
+    if (indexed) { return new ArrayApplicator(this.encoding); }
+    final String name = clazz.getName();
     final Class applicatorClazz = this.config.getChangeApplicator(clazz.getPeerClass());
 
     if (applicatorClazz == null) {
-      return new BaseApplicator(this.encoding);
+      if (LiteralValues.isLiteral(name)) {
+        return new LiteralTypesApplicator(clazz, this.encoding);
+      } else {
+        return new PhysicalApplicator(clazz, this.encoding);
+      }
     }
 
     TCLogger logger = TCLogging.getLogger(ChangeApplicator.class.getName() + "." + applicatorClazz.getName());
