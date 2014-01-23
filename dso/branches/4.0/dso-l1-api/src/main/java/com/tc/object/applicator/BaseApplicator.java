@@ -5,23 +5,16 @@
 package com.tc.object.applicator;
 
 import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
-import com.tc.object.TraversedReferences;
-import com.tc.object.bytecode.TransparentAccess;
-import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAEncoding;
-import com.tc.object.dna.api.DNAWriter;
-
-import java.io.IOException;
 
 /**
  * This class provides facilities for use in implementing applicators.
  */
-public class BaseApplicator implements ChangeApplicator {
+public abstract class BaseApplicator implements ChangeApplicator {
 
   /**
    * The encoding to use when reading/writing DNA
@@ -35,12 +28,7 @@ public class BaseApplicator implements ChangeApplicator {
    * 
    * @param encoding DNA encoding to use
    */
-  public BaseApplicator(DNAEncoding encoding) {
-    this.encoding = encoding;
-    this.logger = TCLogging.getLogger(BaseApplicator.class);
-  }
-
-  public BaseApplicator(DNAEncoding encoding, TCLogger logger) {
+  protected BaseApplicator(DNAEncoding encoding, TCLogger logger) {
     this.encoding = encoding;
     this.logger = logger;
   }
@@ -94,29 +82,6 @@ public class BaseApplicator implements ChangeApplicator {
    */
   protected boolean isPortableReference(Class c) {
     return !LiteralValues.isLiteral(c.getName());
-  }
-
-  @Override
-  public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object pojo) throws IOException,
-      ClassNotFoundException {
-    throw new UnsupportedOperationException();
-
-  }
-
-  @Override
-  public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {
-    if (!(pojo instanceof TransparentAccess)) return addTo;
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) throws IOException, ClassNotFoundException {
-    throw new UnsupportedOperationException();
   }
 
 }

@@ -24,7 +24,7 @@ public class TestClassFactory implements TCClassFactory {
   }
 
   @Override
-  public ChangeApplicator createApplicatorFor(final TCClass clazz) {
+  public ChangeApplicator createApplicatorFor(final TCClass clazz, final boolean indexed) {
     throw new ImplementMe();
   }
 
