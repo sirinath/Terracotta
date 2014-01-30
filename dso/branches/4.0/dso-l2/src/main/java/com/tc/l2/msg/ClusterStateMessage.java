@@ -119,9 +119,8 @@ public class ClusterStateMessage extends AbstractGroupMessage {
         out.writeLong(nextAvailableDGCId);
         out.writeString(clusterID);
         out.writeInt(connectionIDs.size());
-        for (Iterator i = connectionIDs.iterator(); i.hasNext();) {
-          ConnectionID conn = (ConnectionID) i.next();
-          writeConnectionID(conn, out);
+        for (final Object connectionID : connectionIDs) {
+          writeConnectionID((ConnectionID)connectionID, out);
         }
         new GroupToStripeMapSerializer(stripeIDMap).serializeTo(out);
         break;
@@ -203,8 +202,8 @@ public class ClusterStateMessage extends AbstractGroupMessage {
         state.setNextAvailableGlobalTransactionID(nextAvailableGID);
         state.setNextAvailableChannelID(nextAvailableChannelID);
         state.setNextAvailableDGCId(nextAvailableDGCId);
-        for (ConnectionID id : connectionIDs) {
-          state.addNewConnection(id);
+        for (Object id : connectionIDs) {
+          state.addNewConnection((ConnectionID) id);
         }
         for (GroupID gid : stripeIDMap.keySet()) {
           state.addToStripeIDMap(gid, stripeIDMap.get(gid));
