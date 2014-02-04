@@ -23,6 +23,7 @@ import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.L2ConfigurationSetupManager;
 import com.tc.exception.TCRuntimeException;
 import com.tc.exception.TCServerRestartException;
+import com.tc.exception.TCShutdownServerException;
 import com.tc.exception.ZapDirtyDbServerNodeException;
 import com.tc.exception.ZapServerNodeException;
 import com.tc.handler.CallbackDumpAdapter;
@@ -426,6 +427,12 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
         state.setRestartNeeded();
       }
     });
+    threadGroup.addCallbackOnExitExceptionHandler(TCShutdownServerException.class, new CallbackOnExitHandler() {
+      @Override
+      public void callbackOnExit(final CallbackOnExitState state) {
+        // do nothing;
+      }
+    });
 
     this.thisServerNodeID = makeServerNodeID(this.configSetupManager.dsoL2Config());
     ThisServerNodeId.setThisServerNodeId(thisServerNodeID);
@@ -466,7 +473,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     this.tcProperties = TCPropertiesImpl.getProperties();
     this.l1ReconnectConfig = new L1ReconnectConfigImpl();
     final boolean restartable = l2DSOConfig.getRestartable().getEnabled();
-    final boolean flash = l2DSOConfig.getDataStorage().isSetFlash();
+    final boolean hybrid = l2DSOConfig.getDataStorage().isSetHybrid();
 
     // start the JMX server
     try {
@@ -837,7 +844,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     this.serverMapEvictor = new ProgressiveEvictionManager(objectManager, persistor.getMonitoredResources(),
                                                            objectStore, clientObjectReferenceSet,
                                                            serverTransactionFactory, threadGroup, resourceManager,
-                                                           sampledCounterManager, evictionTransactionPersistor, flash, restartable);
+                                                           sampledCounterManager, evictionTransactionPersistor, hybrid, restartable);
 
     toInit.add(this.serverMapEvictor);
     this.dumpHandler.registerForDump(new CallbackDumpAdapter(this.serverMapEvictor));
@@ -846,7 +853,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                  .getInt(TCPropertiesConsts.L2_SEDA_EVICTION_PROCESSORSTAGE_SINK_SIZE));
     
     // Lookup stage should never be blocked trying to add to apply stage
-    int applyStageThreads = L2Utils.getOptimalApplyStageWorkerThreads(restartable);
+    int applyStageThreads = L2Utils.getOptimalApplyStageWorkerThreads(restartable || hybrid);
     stageManager.createStage(ServerConfigurationContext.APPLY_CHANGES_STAGE,
                              new ApplyTransactionChangeHandler(instanceMonitor, this.transactionManager, this.serverMapEvictor, persistor
                                  .getPersistenceTransactionProvider(), taskRunner, serverEventPublisher), applyStageThreads, 1, -1);
@@ -875,12 +882,11 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     final Stage txnLwmStage = stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOWWATERMARK_STAGE,
                                                        new TransactionLowWaterMarkHandler(gtxm), 1, maxStageSize);
 
+    ClientConnectEventHandler clientConnectEventHandler = new ClientConnectEventHandler();
     final Stage jmxRemoteConnectStage = stageManager.createStage(ServerConfigurationContext.JMXREMOTE_CONNECT_STAGE,
-        new ClientConnectEventHandler(), 1, maxStageSize);
-
+                                                                 clientConnectEventHandler, 1, maxStageSize);
     final Stage jmxRemoteDisconnectStage = stageManager
-        .createStage(ServerConfigurationContext.JMXREMOTE_DISCONNECT_STAGE, new ClientConnectEventHandler(), 1,
-            maxStageSize);
+        .createStage(ServerConfigurationContext.JMXREMOTE_DISCONNECT_STAGE, clientConnectEventHandler, 1, maxStageSize);
 
     cteh.setStages(jmxRemoteConnectStage.getSink(), jmxRemoteDisconnectStage.getSink());
     final Stage jmxRemoteTunnelStage = stageManager.createStage(ServerConfigurationContext.JMXREMOTE_TUNNEL_STAGE,

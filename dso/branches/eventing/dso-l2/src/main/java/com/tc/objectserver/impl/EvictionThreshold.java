@@ -73,10 +73,10 @@ public enum EvictionThreshold {
         }
     }
     
-    public boolean shouldThrottle(MonitoredResource usage,int usedTweak,int reservedTweak) {
+    public boolean shouldThrottle(MonitoredResource usage,int reservedTweak) {
         long reserve = getReserved(reservedTweak);
         // long used = getUsed(reserve, usedTweak);
-        if ( usage.getReserved() > usage.getTotal() - (reserve) ) {
+        if ( usage.getReserved() > usage.getTotal() - reserve ) {
             return true;
         }
         return false;
@@ -108,7 +108,7 @@ public enum EvictionThreshold {
         long lres = getReserved(reservedTweak);
         long lused = getUsed(lres,usedTweak);
         if ( usage.getVital() > max - lres ) {
-            return true;
+          return true;
         }
         if ( reserve > max - lused && usage.getUsed() > max - lused ) {
             return true;
@@ -130,11 +130,19 @@ public enum EvictionThreshold {
         if ( tweak < 0 || tweak > 300 ) {
             return used;
         }
-        return localReserve + Math.round((tweak/100d) * localReserve);
+        return used + Math.round((tweak/100d) * localReserve);
     }
 
     @Override
     public String toString() {
-        return "EvictionThreshold{" + "name=" + name + ", max=" + maxSize + ", used=" + used + ", reserved=" + reserved + '}';
+      try {
+        return "EvictionThreshold{" + "name=" + name + ", max=" + Conversion.memoryBytesAsSize(maxSize)
+            + ", used=" + Conversion.memoryBytesAsSize(used) 
+            + ", reserved=" + Conversion.memoryBytesAsSize(reserved) + '}';
+      } catch ( Conversion.MetricsFormatException format ) {
+        return "EvictionThreshold{" + "name=" + name + ", max=" + maxSize
+            + ", used=" + used 
+            + ", reserved=" + reserved + '}';
+      } 
     }
 }

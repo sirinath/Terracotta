@@ -37,8 +37,12 @@ import java.util.Set;
 public class ConcurrentDistributedServerMapManagedObjectState extends PartialMapManagedObjectState implements
     EvictableMap {
 
+  private static final CDSMValue NULL_CDSM_VALUE = new CDSMValue(ObjectID.NULL_ID);
+
   private static final TCLogger LOGGER                         = TCLogging
                                                                    .getLogger(ConcurrentDistributedServerMapManagedObjectState.class);
+  private static final boolean  CAS_LOGGING                    = TCPropertiesImpl.getProperties()
+                                                                   .getBoolean(TCPropertiesConsts.CAS_LOGGING_ENABLED, false);
 
   public static final String    CACHE_NAME_FIELDNAME           = "cacheName";
   public static final String    INVALIDATE_ON_CHANGE_FIELDNAME = "invalidateOnChange";
@@ -147,6 +151,11 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
         final int method = logicalAction.getMethod();
         final Object[] params = logicalAction.getParameters();
         LogicalChangeResult result = applyLogicalAction(objectID, applyInfo, method, params);
+        if (CAS_LOGGING && result == LogicalChangeResult.SUCCESS) {
+          LOGGER.info("SUCCESS returned for KEY: " + params[0] + "   for ServerTransactionID: "
+                      + applyInfo.getServerTransactionID() + "   ---   "
+                       + logicalAction.getLogicalChangeID());
+        }
         applyInfo.getApplyResultRecorder().recordResult(logicalAction.getLogicalChangeID(), result);
         // TODO: requires refactoring, we should call super.apply() instead
         if (method == SerializationUtil.CLEAR || method == SerializationUtil.CLEAR_LOCAL_CACHE
@@ -246,7 +255,6 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
       case SerializationUtil.REPLACE:
         return applyReplace(applyInfo, params);
       case SerializationUtil.EVICTION_COMPLETED:
-        applyInfo.getServerEventRecorder().reconsiderRemovals(samplingType);
         evictionCompleted();
         // make sure we don't need more capacity eviction to get to target
         startCapacityEvictionIfNeccessary(applyInfo);
@@ -319,7 +327,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
     applyPutInternal(applyInfo, params, value, old);
 
     // collect modifications for futher broadcasting
-    applyInfo.getServerEventRecorder().recordEvent(ServerEventType.PUT_LOCAL, key, oid, value, cacheName);
+    applyInfo.getMutationEventPublisher().publishEvent(ServerEventType.PUT_LOCAL, key, value, cacheName);
     return old;
   }
 
@@ -365,7 +373,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
     startCapacityEvictionIfNeccessary(applyInfo);
 
     // collect modifications for futher broadcasting
-    applyInfo.getServerEventRecorder().recordEvent(ServerEventType.PUT, key, oid, cacheName);
+    applyInfo.getMutationEventPublisher().publishEvent(ServerEventType.PUT, key, new CDSMValue(oid), cacheName);
   }
 
   private boolean startCapacityEvictionIfNeccessary(final ApplyTransactionInfo applyInfo) {
@@ -431,9 +439,15 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
       removedReferences(applyInfo, value);
       final ObjectID objectId = (ObjectID) value;
 
-      applyInfo.getServerEventRecorder().recordEvent(ServerEventType.REMOVE, key, objectId, cacheName);
-      applyInfo.getServerEventRecorder().recordEvent(ServerEventType.REMOVE_LOCAL, key, objectId,
-                                                     valueInMap.getVersion() + 1, cacheName);
+      if (applyInfo.isEviction() && samplingType == SamplingType.FOR_EVICTION) {
+        applyInfo.getMutationEventPublisher().publishEvent(ServerEventType.EVICT, key, NULL_CDSM_VALUE, cacheName);
+      } else if (applyInfo.isEviction() && samplingType == SamplingType.FOR_EXPIRATION) {
+        applyInfo.getMutationEventPublisher().publishEvent(ServerEventType.EXPIRE, key, NULL_CDSM_VALUE, cacheName);
+      } else {
+        applyInfo.getMutationEventPublisher().publishEvent(ServerEventType.REMOVE, key, NULL_CDSM_VALUE, cacheName);
+      }
+      applyInfo.getMutationEventPublisher().publishEvent(ServerEventType.REMOVE_LOCAL, key,
+          new CDSMValue(ObjectID.NULL_ID, 0, 0, 0, 0, valueInMap.getVersion() + 1), cacheName);
       return LogicalChangeResult.SUCCESS;
     } else {
       return LogicalChangeResult.FAILURE;
@@ -447,7 +461,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
     if (valueInMap != null && value.equals(valueInMap.getObjectID())) {
       references.remove(key);
       removedReferences(applyInfo, value);
-      applyInfo.getServerEventRecorder().recordEvent(ServerEventType.EXPIRE, key, (ObjectID) value, cacheName);
+      applyInfo.getMutationEventPublisher().publishEvent(ServerEventType.EXPIRE, key, NULL_CDSM_VALUE, cacheName);
       return LogicalChangeResult.SUCCESS;
     } else {
       return LogicalChangeResult.FAILURE;
@@ -462,9 +476,9 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
       final CDSMValue oldValue = (CDSMValue) old;
       final ObjectID objectId = oldValue.getObjectID();
 
-      applyInfo.getServerEventRecorder().recordEvent(ServerEventType.REMOVE, key, objectId, cacheName);
-      applyInfo.getServerEventRecorder().recordEvent(ServerEventType.REMOVE_LOCAL, key, objectId,
-          oldValue.getVersion() + 1, cacheName);
+      applyInfo.getMutationEventPublisher().publishEvent(ServerEventType.REMOVE, key, NULL_CDSM_VALUE, cacheName);
+      applyInfo.getMutationEventPublisher().publishEvent(ServerEventType.REMOVE_LOCAL, key,
+          new CDSMValue(ObjectID.NULL_ID, 0, 0, 0, 0, oldValue.getVersion() + 1), cacheName);
     }
     return old;
   }
@@ -476,7 +490,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
     final Object old = super.applyRemove(applyInfo, params);
     if (old instanceof CDSMValue) {
       final ObjectID objectId = ((CDSMValue) old).getObjectID();
-      applyInfo.getServerEventRecorder().recordEvent(ServerEventType.REMOVE, key, objectId, cacheName);
+      applyInfo.getMutationEventPublisher().publishEvent(ServerEventType.REMOVE, key, NULL_CDSM_VALUE, cacheName);
     }
     return old;
   }
@@ -498,9 +512,9 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
       final CDSMValue value = getValueForKey(key);
       removedReference(applyInfo, value);
 
-      applyInfo.getServerEventRecorder().recordEvent(ServerEventType.REMOVE, key, value.getObjectID(), cacheName);
-      applyInfo.getServerEventRecorder().recordEvent(ServerEventType.REMOVE_LOCAL, key, value.getObjectID(),
-          value.getVersion() + 1, cacheName);
+      applyInfo.getMutationEventPublisher().publishEvent(ServerEventType.REMOVE, key, NULL_CDSM_VALUE, cacheName);
+      applyInfo.getMutationEventPublisher().publishEvent(ServerEventType.REMOVE_LOCAL, key, new CDSMValue(ObjectID.NULL_ID,
+          0, 0, 0, 0, value.getVersion() + 1), cacheName);
     }
     references.clear();
   }
@@ -512,7 +526,7 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
     for (Object key : references.keySet()) {
       CDSMValue value = getValueForKey(key);
       removedReference(applyInfo, value);
-      applyInfo.getServerEventRecorder().recordEvent(ServerEventType.REMOVE, key, value.getObjectID(), cacheName);
+      applyInfo.getMutationEventPublisher().publishEvent(ServerEventType.REMOVE, key, NULL_CDSM_VALUE, cacheName);
     }
     this.references.clear();
   }

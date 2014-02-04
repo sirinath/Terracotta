@@ -51,7 +51,7 @@ public class ClientBeanBag {
     setTunneledDomains(tunneledDomains);
   }
 
-  synchronized void unregisterBeans() {
+  public synchronized void unregisterBeans() {
     for (ObjectName name : beanNames) {
       unregisterBean(name, false);
     }
@@ -156,7 +156,9 @@ public class ClientBeanBag {
 
     ObjectName modifiedObjName = null;
     try {
-      modifiedObjName = TerracottaManagement.addNodeInfo(objName, channel.getRemoteAddress());
+      // only change the node attribute of the ObjectName if the MBeans has to be removed from the beanNames set
+      // otherwise this means the beanNames set is being iterated and already contains correct ObjectName's
+      modifiedObjName = remove ? TerracottaManagement.addNodeInfo(objName, channel.getRemoteAddress()) : objName;
       if (beanNames.contains(modifiedObjName)) {
         l2MBeanServer.unregisterMBean(modifiedObjName);
         LOGGER.debug("Unregistered Tunneled MBean '" + modifiedObjName + "'");
@@ -180,6 +182,7 @@ public class ClientBeanBag {
       this.queryExp = queryExp;
     }
 
+    @Override
     public boolean isNotificationEnabled(final Notification notification) {
       if (notification instanceof MBeanServerNotification) {
         final MBeanServerNotification mbsn = (MBeanServerNotification) notification;
@@ -205,6 +208,7 @@ public class ClientBeanBag {
       this.bag = bag;
     }
 
+    @Override
     final public void handleNotification(final Notification notification, final Object context) {
       if (notification instanceof MBeanServerNotification) {
         String type = notification.getType();
