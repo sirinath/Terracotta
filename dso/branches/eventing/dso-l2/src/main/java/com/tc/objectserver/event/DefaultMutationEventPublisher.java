@@ -1,9 +1,12 @@
 package com.tc.objectserver.event;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.tc.object.ObjectID;
+import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.objectserver.managedobject.CDSMValue;
 import com.tc.server.BasicServerEvent;
 import com.tc.server.CustomLifespanVersionedServerEvent;
@@ -12,8 +15,6 @@ import com.tc.server.VersionedServerEvent;
 
 import java.util.Collection;
 import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * @author Eugene Shelestovich
@@ -26,8 +27,10 @@ public class DefaultMutationEventPublisher implements MutationEventPublisher {
   private final Map<ObjectID, byte[]> oidToValueMap = Maps.newHashMap();
 
   private final ServerEventPublisher serverEventPublisher;
+  private final GlobalTransactionID                      gtxId;
 
-  public DefaultMutationEventPublisher(final ServerEventPublisher serverEventPublisher) {
+  public DefaultMutationEventPublisher(final GlobalTransactionID gtxId, final ServerEventPublisher serverEventPublisher) {
+    this.gtxId = gtxId;
     this.serverEventPublisher = serverEventPublisher;
   }
 
@@ -47,7 +50,7 @@ public class DefaultMutationEventPublisher implements MutationEventPublisher {
         serverEvent.setValue(valueBytes);
       }
     }
-    serverEventPublisher.post(serverEvent);
+    serverEventPublisher.post(ServerEventWrapper.createServerEventWrapper(gtxId, serverEvent));
   }
 
   @Override
@@ -56,7 +59,7 @@ public class DefaultMutationEventPublisher implements MutationEventPublisher {
     Collection<VersionedServerEvent> serverEvents = pendingEvents.removeAll(objectId);
     for (VersionedServerEvent serverEvent : serverEvents) {
       serverEvent.setValue(value);
-      serverEventPublisher.post(serverEvent);
+      serverEventPublisher.post(ServerEventWrapper.createServerEventWrapper(gtxId, serverEvent));
     }
   }
 }

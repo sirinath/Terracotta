@@ -1,11 +1,14 @@
 package com.tc.objectserver.event;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.tc.exception.ImplementMe;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.msg.ServerEventBatchMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.NoSuchChannelException;
@@ -49,6 +52,10 @@ public class ServerEventBatcher implements Runnable {
     if (!buffer.isEmpty()) {
       drain();
     }
+  }
+
+  public void add(GlobalTransactionID gtxId, Multimap<ClientID, ServerEvent> eventsForTransaction) {
+    throw new ImplementMe();
   }
 
   /**
