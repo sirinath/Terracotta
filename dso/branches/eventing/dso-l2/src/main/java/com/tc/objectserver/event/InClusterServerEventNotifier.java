@@ -1,11 +1,14 @@
 package com.tc.objectserver.event;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.net.protocol.tcm.MessageChannel;
+import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.DSOChannelManagerEventListener;
 import com.tc.server.ServerEvent;
@@ -13,6 +16,7 @@ import com.tc.server.ServerEventType;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -26,6 +30,7 @@ public class InClusterServerEventNotifier implements ServerEventListener, DSOCha
   private static final TCLogger LOG = TCLogging.getLogger(InClusterServerEventNotifier.class);
 
   private final Map<ServerEventType, Map<ClientID, Set<String>>> registry = Maps.newEnumMap(ServerEventType.class);
+  private final ConcurrentMap<GlobalTransactionID, Multimap<ClientID, ServerEvent>> eventMap = Maps.newConcurrentMap();
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
   private final DSOChannelManager channelManager;
@@ -37,21 +42,37 @@ public class InClusterServerEventNotifier implements ServerEventListener, DSOCha
     this.channelManager.addEventListener(this);
   }
 
+
   @Override
-  public final void handleServerEvent(final ServerEvent event) {
-    lock.readLock().lock();
-    try {
-      final Map<ClientID, Set<String>> clients = registry.get(event.getType());
-      if (clients != null) {
-        for (Map.Entry<ClientID, Set<String>> entry : clients.entrySet()) {
-          final Set<String> destinations = entry.getValue();
-          if (destinations.contains(event.getCacheName())) {
-            batcher.add(entry.getKey(), event);
+  public final void handleServerEvent(final ServerEventWrapper eventWrapper) {
+    switch (eventWrapper.getType()) {
+      case BEGIN:
+        Multimap<ClientID, ServerEvent> clientToEventMap = ArrayListMultimap.create();
+        eventMap.put(eventWrapper.getGtxId(), clientToEventMap);
+        break;
+
+      case SERVER_EVENT:
+        ServerEvent event = eventWrapper.getEvent();
+        lock.readLock().lock();
+        try {
+          final Map<ClientID, Set<String>> clients = registry.get(event.getType());
+          if (clients != null) {
+            for (Map.Entry<ClientID, Set<String>> entry : clients.entrySet()) {
+              final Set<String> destinations = entry.getValue();
+              if (destinations.contains(event.getCacheName())) {
+                eventMap.get(eventWrapper.getGtxId()).put(entry.getKey(), event);
+              }
+            }
           }
+        } finally {
+          lock.readLock().unlock();
         }
-      }
-    } finally {
-      lock.readLock().unlock();
+        break;
+
+      case END:
+        Multimap<ClientID, ServerEvent> eventsForTransaction = eventMap.remove(eventWrapper.getGtxId());
+        batcher.add(eventWrapper.getGtxId(), eventsForTransaction);
+
     }
   }
 

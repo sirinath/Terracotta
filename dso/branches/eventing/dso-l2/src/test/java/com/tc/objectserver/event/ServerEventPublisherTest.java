@@ -4,6 +4,9 @@
 
 package com.tc.objectserver.event;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 
 import com.google.common.eventbus.EventBus;
@@ -13,9 +16,6 @@ import com.tc.server.ServerEventType;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Eugene Shelestovich
@@ -35,7 +35,9 @@ public class ServerEventPublisherTest {
     final ServerEvent event2 = new BasicServerEvent(ServerEventType.REMOVE, 1, cacheName);
     final ServerEvent event3 = new BasicServerEvent(ServerEventType.EVICT, 2, cacheName);
 
-    publisher.post(event1, event2, event3);
+    publisher.post(event1);
+    publisher.post(event2);
+    publisher.post(event3);
 
     assertConsumer(consumer1);
     assertConsumer(consumer2);

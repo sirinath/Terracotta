@@ -24,6 +24,7 @@ import com.tc.objectserver.context.BroadcastChangeContext;
 import com.tc.objectserver.context.FlushApplyCommitContext;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
+import com.tc.objectserver.event.ServerEventWrapper;
 import com.tc.objectserver.event.ServerEventPublisher;
 import com.tc.objectserver.locks.LockManager;
 import com.tc.objectserver.locks.NotifiedWaiters;
@@ -99,11 +100,14 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
     ApplyTransactionContext atc = (ApplyTransactionContext) context;
     ServerTransaction txn = atc.getTxn();
     ServerTransactionID stxnID = txn.getServerTransactionID();
-    ApplyTransactionInfo applyInfo = new ApplyTransactionInfo(txn.isActiveTxn(), stxnID, txn.isSearchEnabled(), txn.isEviction(),
-        serverEventPublisher);
+    ApplyTransactionInfo applyInfo = new ApplyTransactionInfo(txn.isActiveTxn(), stxnID, txn.getGlobalTransactionID(),
+                                                              txn.isSearchEnabled(), txn.isEviction(),
+                                                              serverEventPublisher);
 
     if (atc.needsApply()) {
+      serverEventPublisher.post(ServerEventWrapper.createBeginEvent(txn.getGlobalTransactionID()));
       transactionManager.apply(txn, atc.getObjects(), applyInfo, this.instanceMonitor);
+      serverEventPublisher.post(ServerEventWrapper.createEndEvent(txn.getGlobalTransactionID()));
       if ( applyInfo.hasObjectsToDelete() ) {
         garbageCollectionManager.deleteObjects(applyInfo.getObjectIDsToDelete(), atc.allCheckedOutObjects());
       }
