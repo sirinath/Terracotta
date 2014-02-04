@@ -8,8 +8,6 @@ import com.tc.async.api.AbstractEventHandler;
 import com.tc.async.api.ConfigurationContext;
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
 import com.tc.object.gtx.GlobalTransactionID;
@@ -34,7 +32,7 @@ import com.tc.objectserver.managedobject.ApplyTransactionInfo;
 import com.tc.objectserver.tx.ServerTransaction;
 import com.tc.objectserver.tx.ServerTransactionManager;
 import com.tc.objectserver.tx.TransactionalObjectManager;
-import com.tc.server.ServerEvent;
+import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.concurrent.TaskRunner;
 import com.tc.util.concurrent.Timer;
 
@@ -42,7 +40,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -55,10 +52,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ApplyTransactionChangeHandler extends AbstractEventHandler {
 
-  private static final TCLogger            LOGGER              = TCLogging
-                                                                   .getLogger(ApplyTransactionChangeHandler.class);
-
-  private static final int                 LWM_UPDATE_INTERVAL = 10000;
+  private static final int                 LWM_UPDATE_INTERVAL = TCPropertiesImpl.getProperties()
+                                                                   .getInt("lwm.update.intervalInMillis", 10000);
 
   private ServerTransactionManager         transactionManager;
   private LockManager                      lockManager;
@@ -104,11 +99,14 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
     ApplyTransactionContext atc = (ApplyTransactionContext) context;
     ServerTransaction txn = atc.getTxn();
     ServerTransactionID stxnID = txn.getServerTransactionID();
-    ApplyTransactionInfo applyInfo = new ApplyTransactionInfo(txn.isActiveTxn(), stxnID, txn.isSearchEnabled());
+    ApplyTransactionInfo applyInfo = new ApplyTransactionInfo(txn.isActiveTxn(), stxnID, txn.isSearchEnabled(), txn.isEviction(),
+        serverEventPublisher);
 
     if (atc.needsApply()) {
       transactionManager.apply(txn, atc.getObjects(), applyInfo, this.instanceMonitor);
-      garbageCollectionManager.deleteObjects(applyInfo.getObjectIDsToDelete(), atc.allCheckedOutObjects());
+      if ( applyInfo.hasObjectsToDelete() ) {
+        garbageCollectionManager.deleteObjects(applyInfo.getObjectIDsToDelete(), atc.allCheckedOutObjects());
+      }
       txnObjectMgr.applyTransactionComplete(applyInfo);
     } else {
       transactionManager.loadApplyChangeResults(txn, applyInfo);
@@ -131,7 +129,6 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
 
     if (txn.isActiveTxn()) {
       // only for active
-      publishModifications(applyInfo);
 
       final Set<ObjectID> initiateEviction = applyInfo.getObjectIDsToInitateEviction();
       if (!initiateEviction.isEmpty()) {
@@ -143,18 +140,6 @@ public class ApplyTransactionChangeHandler extends AbstractEventHandler {
     }
 
     commit(atc, applyInfo);
-  }
-
-  private void publishModifications(final ApplyTransactionInfo applyInfo) {
-    final List<ServerEvent> events = applyInfo.getServerEventRecorder().getEvents();
-    if (events != null && !events.isEmpty()) {
-      serverEventPublisher.post(events);
-
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(events.size() + " server events have been queued for sending");
-        LOGGER.debug(events);
-      }
-    }
   }
 
   private void begin() {

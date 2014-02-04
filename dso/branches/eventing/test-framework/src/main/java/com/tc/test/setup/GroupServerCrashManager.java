@@ -39,12 +39,14 @@ class GroupServerCrashManager implements Runnable {
       debug("Sleeping for initial delay seconds before starting to crash servers - " + delayInSeconds);
       sleep(delayInSeconds * 1000);
     }
+    try {
+      // Precondition for the loop
+      serverManager.waituntilEveryPassiveStandBy();
 
-    while (!done) {
-      sleep(getCrashConfig().getServerCrashWaitTimeInSec() * 1000);
+      while (!done) {
+        sleep(getCrashConfig().getServerCrashWaitTimeInSec() * 1000);
 
-      if ((getCrashConfig().getMaxCrashCount() > crashCount) && !done) {
-        try {
+        if ((getCrashConfig().getMaxCrashCount() > crashCount) && !done) {
           switch (getCrashConfig().getCrashMode()) {
 
             case RANDOM_ACTIVE_CRASH:
@@ -59,17 +61,20 @@ class GroupServerCrashManager implements Runnable {
               throw new AssertionError("Unsupported crash mode: " + getCrashConfig().getCrashMode());
           }
           debug("about to restart last crashed server");
-          serverManager.restartLastCrashedServer(); // no-op after stop() is called
-          crashCount++;
-        } catch (Exception e) {
-          debug("Error occured while crashing/restarting server");
-          errors.add(e);
-          e.printStackTrace();
+          // Re-establish a stable state prior to next iteration
+          serverManager.restartLastCrashedServer();
+          serverManager.waituntilEveryPassiveStandBy();
 
-          break;
+          crashCount++;
         }
       }
+    } catch (Exception e) {
+      debug("Error occured while crashing/restarting server");
+      errors.add(e);
+      e.printStackTrace();
+
     }
+
     debug("ServerCrasher is done: errors[" + errors.size() + "] crashCount[" + crashCount + "]");
   }
 

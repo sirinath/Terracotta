@@ -21,12 +21,16 @@ import com.tc.logging.TCLogger;
 import com.tc.management.TerracottaManagement;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.TCServerInfoMBean;
+import com.tc.net.core.BufferManagerFactory;
+import com.tc.net.core.security.TCSecurityManager;
 import com.tc.security.PwProvider;
 import com.tc.util.concurrent.ThreadUtil;
+import com.terracotta.management.keychain.KeyChain;
 
 import java.io.Console;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -35,6 +39,7 @@ import java.util.Arrays;
 
 import javax.management.MBeanServerConnection;
 import javax.management.remote.JMXConnector;
+import javax.net.ssl.SSLContext;
 
 public class TCStop {
   private static final TCLogger consoleLogger = CustomerLogging.getConsoleLogger();
@@ -154,8 +159,9 @@ public class TCStop {
       String[] servers = manager.allCurrentlyKnownServers();
 
       if(manager.isSecure() || securedSpecified) {
+        // Create a security manager that will set the default SSL context
         final Class<?> securityManagerClass = Class.forName("com.tc.net.core.security.TCClientSecurityManager");
-        securityManagerClass.newInstance();
+        securityManagerClass.getConstructor(KeyChain.class, boolean.class).newInstance(null, true);
         secured = true;
       }
 

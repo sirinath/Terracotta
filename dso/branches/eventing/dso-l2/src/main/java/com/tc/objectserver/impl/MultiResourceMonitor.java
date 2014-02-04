@@ -32,28 +32,37 @@ public class MultiResourceMonitor implements ResourceEventProducer {
   private final EvictionThreshold  memoryThreshold;
   private final TaskRunner                        runner;
   private final Timer                             driver;
-  private final int                               L2_EVICTION_CRITICALTHRESHOLD;
-  private final int                               L2_EVICTION_HALTTHRESHOLD;
-  private final int                               L2_EVICTION_OFFHEAP_STOPPAGE;
-  private final int                               L2_EVICTION_STORAGE_STOPPAGE;
-  private final boolean                           flash;
+  private final int                                 L2_EVICTION_CRITICALTHRESHOLD;
+  private final int                                 L2_EVICTION_HALTTHRESHOLD;
+  private float                               L2_EVICTION_OFFHEAP_STOPPAGE;
+  private float                               L2_EVICTION_STORAGE_STOPPAGE;
+  private final boolean                           hybrid;
   
   private boolean evicting = false;
   private boolean throttling = false;
   private final Set<MonitoredResource.Type> stops = EnumSet.noneOf(MonitoredResource.Type.class);
     
-  public MultiResourceMonitor(Collection<MonitoredResource> rsrc, ThreadGroup grp, EvictionThreshold et, long maxSleepTime, boolean flash, boolean persistent) {
+  public MultiResourceMonitor(Collection<MonitoredResource> rsrc, ThreadGroup grp, EvictionThreshold et, long maxSleepTime, boolean hybrid, boolean persistent) {
     this.sleepInterval = maxSleepTime;
     this.resources = rsrc;
     this.memoryThreshold = et;
     this.runner = Runners.newScheduledTaskRunner(1, grp);
     this.driver = this.runner.newTimer();
-    this.flash = flash;
+    this.hybrid = hybrid;
     L2_EVICTION_CRITICALTHRESHOLD = TCPropertiesImpl.getProperties()
-            .getInt(TCPropertiesConsts.L2_EVICTION_CRITICALTHRESHOLD,(persistent) ? 10 : -1);
+            .getInt(TCPropertiesConsts.L2_EVICTION_CRITICALTHRESHOLD,(persistent) ? 3 : -1);  // add a bit extra for eviction logging
     L2_EVICTION_HALTTHRESHOLD = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_EVICTION_HALTTHRESHOLD,-1);
-    L2_EVICTION_OFFHEAP_STOPPAGE = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_EVICTION_OFFHEAP_STOPPAGE,8 * 1024 * 1024);
-    L2_EVICTION_STORAGE_STOPPAGE = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_EVICTION_STORAGE_STOPPAGE,95);
+    L2_EVICTION_OFFHEAP_STOPPAGE = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_EVICTION_OFFHEAP_STOPPAGE,80) * 0.01f;
+    L2_EVICTION_STORAGE_STOPPAGE = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_EVICTION_STORAGE_STOPPAGE,90) * 0.01f;
+    if ( L2_EVICTION_OFFHEAP_STOPPAGE > 1 || L2_EVICTION_OFFHEAP_STOPPAGE < 0 ) {
+      L2_EVICTION_OFFHEAP_STOPPAGE = 0.8f;
+    }
+    if ( L2_EVICTION_STORAGE_STOPPAGE > 1 || L2_EVICTION_STORAGE_STOPPAGE < 0 ) {
+      L2_EVICTION_STORAGE_STOPPAGE = 0.9f;
+    }
+    if ( hybrid ) {
+      LOGGER.info("offheap stoppage occurs at " + (int)Math.ceil(L2_EVICTION_OFFHEAP_STOPPAGE * 100 ) + "% ");
+    }
   }
 
   @Override
@@ -83,7 +92,7 @@ public class MultiResourceMonitor implements ResourceEventProducer {
     for ( MonitoredResource rsrc : this.resources ) {
       switch ( rsrc.getType() ) {
         case OFFHEAP:
-          if ( flash ) {
+          if (hybrid) {
             schedule(createVitalMemoryTask(rsrc, sleepInterval), 10);
           } else {
             schedule(createMemoryTask(rsrc, sleepInterval), 20);
@@ -91,6 +100,7 @@ public class MultiResourceMonitor implements ResourceEventProducer {
         break;
         case HEAP:
         case OTHER:
+        case DATA:
           schedule(createMemoryTask(rsrc, sleepInterval), 30);
           break;
         case DISK:
@@ -114,7 +124,7 @@ public class MultiResourceMonitor implements ResourceEventProducer {
       public void run() {
         long reserved = rsrc.getReserved();
         long total = rsrc.getTotal();
-        if ( reserved > total * (L2_EVICTION_STORAGE_STOPPAGE*0.01) ) {
+        if ( reserved > total * (L2_EVICTION_STORAGE_STOPPAGE) ) {
           if ( stops.add(rsrc.getType()) ) {
             for (ResourceEventListener listener : listeners) {
               listener.requestStop(rsrc);
@@ -134,26 +144,43 @@ public class MultiResourceMonitor implements ResourceEventProducer {
   
   private Runnable createVitalMemoryTask(final MonitoredResource rsrc, final long time) {
     return new Runnable() {
+      
+      boolean warned = false;
 
       @Override
       public void run() {
         long vital = rsrc.getVital();
+        long reserved = rsrc.getReserved();
+        long used = rsrc.getUsed();
         long total = rsrc.getTotal();
 
-        if ( total - vital < L2_EVICTION_OFFHEAP_STOPPAGE ) {
+        if (vital > L2_EVICTION_OFFHEAP_STOPPAGE * total) {
           if ( stops.add(rsrc.getType()) ) {
             for (ResourceEventListener listener : listeners) {
               listener.requestStop(rsrc);
             }
           }
+        } else if ( reserved > L2_EVICTION_OFFHEAP_STOPPAGE * total ) {
+          if ( !warned ) {
+            for (ResourceEventListener listener : listeners) {
+              listener.resourcesConstrained(rsrc);
+            }
+            warned = true;
+          }
         } else {
+          if ( warned ) {
+            for (ResourceEventListener listener : listeners) {
+              listener.resourcesConstrained(rsrc);
+            }
+            warned = false;
+          }
           if ( stops.remove(rsrc.getType()) ) {
             for (ResourceEventListener listener : listeners) {
               listener.cancelStop(rsrc);
             }
           }
         }
-        schedule(this, adjust(vital ,total , time));        
+        schedule(this, adjust(vital, total, time));        
       }
     };
   }
@@ -167,13 +194,24 @@ public class MultiResourceMonitor implements ResourceEventProducer {
         for (ResourceEventListener listener : listeners) {
           listener.resourcesUsed(working);
         }
-        
-        if ( memoryThreshold.shouldThrottle(working, L2_EVICTION_CRITICALTHRESHOLD, L2_EVICTION_HALTTHRESHOLD) ) {
+//  just in case
+        if ( working.getReserved() > 0.98 * working.getTotal() ) {
+          if ( stops.add(rsrc.getType()) ) {
+            for (ResourceEventListener listener : listeners) {
+              listener.requestStop(rsrc);
+            }
+          }
+        } else if ( memoryThreshold.shouldThrottle(working, L2_EVICTION_HALTTHRESHOLD) ) {
           throttling = true;
           for (ResourceEventListener listener : listeners) {
             listener.requestThrottle(working);
           }
         } else {
+            if ( stops.remove(rsrc.getType()) ) {
+              for (ResourceEventListener listener : listeners) {
+                listener.cancelThrottle(working);
+              }
+            }
             if ( throttling ) {
               for (ResourceEventListener listener : listeners) {
                 listener.cancelThrottle(working);

@@ -12,7 +12,6 @@ import org.terracotta.toolkit.internal.cache.VersionUpdateListener;
 import org.terracotta.toolkit.internal.cache.VersionedValue;
 import org.terracotta.toolkit.search.QueryBuilder;
 import org.terracotta.toolkit.search.attribute.ToolkitAttributeExtractor;
-import org.terracotta.toolkit.store.ToolkitStore;
 
 import com.tc.object.ObjectID;
 import com.terracotta.toolkit.nonstop.ToolkitObjectLookup;
@@ -25,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class LocalReadsToolkitCacheImpl<K, V> implements ValuesResolver<K, V>, ToolkitCacheImplInterface<K, V>,
-    DestroyableToolkitObject, ToolkitStore<K, V> {
+    DestroyableToolkitObject {
   private final ToolkitObjectLookup<ToolkitCacheImplInterface<K, V>> delegate;
   private final ToolkitCacheImplInterface<K, V>                      noOpBehaviourResolver;
 
@@ -356,6 +355,11 @@ public class LocalReadsToolkitCacheImpl<K, V> implements ValuesResolver<K, V>, T
   }
 
   @Override
+  public void unregisterVersionUpdateListener(final VersionUpdateListener listener) {
+    throw new UnsupportedOperationException("Implement me!");
+  }
+
+  @Override
   public Set<K> keySetForSegment(final int segmentIndex) {
     throw new UnsupportedOperationException("Implement me!");
   }
@@ -422,6 +426,26 @@ public class LocalReadsToolkitCacheImpl<K, V> implements ValuesResolver<K, V>, T
 
   @Override
   public boolean replace(K key, V oldValue, V newValue, ToolkitValueComparator<V> comparator) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void startBuffering() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public boolean isBuffering() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void stopBuffering() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void flushBuffer() {
     throw new UnsupportedOperationException();
   }
 }

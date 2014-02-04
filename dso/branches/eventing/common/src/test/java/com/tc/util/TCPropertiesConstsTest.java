@@ -55,16 +55,17 @@ public class TCPropertiesConstsTest extends TCTestCase {
     exemptedProperties.add(TCPropertiesConsts.L2_OFFHEAP_OBJECTDB_TABLESIZE);
     exemptedProperties.add(TCPropertiesConsts.L2_OFFHEAP_DISABLED);
 
+    exemptedProperties.add(TCPropertiesConsts.L2_SEDA_APPLY_STAGE_THREADS);
     exemptedProperties.add(TCPropertiesConsts.L2_SEDA_SERVER_MAP_CAPACITY_EVICTION_STAGE_THREADS);
     exemptedProperties.add(TCPropertiesConsts.L2_SEDA_MANAGEDOBJECTREQUESTSTAGE_THREADS);
     exemptedProperties.add(TCPropertiesConsts.L2_SEDA_MANAGEDOBJECTRESPONSESTAGE_THREADS);
 
     exemptedProperties.add(TCPropertiesConsts.L2_NHA_TCGROUPCOMM_RECONNECT_L2PROXY_TO_PORT);
 
-    exemptedProperties.add(TCPropertiesConsts.L2_ALLOCATION_USE_PARTIALS);
     exemptedProperties.add(TCPropertiesConsts.L2_ALLOCATION_DISABLE_PARTIAL_MAPS);
     exemptedProperties.add(TCPropertiesConsts.L2_ALLOCATION_DISABLE_PARTIAL_OBJECTS);
-    exemptedProperties.add(TCPropertiesConsts.L2_ALLOCATION_DISABLE_PARTIAL_HOTSET);
+    exemptedProperties.add(TCPropertiesConsts.L2_ALLOCATION_ENABLE_OBJECTS_HOTSET);
+    exemptedProperties.add(TCPropertiesConsts.L2_ALLOCATION_DISABLE_MAPS_HOTSET);
     exemptedProperties.add(TCPropertiesConsts.L2_OFFHEAP_MAX_CHUNK_SIZE);
     exemptedProperties.add(TCPropertiesConsts.L2_OFFHEAP_MIN_CHUNK_SIZE);
     exemptedProperties.add(TCPropertiesConsts.L2_OFFHEAP_MAX_PAGE_SIZE);
@@ -81,6 +82,7 @@ public class TCPropertiesConstsTest extends TCTestCase {
     exemptedProperties.add(TCPropertiesConsts.SEARCH_LUCENE_MAX_BOOLEAN_CLAUSES);
     exemptedProperties.add(TCPropertiesConsts.L1_SEARCH_MAX_OPEN_RESULT_SETS);
     exemptedProperties.add(TCPropertiesConsts.L2_SEARCH_MAX_PAGED_RESULT_SETS);
+    exemptedProperties.add(TCPropertiesConsts.L2_SEARCH_MAX_RESULT_PAGE_SIZE);
 
     exemptedProperties.add(TCPropertiesConsts.L2_FRS_PREFIX);
     exemptedProperties.add(TCPropertiesConsts.L2_FRS_COMPACTOR_POLICY);
@@ -92,6 +94,8 @@ public class TCPropertiesConstsTest extends TCTestCase {
     exemptedProperties.add(TCPropertiesConsts.L2_SERVER_EVENT_BATCHER_INTERVAL_MS);
     exemptedProperties.add(TCPropertiesConsts.L2_SERVER_EVENT_BATCHER_QUEUE_SIZE);
     exemptedProperties.add(TCPropertiesConsts.L1_SERVER_EVENT_DELIVERY_THREADS);
+
+    exemptedProperties.add(TCPropertiesConsts.CAS_LOGGING_ENABLED);
   }
 
   private void loadDefaults(String propFile) {

@@ -38,17 +38,15 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.management.MBeanServerConnection;
 
 @RunWith(value = TcTestRunner.class)
-public abstract class AbstractTestBase extends TCTestCase {
+public abstract class AbstractTestBase extends TCTestCase implements TestFailureListener {
   private static final String              TC_TESTS_INFO_STANDALONE  = "tc.tests.info.standalone";
   private static final String              DEFAULT_CONFIG            = "default-config";
   public static final String               TC_CONFIG_PROXY_FILE_NAME = "tc-config-proxy.xml";
@@ -61,19 +59,19 @@ public abstract class AbstractTestBase extends TCTestCase {
   protected final File                     tempDir;
   protected File                           javaHome;
   protected TestClientManager              clientRunner;
-  protected TestJMXServerManager           jmxServerManager;
-  private Thread                           duringRunningClusterThread;
-  private volatile Thread                  testExecutionThread;
+  private volatile TestJMXServerManager    jmxServerManager;
+  protected volatile Thread                duringRunningClusterThread;
+  protected volatile Thread                testExecutionThread;
   private static final String              log4jPrefix               = "log4j.logger.";
   private final Map<String, LogLevel>      tcLoggingConfigs          = new HashMap<String, LogLevel>();
-  private final AtomicReference<Throwable> testException             = new AtomicReference<Throwable>();
-  private PauseManager                     pauseManager;
+  protected final AtomicReference<Throwable> testException             = new AtomicReference<Throwable>();
+  protected volatile PauseManager                     pauseManager;
 
   public AbstractTestBase(TestConfig testConfig) {
     this.testConfig = testConfig;
     try {
       this.tempDir = getTempDirectory();
-      tempDir.mkdir();
+      FileUtils.forceMkdir(tempDir);
       FileUtils.cleanDirectory(tempDir);
       tcConfigFile = getTempFile(TC_CONFIG_FILE_NAME);
       tcConfigProxyFile = getTempFile(TC_CONFIG_PROXY_FILE_NAME);
@@ -102,7 +100,8 @@ public abstract class AbstractTestBase extends TCTestCase {
   }
 
   /**
-   * Returns the list of testconfigs the test has to run with Overwrite this method to run the same test with multiple
+   * Returns the list of test configs the test has to run with.
+   * Override this method to run the same test with multiple
    * configs
    */
   @Configs
@@ -148,21 +147,23 @@ public abstract class AbstractTestBase extends TCTestCase {
       try {
         System.out.println("***************" + Calendar.getInstance().getTime() + " Starting Test with Test Profile : "
                            + testConfig.getConfigName() + " **************************");
+
+        jmxServerManager = new TestJMXServerManager(new PortChooser().chooseRandomPort());
+        jmxServerManager.startJMXServer();
+
         setJavaHome();
-        pauseManager = new PauseManager(testConfig);
-        clientRunner = new TestClientManager(tempDir, this, this.testConfig, pauseManager);
+        pauseManager = setupPauseManager();
+        clientRunner = setupTestClientManager();
         pauseManager.setClientManager(clientRunner); // Adds a circular dependency
         if (!testConfig.isStandAloneTest()) {
-          testServerManager = new TestServerManager(this.testConfig, this.tempDir, this.tcConfigFile, this.javaHome,
-                                                    new FailTestCallback());
+          testServerManager = setupTestServerManager();
           pauseManager.setTestServerManager(testServerManager);
           writeProxyTcConfigFile();
           startServers();
         }
 
         TestHandler testHandlerMBean = new TestHandler(testServerManager, clientRunner, testConfig, pauseManager);
-        jmxServerManager = new TestJMXServerManager(new PortChooser().chooseRandomPort(), testHandlerMBean);
-        jmxServerManager.startJMXServer();
+        jmxServerManager.registerMBean(testHandlerMBean, TestHandler.TEST_SERVER_CONTROL_MBEAN);
         configureTestHandlerMBean(testHandlerMBean);
         executeDuringRunningCluster();
       } catch (Throwable e) {
@@ -170,6 +171,18 @@ public abstract class AbstractTestBase extends TCTestCase {
         throw new AssertionError(e);
       }
     }
+  }
+
+  protected TestServerManager setupTestServerManager() throws Exception {
+    return new TestServerManager(testConfig, tempDir, tcConfigFile, javaHome, this);
+  }
+
+  protected PauseManager setupPauseManager() {
+    return new PauseManager(testConfig);
+  }
+
+  protected TestClientManager setupTestClientManager() throws IOException {
+    return new TestClientManager(tempDir, this, testConfig, pauseManager);
   }
 
   private void writeProxyTcConfigFile() throws Exception {
@@ -201,7 +214,7 @@ public abstract class AbstractTestBase extends TCTestCase {
 
   @Override
   @Test
-  final public void runTest() throws Throwable {
+  public void runTest() throws Throwable {
     if (!testWillRun) return;
 
     testExecutionThread = new Thread(new Runnable() {
@@ -228,14 +241,12 @@ public abstract class AbstractTestBase extends TCTestCase {
     tcTestCaseTearDown(testException.get());
   }
 
-  private class FailTestCallback implements TestFailureListener {
-    @Override
-    public void testFailed(String reason) {
-      if (testExecutionThread != null) {
-        doDumpServerDetails();
-        testException.compareAndSet(null, new Throwable(reason));
-        testExecutionThread.interrupt();
-      }
+  @Override
+  public void testFailed(String reason) {
+    if (testExecutionThread != null) {
+      doDumpServerDetails();
+      testException.compareAndSet(null, new Throwable(reason));
+      testExecutionThread.interrupt();
     }
   }
 
@@ -300,27 +311,18 @@ public abstract class AbstractTestBase extends TCTestCase {
   }
 
   protected String makeClasspath(String... jars) {
-    Set<String> uniqueJars = new LinkedHashSet<String>();
-    for (String jar : jars) {
-      uniqueJars.add(jar);
-    }
-
-    String cp = "";
-    for (String jar : uniqueJars) {
-      cp += SEP + jar;
-    }
+    String cp = TestBaseUtil.constructClassPath(jars);
 
     if (!tcLoggingConfigs.isEmpty()) {
-      cp += SEP + getTCLoggingFilePath();
+      return addToClasspath(cp, getTCLoggingFilePath());
+    } else {
+      return cp;
     }
-    return cp;
   }
 
   protected String makeClasspath(List<String> list, String... jars) {
     List<String> fullList = new ArrayList<String>(list);
-    for (String jar : jars) {
-      fullList.add(jar);
-    }
+    Collections.addAll(fullList, jars);
     return makeClasspath(fullList.toArray(new String[0]));
   }
 
@@ -367,11 +369,17 @@ public abstract class AbstractTestBase extends TCTestCase {
     if (testWillRun) {
       System.out.println("Waiting for During Cluster running thread to finish");
       duringRunningClusterThread.join();
-      if (!testConfig.isStandAloneTest()) this.testServerManager.stopAllServers();
-      this.jmxServerManager.stopJmxServer();
+      if (!testConfig.isStandAloneTest()) {
+        stopServers();
+      }
+      jmxServerManager.stopJmxServer();
       System.out.println("***************" + Calendar.getInstance().getTime() + " Stopped Test with Test Profile : "
                          + testConfig.getConfigName() + " **************************");
     }
+  }
+
+  protected void stopServers() throws Exception {
+    this.testServerManager.stopAllServers();
   }
 
   @Override
@@ -535,4 +543,7 @@ public abstract class AbstractTestBase extends TCTestCase {
     return tcConfigProxyFile;
   }
 
+  public TestJMXServerManager getJmxServerManager() {
+    return jmxServerManager;
+  }
 }

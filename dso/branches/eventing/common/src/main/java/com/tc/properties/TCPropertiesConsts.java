@@ -744,6 +744,7 @@ public interface TCPropertiesConsts {
    ********************************************************************************************************************/
   public static final String L2_REMOTEJMX_MAXTHREADS                                        = "l2.remotejmx.maxthreads";
   public static final String L2_REMOTEJMX_IDLETIME                                          = "l2.remotejmx.idletime";
+  public static final String L2_REMOTEJMX_CONNECT_TIMEOUT                                   = "l2.remotejmx.connect.timeout";
 
   /*********************************************************************************************************************
    * <code>
@@ -805,16 +806,21 @@ public interface TCPropertiesConsts {
   /*********************************************************************************************************************
    * <code>
    * Section :  OffHeap Settings
+   * l2.offHeap.allocation.partial.disable.maps - disable the partial allocation of map storage
+   * l2.offHeap.allocation.partial.disable.objects - disable the partial allocation of objectdb storage
+   * l2.offHeap.allocation.partial.disable.map.hotset - disable caching map values in offheap
+   * l2.offHeap.allocation.partial.enable.object.hotset - enable caching object values in offheap
+   * 
    * </code>
    ********************************************************************************************************************/
 
   public static final String L2_OFFHEAP_ALLOCATION_SLOW                                     = "l2.offHeap.allocation.slow";
   public static final String L2_OFFHEAP_ALLOCATION_CRITICAL                                 = "l2.offHeap.allocation.critical";
   public static final String L2_OFFHEAP_ALLOCATION_CRITICAL_HALT                            = "l2.offHeap.allocation.critical.halt";
-  public static final String L2_ALLOCATION_USE_PARTIALS                                 = "l2.offHeap.allocation.partials";
   public static final String L2_ALLOCATION_DISABLE_PARTIAL_MAPS                                 = "l2.offHeap.allocation.partial.disable.maps";
   public static final String L2_ALLOCATION_DISABLE_PARTIAL_OBJECTS                                 = "l2.offHeap.allocation.partial.disable.objects";
-  public static final String L2_ALLOCATION_DISABLE_PARTIAL_HOTSET                                = "l2.offHeap.allocation.partial.disable.hotset";
+  public static final String L2_ALLOCATION_ENABLE_OBJECTS_HOTSET                                = "l2.offHeap.allocation.partial.enable.object.hotset";
+  public static final String L2_ALLOCATION_DISABLE_MAPS_HOTSET                                = "l2.offHeap.allocation.partial.disable.map.hotset";
 
   public static final String L2_OFFHEAP_DISABLED                                            = "l2.offheap.disable";
 
@@ -836,6 +842,7 @@ public interface TCPropertiesConsts {
 
   public static final String L1_SEARCH_MAX_OPEN_RESULT_SETS                                 = "l1.search.max.open.resultSets";
   public static final String L2_SEARCH_MAX_PAGED_RESULT_SETS                                = "l2.search.max.paged.resultSets";
+  public static final String L2_SEARCH_MAX_RESULT_PAGE_SIZE                                 = "l2.search.max.result.pageSize";
 
   public static final String SEARCH_QUERY_WAIT_FOR_TXNS                                     = "search.query.wait.for.txns";
   public static final String SEARCH_USE_COMMIT_THREAD                                       = "search.use.commit.thread";
@@ -889,5 +896,10 @@ public interface TCPropertiesConsts {
   public static final String TOOLKIT_LOCAL_BUFFER_PUTS_BATCH_BYTE_SIZE                      = "toolkit.bulkload.minbatchbytesize";
   public static final String TOOLKIT_LOCAL_BUFFER_PUTS_BATCH_TIME_MILLIS                    = "toolkit.bulkload.throttle.timeInmillis";
   public static final String TOOLKIT_LOCAL_BUFFER_PUTS_THROTTLE_BYTE_SIZE                   = "toolkit.bulkload.throttle.threshold";
+
+  /*
+   * For enabling CAS logging
+   */
+  public static final String CAS_LOGGING_ENABLED                                            = "cas.logging.enabled";
 
 }
