@@ -11,6 +11,8 @@ import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
+import com.tc.object.msg.AcknowledgeServerEventMessage;
+import com.tc.object.msg.AcknowledgeServerEventMessageFactory;
 import com.tc.object.msg.AcknowledgeTransactionMessage;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.ClientHandshakeMessage;
@@ -54,7 +56,7 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
     RequestRootMessageFactory, RequestManagedObjectMessageFactory, ClientHandshakeMessageFactory,
     ObjectIDBatchRequestMessageFactory, CommitTransactionMessageFactory, AcknowledgeTransactionMessageFactory,
     CompletedTransactionLowWaterMarkMessageFactory, NodesWithObjectsMessageFactory, ServerMapMessageFactory,
-    KeysForOrphanedValuesMessageFactory, NodeMetaDataMessageFactory,
+    KeysForOrphanedValuesMessageFactory, NodeMetaDataMessageFactory, AcknowledgeServerEventMessageFactory,
     SearchRequestMessageFactory, NodesWithKeysMessageFactory, ServerEventListenerMessageFactory {
 
   private final ClientMessageChannel channel;
@@ -146,6 +148,16 @@ public class DSOClientMessageChannelImpl implements DSOClientMessageChannel, Loc
   @Override
   public AcknowledgeTransactionMessage newAcknowledgeTransactionMessage(final NodeID remoteNode) {
     return (AcknowledgeTransactionMessage) this.channel.createMessage(TCMessageType.ACKNOWLEDGE_TRANSACTION_MESSAGE);
+  }
+
+  @Override
+  public AcknowledgeServerEventMessageFactory getAcknowledgeServerEventMessageFactory() {
+    return this;
+  }
+
+  @Override
+  public AcknowledgeServerEventMessage newAcknowledgeServerEventMessage(final NodeID remoteNode) {
+    return (AcknowledgeServerEventMessage) this.channel.createMessage(TCMessageType.ACKNOWLEDGE_SERVER_EVENT_MESSAGE);
   }
 
   @Override

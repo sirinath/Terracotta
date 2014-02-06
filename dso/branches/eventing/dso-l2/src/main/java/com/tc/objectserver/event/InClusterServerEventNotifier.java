@@ -17,7 +17,6 @@ import com.tc.server.ServerEventType;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -31,7 +30,7 @@ public class InClusterServerEventNotifier implements ServerEventListener, DSOCha
   private static final TCLogger LOG = TCLogging.getLogger(InClusterServerEventNotifier.class);
 
   private final Map<ServerEventType, Map<ClientID, Set<String>>> registry = Maps.newEnumMap(ServerEventType.class);
-  private final ConcurrentMap<GlobalTransactionID, Multimap<ClientID, ServerEvent>> eventMap = Maps.newConcurrentMap();
+  private final Map<GlobalTransactionID, Multimap<ClientID, ServerEvent>> eventMap = Maps.newHashMap(); //TODO: Do I need a concurrentmap
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
   private final DSOChannelManager channelManager;
@@ -174,4 +173,13 @@ public class InClusterServerEventNotifier implements ServerEventListener, DSOCha
       lock.writeLock().unlock();
     }
   }
+
+  public void acknowledgement(final Set<GlobalTransactionID> acknowledgedGtxIds) {
+    for (GlobalTransactionID gtxId : acknowledgedGtxIds) {
+      eventMap.remove(gtxId);
+    }
+
+    // TODO: Relay to Passive the acked serverevents
+  }
+
 }

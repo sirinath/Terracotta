@@ -9,6 +9,7 @@ import com.tc.net.MaxConnectionsExceededException;
 import com.tc.net.protocol.tcm.ChannelEventListener;
 import com.tc.net.protocol.tcm.ClientMessageChannel;
 import com.tc.object.ClientIDProvider;
+import com.tc.object.msg.AcknowledgeServerEventMessageFactory;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
 import com.tc.object.msg.CommitTransactionMessageFactory;
@@ -63,6 +64,8 @@ public interface DSOClientMessageChannel {
   public ClientHandshakeMessageFactory getClientHandshakeMessageFactory();
 
   public AcknowledgeTransactionMessageFactory getAcknowledgeTransactionMessageFactory();
+
+  public AcknowledgeServerEventMessageFactory getAcknowledgeServerEventMessageFactory();
 
   public NodesWithObjectsMessageFactory getNodesWithObjectsMessageFactory();
 

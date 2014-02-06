@@ -86,6 +86,7 @@ public final class TCMessageType {
   public static final int           TYPE_SEARCH_RESULTS_REQUEST_MESSAGE               = 75;
   public static final int           TYPE_SEARCH_RESULTS_RESPONSE_MESSAGE              = 76;
   public static final int           TYPE_SEARCH_RESULTS_CLOSE_MESSAGE                 = 77;
+  public static final int           TYPE_ACKNOWLEDGE_SERVER_EVENT_MESSAGE             = 78;
 
   public static final TCMessageType PING_MESSAGE                                      = new TCMessageType();
   public static final TCMessageType PONG_MESSAGE                                      = new TCMessageType();
@@ -147,6 +148,7 @@ public final class TCMessageType {
   public static final TCMessageType REGISTER_SERVER_EVENT_LISTENER_MESSAGE            = new TCMessageType();
   public static final TCMessageType UNREGISTER_SERVER_EVENT_LISTENER_MESSAGE          = new TCMessageType();
   public static final TCMessageType SERVER_EVENT_BATCH_MESSAGE                        = new TCMessageType();
+  public static final TCMessageType ACKNOWLEDGE_SERVER_EVENT_MESSAGE                  = new TCMessageType();
 
   public static TCMessageType getInstance(final int i) {
     return typeMap.get(i);
