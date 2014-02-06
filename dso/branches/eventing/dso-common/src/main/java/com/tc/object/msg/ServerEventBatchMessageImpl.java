@@ -1,5 +1,7 @@
 package com.tc.object.msg;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.tc.bytes.TCByteBuffer;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
@@ -10,6 +12,7 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.impl.SerializerDNAEncodingImpl;
 import com.tc.object.dna.impl.UTF8ByteDataHolder;
+import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.session.SessionID;
 import com.tc.server.BasicServerEvent;
 import com.tc.server.CustomLifespanVersionedServerEvent;
@@ -19,8 +22,9 @@ import com.tc.server.VersionedServerEvent;
 import com.tc.util.Assert;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * @author Eugene Shelestovich
@@ -30,9 +34,8 @@ public class ServerEventBatchMessageImpl extends DSOMessageBase implements Serve
   private final static DNAEncoding encoder = new SerializerDNAEncodingImpl();
   private final static DNAEncoding decoder = new SerializerDNAEncodingImpl();
 
-  private static final byte EVENTS_COUNT = 0;
-
-  private List<ServerEvent> events = new ArrayList<ServerEvent>();
+  private static final byte TRANSACTIONS_COUNT = 0;
+  private Map<GlobalTransactionID, List<ServerEvent>> serverEventMap     = Maps.newHashMap();
 
   public ServerEventBatchMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
                                      final TCByteBufferOutputStream out, final MessageChannel channel,
@@ -48,59 +51,74 @@ public class ServerEventBatchMessageImpl extends DSOMessageBase implements Serve
 
   @Override
   protected void dehydrateValues() {
-    putNVPair(EVENTS_COUNT, events.size());
+    putNVPair(TRANSACTIONS_COUNT, serverEventMap.size());
 
-    int count = 0;
+    int txnCount = 0;
     final TCByteBufferOutputStream outStream = getOutputStream();
-    for (ServerEvent event : events) {
-      encoder.encode(event.getType().ordinal(), outStream);
-      encoder.encode(event.getCacheName(), outStream);
-      encoder.encode(event.getKey(), outStream);
-      encoder.encode(event.getValue(), outStream);
-      // Note: This is an ugly hack, but it will work for now. Should fix it soon.
-      // Currently every event is a VersionedServerEvent, there is no implementation for ServerEvent
-      encoder.encode(((VersionedServerEvent) event).getVersion(), outStream);
 
-      boolean customLifespanEvent = (event instanceof CustomLifespanVersionedServerEvent);
-      encoder.encode(customLifespanEvent, outStream);
-      if (customLifespanEvent) {
-        CustomLifespanVersionedServerEvent customLifespanVersionedServerEvent = (CustomLifespanVersionedServerEvent) event;
-        encoder.encode(customLifespanVersionedServerEvent.getCreationTimeInSeconds(), outStream);
-        encoder.encode(customLifespanVersionedServerEvent.getTimeToIdle(), outStream);
-        encoder.encode(customLifespanVersionedServerEvent.getTimeToLive(), outStream);
+    for (Entry<GlobalTransactionID, List<ServerEvent>> entry : serverEventMap.entrySet()) {
+      int eventCount = 0;
+      encoder.encode(entry.getKey().toLong(), outStream);
+      encoder.encode(entry.getValue().size(), outStream);
+      for (ServerEvent event : entry.getValue()) {
+        encoder.encode(event.getType().ordinal(), outStream);
+        encoder.encode(event.getCacheName(), outStream);
+        encoder.encode(event.getKey(), outStream);
+        encoder.encode(event.getValue(), outStream);
+        // Note: This is an ugly hack, but it will work for now. Should fix it soon.
+        // Currently every event is a VersionedServerEvent, there is no implementation for ServerEvent
+        encoder.encode(((VersionedServerEvent) event).getVersion(), outStream);
+
+        boolean customLifespanEvent = (event instanceof CustomLifespanVersionedServerEvent);
+        encoder.encode(customLifespanEvent, outStream);
+        if (customLifespanEvent) {
+          CustomLifespanVersionedServerEvent customLifespanVersionedServerEvent = (CustomLifespanVersionedServerEvent) event;
+          encoder.encode(customLifespanVersionedServerEvent.getCreationTimeInSeconds(), outStream);
+          encoder.encode(customLifespanVersionedServerEvent.getTimeToIdle(), outStream);
+          encoder.encode(customLifespanVersionedServerEvent.getTimeToLive(), outStream);
+        }
+        eventCount++;
       }
-      count++;
+      Assert.assertEquals(entry.getValue().size(), eventCount);
+      txnCount++;
     }
-    Assert.assertEquals(events.size(), count);
+
+    Assert.assertEquals(serverEventMap.size(), txnCount);
   }
 
   @Override
   protected boolean hydrateValue(byte name) throws IOException {
     switch (name) {
-      case EVENTS_COUNT:
+      case TRANSACTIONS_COUNT:
         try {
-          int count = getIntValue();
-          events = new ArrayList<ServerEvent>(count);
+          int txnCount = getIntValue();
+          serverEventMap = Maps.newHashMap();
           final TCByteBufferInputStream inputStream = getInputStream();
-          while (count-- > 0) {
-            int index = (Integer)decoder.decode(inputStream);
-            final ServerEventType type = ServerEventType.values()[index];
-            final String destination = (String)decoder.decode(inputStream);
-            final Object key = decoder.decode(inputStream);
-            final byte[] value = (byte[])decoder.decode(inputStream);
-            final long version = (Long) decoder.decode(inputStream);
-            VersionedServerEvent serverEvent = new BasicServerEvent(type, extractStringIfNecessary(key), value,
-                                                                     version, destination);
+          while (txnCount-- > 0) {
+            final GlobalTransactionID gtxId = new GlobalTransactionID((Long) decoder.decode(inputStream));
+            int eventCount = (Integer) decoder.decode(inputStream);
+            List<ServerEvent> events = Lists.newArrayList();
+            serverEventMap.put(gtxId, events);
+            while (eventCount-- > 0) {
+              int index = (Integer) decoder.decode(inputStream);
+              final ServerEventType type = ServerEventType.values()[index];
+              final String destination = (String) decoder.decode(inputStream);
+              final Object key = decoder.decode(inputStream);
+              final byte[] value = (byte[]) decoder.decode(inputStream);
+              final long version = (Long) decoder.decode(inputStream);
+              VersionedServerEvent serverEvent = new BasicServerEvent(type, extractStringIfNecessary(key), value,
+                                                                      version, destination);
 
-            boolean customLifespanEvent = (Boolean) decoder.decode(inputStream);
-            if (customLifespanEvent) {
-              final int creationTime = (Integer) decoder.decode(inputStream);
-              final int timeToIdle = (Integer) decoder.decode(inputStream);
-              final int timeToLive = (Integer) decoder.decode(inputStream);
-              serverEvent = new CustomLifespanVersionedServerEvent((BasicServerEvent) serverEvent, creationTime, timeToIdle, timeToLive);
+              boolean customLifespanEvent = (Boolean) decoder.decode(inputStream);
+              if (customLifespanEvent) {
+                final int creationTime = (Integer) decoder.decode(inputStream);
+                final int timeToIdle = (Integer) decoder.decode(inputStream);
+                final int timeToLive = (Integer) decoder.decode(inputStream);
+                serverEvent = new CustomLifespanVersionedServerEvent((BasicServerEvent) serverEvent, creationTime,
+                                                                     timeToIdle, timeToLive);
+              }
+              events.add(serverEvent);
             }
-
-            events.add(serverEvent);
           }
         } catch (ClassNotFoundException e) {
           throw new AssertionError(e);
@@ -125,12 +143,12 @@ public class ServerEventBatchMessageImpl extends DSOMessageBase implements Serve
   }
 
   @Override
-  public void setEvents(final List<ServerEvent> events) {
-    this.events = events;
+  public void setEvents(final Map<GlobalTransactionID, List<ServerEvent>> events) {
+    this.serverEventMap = events;
   }
 
   @Override
-  public List<ServerEvent> getEvents() {
-    return events;
+  public Map<GlobalTransactionID, List<ServerEvent>> getEvents() {
+    return serverEventMap;
   }
 }
