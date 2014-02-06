@@ -14,6 +14,7 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.net.protocol.tcm.TestChannelIDProvider;
 import com.tc.object.ClientIDProvider;
 import com.tc.object.ClientIDProviderImpl;
+import com.tc.object.msg.AcknowledgeServerEventMessageFactory;
 import com.tc.object.msg.AcknowledgeTransactionMessageFactory;
 import com.tc.object.msg.ClientHandshakeMessageFactory;
 import com.tc.object.msg.CommitTransactionMessageFactory;
@@ -165,6 +166,11 @@ public class MockChannel implements DSOClientMessageChannel {
 
   @Override
   public SearchRequestMessageFactory getSearchRequestMessageFactory() {
+    throw new ImplementMe();
+  }
+
+  @Override
+  public AcknowledgeServerEventMessageFactory getAcknowledgeServerEventMessageFactory() {
     throw new ImplementMe();
   }
 }

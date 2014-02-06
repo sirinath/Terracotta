@@ -98,6 +98,7 @@ import com.tc.object.locks.ClientLockManagerConfigImpl;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.locks.LocksRecallService;
 import com.tc.object.locks.LocksRecallServiceImpl;
+import com.tc.object.msg.AcknowledgeServerEventMessageImpl;
 import com.tc.object.msg.AcknowledgeTransactionMessageImpl;
 import com.tc.object.msg.BatchTransactionAcknowledgeMessageImpl;
 import com.tc.object.msg.BroadcastTransactionMessageImpl;
@@ -702,7 +703,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
         new ServerEventDeliveryHandler(serverEventListenerManager), TCPropertiesImpl.getProperties()
         .getInt(TCPropertiesConsts.L1_SERVER_EVENT_DELIVERY_THREADS, 4), 1, maxSize);
     final Stage serverEventStage = stageManager.createStage(ClientConfigurationContext.SERVER_EVENT_STAGE,
-        new ServerEventMessageHandler(serverEventDeliveryStage.getSink()), 1, maxSize);
+                     new ServerEventMessageHandler(serverEventDeliveryStage.getSink(), this.channel
+                         .getAcknowledgeServerEventMessageFactory()), 1, maxSize);
 
     final List<ClientHandshakeCallback> clientHandshakeCallbacks = new ArrayList<ClientHandshakeCallback>();
     clientHandshakeCallbacks.add(this.lockManager);
@@ -925,6 +927,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     messageTypeClassMapping.put(TCMessageType.REGISTER_SERVER_EVENT_LISTENER_MESSAGE, RegisterServerEventListenerMessage.class);
     messageTypeClassMapping.put(TCMessageType.UNREGISTER_SERVER_EVENT_LISTENER_MESSAGE, UnregisterServerEventListenerMessage.class);
     messageTypeClassMapping.put(TCMessageType.SERVER_EVENT_BATCH_MESSAGE, ServerEventBatchMessageImpl.class);
+    messageTypeClassMapping
+        .put(TCMessageType.ACKNOWLEDGE_SERVER_EVENT_MESSAGE, AcknowledgeServerEventMessageImpl.class);
     return messageTypeClassMapping;
   }
 

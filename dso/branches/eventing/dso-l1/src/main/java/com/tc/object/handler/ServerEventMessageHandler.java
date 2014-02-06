@@ -6,6 +6,8 @@ import com.tc.async.api.Sink;
 import com.tc.net.NodeID;
 import com.tc.object.context.ServerEventDeliveryContext;
 import com.tc.object.gtx.GlobalTransactionID;
+import com.tc.object.msg.AcknowledgeServerEventMessage;
+import com.tc.object.msg.AcknowledgeServerEventMessageFactory;
 import com.tc.object.msg.ServerEventBatchMessage;
 import com.tc.server.ServerEvent;
 
@@ -21,9 +23,11 @@ import java.util.Map.Entry;
 public class ServerEventMessageHandler extends AbstractEventHandler {
 
   private final Sink deliverySink;
+  private final AcknowledgeServerEventMessageFactory ackMessageFactory;
 
-  public ServerEventMessageHandler(final Sink deliverySink) {
+  public ServerEventMessageHandler(final Sink deliverySink, final AcknowledgeServerEventMessageFactory ackMessageFactory) {
     this.deliverySink = deliverySink;
+    this.ackMessageFactory = ackMessageFactory;
   }
 
   @Override
@@ -37,14 +41,15 @@ public class ServerEventMessageHandler extends AbstractEventHandler {
     // unfold the batch and multiplex messages to different queues based on the event key
     Map<GlobalTransactionID, List<ServerEvent>> eventMap = message.getEvents();
     for (Entry<GlobalTransactionID, List<ServerEvent>> entry : eventMap.entrySet()) {
-
       for (final ServerEvent event : entry.getValue()) {
         deliverySink.add(new ServerEventDeliveryContext(event, remoteNode));
       }
-
-      // TODO: Acknowledge events received
-
     }
+
+    // TODO: Acknowledge events received
+    AcknowledgeServerEventMessage ack = ackMessageFactory.newAcknowledgeServerEventMessage(message.getSourceNodeID());
+    ack.initialize(eventMap.keySet());
+    ack.send();
 
   }
 }

@@ -6,7 +6,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import com.tc.async.api.Sink;
 import com.tc.net.GroupID;
@@ -14,6 +18,8 @@ import com.tc.net.NodeID;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.object.context.ServerEventDeliveryContext;
 import com.tc.object.gtx.GlobalTransactionID;
+import com.tc.object.msg.AcknowledgeServerEventMessage;
+import com.tc.object.msg.AcknowledgeServerEventMessageFactory;
 import com.tc.object.msg.ServerEventBatchMessage;
 import com.tc.server.BasicServerEvent;
 import com.tc.server.ServerEvent;
@@ -28,6 +34,15 @@ import java.util.Map;
  * @author Eugene Shelestovich
  */
 public class ServerEventMessageHandlerTest {
+
+  @Mock private AcknowledgeServerEventMessageFactory ackMessageFactory;
+  @Mock private AcknowledgeServerEventMessage        ack;
+
+  @Before
+  public void setUp() {
+    MockitoAnnotations.initMocks(this);
+    Mockito.when(ackMessageFactory.newAcknowledgeServerEventMessage(any(NodeID.class))).thenReturn(ack);
+  }
 
   @Test
   public void testMustQueueUpEventsToDeliveryStage() {
@@ -45,7 +60,7 @@ public class ServerEventMessageHandlerTest {
     when(channel.getRemoteNodeID()).thenReturn(remoteNode);
     when(msg.getEvents()).thenReturn(events);
 
-    final ServerEventMessageHandler handler = new ServerEventMessageHandler(sink);
+    final ServerEventMessageHandler handler = new ServerEventMessageHandler(sink, ackMessageFactory);
     handler.handleEvent(msg);
 
     verify(sink, times(3)).add(any(ServerEventDeliveryContext.class));
