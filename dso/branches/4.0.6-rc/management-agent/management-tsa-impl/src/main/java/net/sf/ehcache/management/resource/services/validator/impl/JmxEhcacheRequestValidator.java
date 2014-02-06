@@ -27,7 +27,6 @@ import java.util.Set;
  */
 public final class JmxEhcacheRequestValidator extends AbstractEhcacheRequestValidator {
 
-  private static final int MAXIMUM_CLIENTS_TO_DISPLAY = Integer.getInteger("com.terracotta.agent.defaultMaxClientsToDisplay", 64);
   private final TsaManagementClientService tsaManagementClientService;
 
   private static final ThreadLocal<Set<String>> tlNode = new ThreadLocal<Set<String>>();
@@ -54,16 +53,7 @@ public final class JmxEhcacheRequestValidator extends AbstractEhcacheRequestVali
     try {
       Set<String> nodes = tsaManagementClientService.getRemoteAgentNodeNames();
       if (ids == null) {
-        // the user did not specify which clients to display; let's return them all if there aren't too many
-        if (nodes.size() <= MAXIMUM_CLIENTS_TO_DISPLAY) {
-          setValidatedNodes(nodes);
-        } else {
-          throw new ResourceRuntimeException(
-                  String.format("There are more than %s agents available; you have to change the maximum using the" +
-                          " VM argument com.terracotta.agent.defaultMaxClientsToDisplay or you have to specify each" +
-                          " agent ID. Agent IDs must be in '%s' or '%s'.", MAXIMUM_CLIENTS_TO_DISPLAY, nodes, AgentEntity.EMBEDDED_AGENT_ID),
-                  Response.Status.BAD_REQUEST.getStatusCode());
-        }
+        setValidatedNodes(nodes);
       } else {
         String[] idsArray = ids.split(",");
 
