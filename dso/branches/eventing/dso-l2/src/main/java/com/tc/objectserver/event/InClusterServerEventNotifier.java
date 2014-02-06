@@ -14,6 +14,7 @@ import com.tc.object.net.DSOChannelManagerEventListener;
 import com.tc.server.ServerEvent;
 import com.tc.server.ServerEventType;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -70,8 +71,13 @@ public class InClusterServerEventNotifier implements ServerEventListener, DSOCha
         break;
 
       case END:
-        Multimap<ClientID, ServerEvent> eventsForTransaction = eventMap.remove(eventWrapper.getGtxId());
-        batcher.add(eventWrapper.getGtxId(), eventsForTransaction);
+        Multimap<ClientID, ServerEvent> eventsForTransaction = eventMap.get(eventWrapper.getGtxId());
+        for (ClientID clientId : eventsForTransaction.keySet()) {
+          List<ServerEvent> events = (List<ServerEvent>) eventsForTransaction.get(clientId);
+          batcher.add(eventWrapper.getGtxId(), clientId, events); // TODO: special handling required for methods like
+                                                                  // clear() which can generate enormous number of
+                                                                  // events for a single transaction
+        }
 
     }
   }

@@ -25,6 +25,7 @@ import org.mockito.InOrder;
 import com.google.common.eventbus.EventBus;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
+import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.objectserver.context.ApplyTransactionContext;
@@ -228,7 +229,8 @@ public class TransactionalObjectManagerTest extends TCTestCase {
   private ApplyTransactionInfo applyInfoWithTransactionID(long transactionID) {
     return spy(new ApplyTransactionInfo(true,
                                         new ServerTransactionID(new ClientID(0), new TransactionID(transactionID)),
-                                        true, false, new ServerEventPublisher(new EventBus())));
+                                        new GlobalTransactionID(1), true, false,
+                                        new ServerEventPublisher(new EventBus())));
   }
 
   private <T> Matcher<T> containsObjectWithID(final ObjectID id) {

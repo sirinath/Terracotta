@@ -1,8 +1,7 @@
 package com.tc.objectserver.event;
 
+
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.tc.exception.ImplementMe;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
@@ -15,12 +14,15 @@ import com.tc.object.net.NoSuchChannelException;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.server.ServerEvent;
+import com.tc.util.Assert;
 import com.tc.util.concurrent.TaskRunner;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +41,7 @@ public class ServerEventBatcher implements Runnable {
   public ServerEventBatcher(final DSOChannelManager channelManager, final TaskRunner taskRunner) {
     this.channelManager = channelManager;
     final int queueSize = TCPropertiesImpl.getProperties()
-        .getInt(TCPropertiesConsts.L2_SERVER_EVENT_BATCHER_QUEUE_SIZE, 4096);
+        .getInt(TCPropertiesConsts.L2_SERVER_EVENT_BATCHER_QUEUE_SIZE, 1024);
     final long interval = TCPropertiesImpl.getProperties()
         .getLong(TCPropertiesConsts.L2_SERVER_EVENT_BATCHER_INTERVAL_MS, 50L);
     buffer = new ArrayBlockingQueue<ClientEnvelope>(queueSize);
@@ -54,44 +56,43 @@ public class ServerEventBatcher implements Runnable {
     }
   }
 
-  public void add(GlobalTransactionID gtxId, Multimap<ClientID, ServerEvent> eventsForTransaction) {
-    throw new ImplementMe();
-  }
-
   /**
    * Uses a retention policy similar to {@link java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy}.
    */
-  public void add(final ClientID clientId, final ServerEvent event) {
-    while (!buffer.offer(new ClientEnvelope(clientId, event))) {
+  public void add(final GlobalTransactionID gtxId, final ClientID clientId, final List<ServerEvent> events) {
+    while (!buffer.offer(new ClientEnvelope(gtxId, clientId, events))) {
       drain();
     }
   }
 
-  private void drain() {
+  private void drain() { // TODO: Looks like it will have concurrency issues
     final List<ClientEnvelope> toProcess = new ArrayList<ClientEnvelope>(buffer.size());
     buffer.drainTo(toProcess);
-    final Map<ClientID, List<ServerEvent>> groups = partition(toProcess);
+    final Map<ClientID, Map<GlobalTransactionID, List<ServerEvent>>> groups = partition(toProcess);
     // send batch messages for each client
-    for (final Map.Entry<ClientID, List<ServerEvent>> entry : groups.entrySet()) {
+    for (final Entry<ClientID, Map<GlobalTransactionID, List<ServerEvent>>> entry : groups.entrySet()) {
       send(entry.getKey(), entry.getValue());
     }
   }
 
-  Map<ClientID, List<ServerEvent>> partition(final Collection<ClientEnvelope> envelopes) {
-    final Map<ClientID, List<ServerEvent>> groups = Maps.newHashMap();
+  Map<ClientID, Map<GlobalTransactionID, List<ServerEvent>>> partition(final Collection<ClientEnvelope> envelopes) {
+    final Map<ClientID, Map<GlobalTransactionID, List<ServerEvent>>> groups = Maps.newHashMap();
     // partition by client id
     for (final ClientEnvelope envelope : envelopes) {
-      List<ServerEvent> events = groups.get(envelope.clientId);
+      Map<GlobalTransactionID, List<ServerEvent>> events = groups.get(envelope.clientId);
       if (events == null) {
-        events = new ArrayList<ServerEvent>();
+        events = new HashMap<GlobalTransactionID, List<ServerEvent>>();
         groups.put(envelope.clientId, events);
       }
-      events.add(envelope.event);
+      List<ServerEvent> previousEventsForTxn = events.put(envelope.gtxId, envelope.events);
+      // TODO: This assert will fail when events for one transaction are added in more than one chunk.
+      // Ex when we split events for a "clear" transaction in multiple small chunks to be sent.
+      Assert.assertNull("Can not add events for one transaction multiple times for one client", previousEventsForTxn);
     }
     return groups;
   }
 
-  void send(final ClientID clientId, final List<ServerEvent> events) {
+  void send(final ClientID clientId, final Map<GlobalTransactionID, List<ServerEvent>> events) {
     final MessageChannel channel;
     try {
       channel = channelManager.getActiveChannel(clientId);
@@ -105,7 +106,7 @@ public class ServerEventBatcher implements Runnable {
     msg.send();
 
     if (LOG.isDebugEnabled()) {
-      LOG.debug(events.size() + " server events have been sent to client '" + clientId + "'");
+      LOG.debug("ServerEvents have been sent to client '" + clientId + "' for " + events.size() + " transactions.");
     }
   }
 
@@ -114,11 +115,13 @@ public class ServerEventBatcher implements Runnable {
    */
   static final class ClientEnvelope {
     final ClientID clientId;
-    final ServerEvent event;
+    final List<ServerEvent> events;
+    final GlobalTransactionID gtxId;
 
-    ClientEnvelope(final ClientID clientId, final ServerEvent event) {
+    ClientEnvelope(final GlobalTransactionID gtxId, final ClientID clientId, final List<ServerEvent> events) {
+      this.gtxId = gtxId;
       this.clientId = clientId;
-      this.event = event;
+      this.events = events;
     }
   }
 
