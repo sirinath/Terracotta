@@ -3,8 +3,6 @@
  */
 package com.tc.object;
 
-import static com.tc.server.VersionedServerEvent.DEFAULT_VERSION;
-
 import com.google.common.base.Preconditions;
 import com.tc.abortable.AbortedOperationException;
 import com.tc.exception.TCObjectNotFoundException;
@@ -45,6 +43,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.tc.server.VersionedServerEvent.DEFAULT_VERSION;
 
 public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjectServerMap<L> {
 
@@ -171,7 +171,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
     try {
       final ObjectID valueObjectID = invokeLogicalPutVersioned(key, value, version);
       addStrongValueToCache(this.manager.generateLockIdentifier(lockID), key, value, valueObjectID,
-                            MapOperationType.PUT);
+          MapOperationType.PUT);
     } finally {
       lock.unlock();
     }
@@ -211,11 +211,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
     try {
       ObjectID valueObjectID = invokeLogicalPut(key, value);
 
-      if (!isEventual) {
-        addIncoherentValueToCache(key, value, valueObjectID, MapOperationType.PUT);
-      } else {
-        addEventualValueToCache(key, value, valueObjectID, MapOperationType.PUT);
-      }
+      updateLocalCacheOnPut(key, value, valueObjectID);
     } finally {
       lock.unlock();
     }
@@ -236,12 +232,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
     lock.lock();
     try {
       final ObjectID valueObjectID = invokeLogicalPutVersioned(key, value, version);
-
-      if (!isEventual) {
-        addIncoherentValueToCache(key, value, valueObjectID, MapOperationType.PUT);
-      } else {
-        addEventualValueToCache(key, value, valueObjectID, MapOperationType.PUT);
-      }
+      updateLocalCacheOnPut(key, value, valueObjectID);
     } finally {
       lock.unlock();
     }
@@ -252,10 +243,18 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
     Lock lock = getLockForKey(key);
     lock.lock();
     try {
-      invokeLogicalPutIfAbsentVersioned(key, value, version);
-      // TODO: Revisit and check whether we can simply omit addToCache(). It may have some serious implications
+      final ObjectID valueObjectID = invokeLogicalPutIfAbsentVersioned(key, value, version);
+      updateLocalCacheOnPut(key, value, valueObjectID);
     } finally {
       lock.unlock();
+    }
+  }
+
+  private void updateLocalCacheOnPut(final Object key, final Object value, final ObjectID valueObjectID) {
+    if (!isEventual) {
+      addIncoherentValueToCache(key, value, valueObjectID, MapOperationType.PUT);
+    } else {
+      addEventualValueToCache(key, value, valueObjectID, MapOperationType.PUT);
     }
   }
 
@@ -284,15 +283,11 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
         boolean rv = logicalInvokeWithResult(SerializationUtil.PUT_IF_ABSENT,
                                              SerializationUtil.PUT_IF_ABSENT_SIGNATURE, parameters);
         if (rv) {
-          if (!isEventual) {
-            addIncoherentValueToCache(key, value, valueObjectID, MapOperationType.PUT);
-          } else {
-            addEventualValueToCache(key, value, valueObjectID, MapOperationType.PUT);
-          }
+          updateLocalCacheOnPut(key, value, valueObjectID);
           return null;
         } else {
           // PutIfAbsent failed i.e there is some mapping on the L2 so putIfAbsent failed,fetch that value from server
-          Object existingMapping = getValueUnlocked(map, key);
+          final Object existingMapping = getValueUnlocked(map, key);
           // existing mapping can be null in case someone removed this value between putIfAbsent, for this case try
           // retrying putIfAbsent
           if (existingMapping != null) { return existingMapping; }
@@ -322,11 +317,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
       boolean rv = logicalInvokeWithResult(SerializationUtil.REPLACE_IF_VALUE_EQUAL,
                                            SerializationUtil.REPLACE_IF_VALUE_EQUAL_SIGNATURE, parameters);
       if (rv) {
-        if (!isEventual) {
-          addIncoherentValueToCache(key, newValue, valueObjectID, MapOperationType.PUT);
-        } else {
-          addEventualValueToCache(key, newValue, valueObjectID, MapOperationType.PUT);
-        }
+        updateLocalCacheOnPut(key, newValue, valueObjectID);
       }
       return rv;
     } finally {
@@ -523,18 +514,6 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
     }
   }
 
-  @Override
-  public VersionedObject getVersionedValue(final TCServerMap map, final Object key) throws AbortedOperationException {
-    if (!isCacheInitialized()) { return null; }
-    Lock lock = getLockForKey(key);
-    lock.lock();
-    try {
-      return (VersionedObject) getValueForKeyFromServer(map, key, true, true);
-    } finally {
-      lock.unlock();
-    }
-  }
-
   private void updateLocalCacheIfNecessary(final Object key, final Object value) {
     // Null values (i.e. cache misses) & literal values are not cached locally
     if (value != null && !LiteralValues.isLiteralInstance(value)) {
@@ -562,15 +541,32 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
     if (item != null) { return item.getValueObject(); }
 
     // Doing double checking to ensure correct value
-    Lock lock = getLockForKey(key);
+    final Lock lock = getLockForKey(key);
     lock.lock();
     try {
       item = getValueUnlockedFromCache(key);
       if (item != null) { return item.getValueObject(); }
 
-      Object value = getValueForKeyFromServer(map, key, true, false);
+      final Object value = getValueForKeyFromServer(map, key, true, false);
       if (value != null) {
         updateLocalCacheIfNecessary(key, value);
+      }
+      return value;
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  public VersionedObject getVersionedValue(final TCServerMap map, final Object key) throws AbortedOperationException {
+    if (!isCacheInitialized()) { return null; }
+
+    final Lock lock = getLockForKey(key);
+    lock.lock();
+    try {
+      final VersionedObject value = (VersionedObject) getValueForKeyFromServer(map, key, true, true);
+      if (value != null) {
+        updateLocalCacheIfNecessary(key, value.getObject());
       }
       return value;
     } finally {
