@@ -4,7 +4,6 @@
 package com.terracotta.management.service.impl;
 
 import net.sf.ehcache.management.service.impl.DfltSamplerRepositoryServiceMBean;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terracotta.management.ServiceExecutionException;
@@ -41,6 +40,7 @@ import com.terracotta.management.resource.ThreadDumpEntity;
 import com.terracotta.management.resource.ThreadDumpEntity.NodeType;
 import com.terracotta.management.resource.TopologyReloadStatusEntity;
 import com.terracotta.management.security.KeychainInitializationException;
+import com.terracotta.management.service.TimeoutService;
 import com.terracotta.management.service.TsaManagementClientService;
 import com.terracotta.management.service.impl.pool.JmxConnectorPool;
 import com.terracotta.management.web.utils.TSAConfig;
@@ -68,6 +68,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.zip.ZipInputStream;
@@ -113,14 +114,62 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
 
   private final JmxConnectorPool jmxConnectorPool;
   private final boolean secure;
-  private final ExecutorService executorService;
-  private final long l1BridgeTimeout;
+  private final ExecutorServiceWrapper executorService;
+  private final TimeoutService timeoutService;
 
-  public TsaManagementClientServiceImpl(JmxConnectorPool jmxConnectorPool, boolean secure, ExecutorService executorService, long l1BridgeTimeoutInMs) {
+  private static class ExecutorServiceWrapper {
+    private final ExecutorService executorService;
+
+    private ExecutorServiceWrapper(ExecutorService executorService) {
+      this.executorService = executorService;
+    }
+
+    private <T> Future<T> submit(Callable<T> callable) {
+      try {
+        return executorService.submit(callable);
+      } catch (RejectedExecutionException ree) {
+        try {
+          LOG.warn("L1 Executor rejected callable, pausing before submitting next one...", ree);
+          Thread.sleep(100L);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+        }
+        return new Future<T>() {
+          @Override
+          public boolean cancel(boolean mayInterruptIfRunning) {
+            return false;
+          }
+
+          @Override
+          public boolean isCancelled() {
+            return false;
+          }
+
+          @Override
+          public boolean isDone() {
+            return true;
+          }
+
+          @Override
+          public T get() throws InterruptedException, ExecutionException {
+            return null;
+          }
+
+          @Override
+          public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return null;
+          }
+        };
+      }
+    }
+
+  }
+
+  public TsaManagementClientServiceImpl(JmxConnectorPool jmxConnectorPool, boolean secure, ExecutorService executorService, TimeoutService timeoutService) {
     this.jmxConnectorPool = jmxConnectorPool;
     this.secure = secure;
-    this.executorService = executorService;
-    this.l1BridgeTimeout = l1BridgeTimeoutInMs;
+    this.executorService = new ExecutorServiceWrapper(executorService);
+    this.timeoutService = timeoutService;
   }
 
   @Override
@@ -179,7 +228,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     }
 
     try {
-      return collectEntitiesFromFutures(futures);
+      return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "clusterThreadDump");
     } catch (Exception e) {
       throw new ServiceExecutionException("error getting cluster thread dump", e);
     }
@@ -215,7 +264,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         futures.add(future);
       }
 
-      return collectEntitiesFromFutures(futures);
+      return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "clientsThreadDump");
     } catch (Exception e) {
       throw new ServiceExecutionException("error getting client stack traces", e);
     } finally {
@@ -275,7 +324,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         }
       }
 
-      return collectEntitiesFromFutures(futures);
+      return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "serversThreadDump");
     } catch (Exception e) {
       throw new ServiceExecutionException("error getting remote servers thread dump", e);
     }
@@ -367,7 +416,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         futures.add(future);
       }
 
-      return collectEntitiesFromFutures(futures);
+      return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "getClientEntities");
     } catch (Exception e) {
       throw new ServiceExecutionException("error making JMX call", e);
     } finally {
@@ -474,7 +523,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         futures.add(future);
       }
 
-      return collectEntitiesFromFutures(futures);
+      return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "getClientsStatistics");
     } catch (Exception e) {
       throw new ServiceExecutionException("error making JMX call", e);
     } finally {
@@ -540,7 +589,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         }
       }
 
-      return collectEntitiesFromFutures(futures);
+      return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "getServersStatistics");
     } catch (Exception e) {
       throw new ServiceExecutionException("error making JMX call", e);
     }
@@ -691,14 +740,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         }
       }
 
-      Collection<StatisticsEntity> result = new ArrayList<StatisticsEntity>();
-      for (Future<Collection<StatisticsEntity>> future : futures) {
-        Collection<StatisticsEntity> statisticsEntities = future.get();
-        if (result.size() < 100) {
-          result.addAll(statisticsEntities);
-        }
-      }
-      return result;
+      return collectEntitiesCollectionFromFutures(futures, timeoutService.getCallTimeout(), "getDgcStatistics", maxDgcStatsEntries);
     } catch (Exception e) {
       throw new ServiceExecutionException("error making JMX call", e);
     }
@@ -799,7 +841,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
   }
 
   @Override
-  public Map<String, Map<String, String>> getRemoteAgentNodeDetails() throws ServiceExecutionException {
+  public Map<String, String> getRemoteAgentNodeDetails(String nodeName) throws ServiceExecutionException {
     JMXConnector jmxConnector = null;
     try {
       jmxConnector = getJMXConnectorWithL1MBeans();
@@ -810,31 +852,18 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
       final MBeanServerConnection mBeanServerConnection = jmxConnector.getMBeanServerConnection();
 
 
-      Map<String, Map<String, String>> nodes = new HashMap<String, Map<String, String>>();
-      Set<ObjectName> objectNames = mBeanServerConnection.queryNames(new ObjectName("net.sf.ehcache:type=RepositoryService,*"), null);
-      for (final ObjectName objectName : objectNames) {
-        try {
-          Map<String, String> attributes = callWithTimeout(new Callable<Map<String, String>>() {
-            @Override
-            public Map<String, String> call() throws Exception {
-              String version = (String)mBeanServerConnection.getAttribute(objectName, "Version");
-              String agency = (String)mBeanServerConnection.getAttribute(objectName, "Agency");
-
-              Map<String, String> props = new HashMap<String, String>();
-              props.put("Version", version);
-              props.put("Agency", agency);
-              return props;
-            }
-          });
-
-          if (attributes != null) {
-            nodes.put(objectName.getKeyProperty("node"), attributes);
-          }
-        } catch (ExecutionException ee) {
-          LOG.warn("error collecting L1 agent node details of " + objectName, ee);
-        }
+      Set<ObjectName> objectNames = mBeanServerConnection.queryNames(new ObjectName("net.sf.ehcache:type=RepositoryService,node=" + nodeName + ",*"), null);
+      if (objectNames.isEmpty()) {
+        return Collections.emptyMap();
       }
-      return nodes;
+      ObjectName objectName = objectNames.iterator().next();
+
+      Map<String, String> attributes = new HashMap<String, String>();
+      String version = (String)mBeanServerConnection.getAttribute(objectName, "Version");
+      String agency = (String)mBeanServerConnection.getAttribute(objectName, "Agency");
+      attributes.put("Version", version);
+      attributes.put("Agency", agency);
+      return attributes;
     } catch (Exception e) {
       throw new ServiceExecutionException("error making JMX call", e);
     } finally {
@@ -881,14 +910,8 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         throw new ServiceExecutionException("Cannot find node : " + nodeName);
       }
 
-      final ObjectName finalObjectName = objectName;
-      return callWithTimeout(new Callable<byte[]>() {
-        @Override
-        public byte[] call() throws Exception {
-          DfltSamplerRepositoryServiceMBean proxy = JMX.newMBeanProxy(mBeanServerConnection, finalObjectName, clazz);
-          return proxy.invoke(ticket, token, securityCallbackUrl, methodName, paramClasses, params);
-        }
-      });
+      DfltSamplerRepositoryServiceMBean proxy = JMX.newMBeanProxy(mBeanServerConnection, objectName, clazz);
+      return proxy.invoke(ticket, token, securityCallbackUrl, methodName, paramClasses, params);
     } catch (ServiceExecutionException see) {
       throw see;
     } catch (Exception e) {
@@ -927,7 +950,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         }
       }
 
-      return collectEntitiesFromFutures(futures);
+      return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "getServerConfigs");
     } catch (Exception e) {
       throw new ServiceExecutionException("error getting servers config", e);
     }
@@ -995,7 +1018,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         futures.add(future);
       }
 
-      return collectEntitiesFromFutures(futures);
+      return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "getClientConfigs");
     } catch (Exception e) {
       throw new ServiceExecutionException("error getting clients config", e);
     } finally {
@@ -1054,7 +1077,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         }
       }
 
-      return collectEntitiesCollectionFromFutures(futures);
+      return collectEntitiesCollectionFromFutures(futures, timeoutService.getCallTimeout(), "getBackupsStatus");
     } catch (Exception e) {
       throw new ServiceExecutionException("error getting servers backup status", e);
     }
@@ -1198,7 +1221,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         }
       }
 
-      return collectEntitiesCollectionFromFutures(futures);
+      return collectEntitiesCollectionFromFutures(futures, timeoutService.getCallTimeout(), "getLogs");
     } catch (Exception e) {
       throw new ServiceExecutionException("error getting servers logs", e);
     }
@@ -1273,7 +1296,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         }
       }
 
-      return collectEntitiesCollectionFromFutures(futures);
+      return collectEntitiesCollectionFromFutures(futures, timeoutService.getCallTimeout(), "getOperatorEvents");
     } catch (Exception e) {
       throw new ServiceExecutionException("error getting operator events", e);
     }
@@ -1399,27 +1422,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         }
       }
 
-      Map<String, Integer> result = new HashMap<String, Integer>();
-      for (EventType severity : EventType.values()) {
-        result.put(severity.name(), 0);
-      }
-
-      for (Future<Map<String, Integer>> future : futures) {
-        try {
-          Map<String, Integer> serverResult = future.get();
-          for (String key : serverResult.keySet()) {
-            Integer value = result.get(key);
-            Integer serverValue = serverResult.get(key);
-
-            value = value + serverValue;
-            result.put(key, value);
-          }
-        } catch (Exception e) {
-          // ignore, we just don't get figures for that node
-        }
-      }
-
-      return result;
+      return collectUnreadOperatorEventCountFromFutures(futures, timeoutService.getCallTimeout());
     } catch (Exception e) {
       throw new ServiceExecutionException("error getting unread operator event count", e);
     }
@@ -1685,7 +1688,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
         }
       }
 
-      return collectEntitiesCollectionFromFutures(futures);
+      return collectEntitiesCollectionFromFutures(futures, timeoutService.getCallTimeout(), "queryMBeans");
     } catch (Exception e) {
       throw new ServiceExecutionException("error getting operator events", e);
     }
@@ -1829,35 +1832,89 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     }
   }
 
-  private <T> T callWithTimeout(Callable<T> callable) throws ExecutionException {
-    Future<T> future = executorService.submit(callable);
-    try {
-      return future.get(l1BridgeTimeout, TimeUnit.MILLISECONDS);
-    } catch (InterruptedException ie) {
-      future.cancel(true);
-      return null;
-    } catch (TimeoutException te) {
-      future.cancel(true);
-      return null;
+  private static Map<String, Integer> collectUnreadOperatorEventCountFromFutures(List<Future<Map<String, Integer>>> futures, long timeoutInMillis) {
+    Map<String, Integer> result = new HashMap<String, Integer>();
+    for (EventType severity : EventType.values()) {
+      result.put(severity.name(), 0);
     }
+
+    long timeLeft = timeoutInMillis;
+    for (Future<Map<String, Integer>> future : futures) {
+      long before = System.nanoTime();
+      try {
+        Map<String, Integer> serverResult = future.get(Math.max(1L, timeLeft), TimeUnit.MILLISECONDS);
+        if (serverResult == null) { continue; }
+        for (String key : serverResult.keySet()) {
+          Integer value = result.get(key);
+          Integer serverValue = serverResult.get(key);
+
+          value = value + serverValue;
+          result.put(key, value);
+        }
+      } catch (Exception e) {
+        LOG.debug("Future execution error in getUnreadOperatorEventCount", e);
+        future.cancel(true);
+        // do not rethrow, we just don't get figures for that node
+      } finally {
+        timeLeft -= TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - before);
+      }
+    }
+
+    return result;
   }
 
-  private <T extends VersionedEntity> Collection<T> collectEntitiesFromFutures(List<Future<T>> futures) throws InterruptedException, ExecutionException {
+  private static <T extends VersionedEntity> Collection<T> collectEntitiesFromFutures(List<Future<T>> futures, long timeoutInMillis, String methodName) throws Exception {
     Collection<T> entities = new ArrayList<T>();
+    long timeLeft = timeoutInMillis;
+    Exception exception = null;
     for (Future<T> future : futures) {
-      T entity = future.get();
-      entities.add(entity);
+      long before = System.nanoTime();
+      try {
+        T entity = future.get(Math.max(1L, timeLeft), TimeUnit.MILLISECONDS);
+        if (entity == null) { continue; }
+        entities.add(entity);
+      } catch (Exception e) {
+        LOG.debug("Future execution error in {}", methodName, e);
+        exception = e;
+        future.cancel(true);
+      } finally {
+        timeLeft -= TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - before);
+      }
+    }
+    if (exception != null) {
+      throw exception;
     }
     return entities;
   }
 
-  private <T extends VersionedEntity> Collection<T> collectEntitiesCollectionFromFutures(List<Future<Collection<T>>> futures) throws InterruptedException, ExecutionException {
-    Collection<T> allEntities = new ArrayList<T>();
+  private <T extends VersionedEntity> Collection<T> collectEntitiesCollectionFromFutures(List<Future<Collection<T>>> futures, long timeoutInMillis, String methodName) throws Exception {
+    return collectEntitiesCollectionFromFutures(futures, timeoutInMillis, methodName, Integer.MAX_VALUE);
+  }
+
+  private <T extends VersionedEntity> Collection<T> collectEntitiesCollectionFromFutures(List<Future<Collection<T>>> futures, long timeoutInMillis, String methodName, int max) throws Exception {
+    Collection<T> result = new ArrayList<T>();
+    long timeLeft = timeoutInMillis;
+    Exception exception = null;
     for (Future<Collection<T>> future : futures) {
-      Collection<T> entities = future.get();
-      allEntities.addAll(entities);
+      long before = System.nanoTime();
+      try {
+        Collection<T> entities = future.get(Math.max(1L, timeLeft), TimeUnit.MILLISECONDS);
+        if (entities == null) { continue; }
+        if (result.size() < max) {
+          result.addAll(entities);
+        }
+      } catch (Exception e) {
+        LOG.debug("Future execution error in {}", methodName, e);
+        exception = e;
+        future.cancel(true);
+      } finally {
+        timeLeft -= TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - before);
+      }
     }
-    return allEntities;
+    if (exception != null) {
+      throw exception;
+    }
+    return result;
   }
 
   // A JMXConnector that returns the platform MBeanServer when getMBeanServerConnection is called

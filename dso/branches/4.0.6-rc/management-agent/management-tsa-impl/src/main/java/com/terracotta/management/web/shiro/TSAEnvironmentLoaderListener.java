@@ -15,6 +15,9 @@ import org.slf4j.LoggerFactory;
 import org.terracotta.management.ServiceLocator;
 import org.terracotta.management.resource.services.validator.RequestValidator;
 
+import com.tc.config.schema.L2Info;
+import com.tc.properties.TCPropertiesConsts;
+import com.tc.properties.TCPropertiesImpl;
 import com.terracotta.management.keychain.URIKeyName;
 import com.terracotta.management.resource.services.validator.TSARequestValidator;
 import com.terracotta.management.security.ContextService;
@@ -44,6 +47,7 @@ import com.terracotta.management.service.LogsService;
 import com.terracotta.management.service.MonitoringService;
 import com.terracotta.management.service.OperatorEventsService;
 import com.terracotta.management.service.ShutdownService;
+import com.terracotta.management.service.TimeoutService;
 import com.terracotta.management.service.TopologyService;
 import com.terracotta.management.service.TsaManagementClientService;
 import com.terracotta.management.service.impl.BackupServiceImpl;
@@ -54,6 +58,7 @@ import com.terracotta.management.service.impl.LogsServiceImpl;
 import com.terracotta.management.service.impl.MonitoringServiceImpl;
 import com.terracotta.management.service.impl.OperatorEventsServiceImpl;
 import com.terracotta.management.service.impl.ShutdownServiceImpl;
+import com.terracotta.management.service.impl.TimeoutServiceImpl;
 import com.terracotta.management.service.impl.TopologyServiceImpl;
 import com.terracotta.management.service.impl.TsaAgentServiceImpl;
 import com.terracotta.management.service.impl.TsaManagementClientServiceImpl;
@@ -61,15 +66,20 @@ import com.terracotta.management.service.impl.pool.JmxConnectorPool;
 import com.terracotta.management.web.utils.TSAConfig;
 import com.terracotta.management.web.utils.TSASslSocketFactory;
 
+import java.lang.management.ManagementFactory;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.management.JMException;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import javax.management.remote.rmi.RMIConnectorServer;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -82,7 +92,15 @@ public class TSAEnvironmentLoaderListener extends EnvironmentLoaderListener {
   private static final Logger LOG = LoggerFactory.getLogger(TSAEnvironmentLoaderListener.class);
 
   private volatile JmxConnectorPool jmxConnectorPool;
-  private volatile ExecutorService executorService;
+  private volatile ThreadPoolExecutor l1BridgeExecutorService;
+  private volatile ThreadPoolExecutor tsaExecutorService;
+
+  protected int getServerCount() throws JMException {
+    MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+    L2Info[] l2Infos = (L2Info[])mBeanServer.getAttribute(
+        new ObjectName("org.terracotta.internal:type=Terracotta Server,name=Terracotta Server"), "L2Info");
+    return l2Infos.length;
+  }
 
   @Override
   public void contextInitialized(ServletContextEvent sce) {
@@ -92,6 +110,9 @@ public class TSAEnvironmentLoaderListener extends EnvironmentLoaderListener {
 
       // The following services are for monitoring the TSA itself
       serviceLocator.loadService(TSARequestValidator.class, new TSARequestValidator());
+
+      TimeoutService timeoutService = new TimeoutServiceImpl(TSAConfig.getL1BridgeTimeout());
+      serviceLocator.loadService(TimeoutService.class, timeoutService);
 
       TsaManagementClientService tsaManagementClientService;
       if (sslEnabled) {
@@ -109,7 +130,7 @@ public class TSAEnvironmentLoaderListener extends EnvironmentLoaderListener {
               if (secret == null) {
                 throw new RuntimeException("Missing keychain entry for URL [" + alias + "]");
               }
-              env.put("jmx.remote.credentials", new Object[] { intraL2Username, SecretUtils.toCharsAndWipe(secret)});
+              env.put("jmx.remote.credentials", new Object[] { intraL2Username, SecretUtils.toCharsAndWipe(secret) });
               return env;
             } catch (Exception e) {
               throw new RuntimeException("Error retrieving secret for JMX host [" + host + ":" + port + "]", e);
@@ -119,24 +140,15 @@ public class TSAEnvironmentLoaderListener extends EnvironmentLoaderListener {
       } else {
         jmxConnectorPool = new JmxConnectorPool("service:jmx:jmxmp://{0}:{1}");
       }
-      executorService = Executors.newCachedThreadPool(new ThreadFactory() {
-        private final ThreadGroup group = (System.getSecurityManager() != null) ?
-            System.getSecurityManager().getThreadGroup() : Thread.currentThread().getThreadGroup();
-        private final AtomicInteger threadNumber = new AtomicInteger(1);
+      int l1Threads = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_REMOTEJMX_MAXTHREADS);
+      l1BridgeExecutorService = new ThreadPoolExecutor(l1Threads, l1Threads, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(l1Threads * 32, true), new ManagementThreadFactory("Management-Agent-L1"));
+      l1BridgeExecutorService.allowCoreThreadTimeOut(true);
 
-        @Override
-        public Thread newThread(Runnable r) {
-          Thread thread = new Thread(group, r, "Management-Agent-" + threadNumber.getAndIncrement(), 0);
-          if (thread.isDaemon()) {
-            thread.setDaemon(false);
-          }
-          if (thread.getPriority() != Thread.NORM_PRIORITY) {
-            thread.setPriority(Thread.NORM_PRIORITY);
-          }
-          return thread;
-        }
-      });
-      tsaManagementClientService = new TsaManagementClientServiceImpl(jmxConnectorPool, sslEnabled, executorService, TSAConfig.getL1BridgeTimeout());
+      int l2Threads = getServerCount();
+      tsaExecutorService = new ThreadPoolExecutor(l2Threads, l2Threads, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(l2Threads * 32, true), new ManagementThreadFactory("Management-Agent-L2"));
+      tsaExecutorService.allowCoreThreadTimeOut(true);
+
+      tsaManagementClientService = new TsaManagementClientServiceImpl(jmxConnectorPool, sslEnabled, tsaExecutorService, timeoutService);
 
       serviceLocator.loadService(TsaManagementClientService.class, tsaManagementClientService);
       serviceLocator.loadService(TopologyService.class, new TopologyServiceImpl(tsaManagementClientService));
@@ -166,7 +178,7 @@ public class TSAEnvironmentLoaderListener extends EnvironmentLoaderListener {
         RequestTicketMonitor requestTicketMonitor = new DfltRequestTicketMonitor();
         TSAIdentityAsserter identityAsserter = new TSAIdentityAsserter(requestTicketMonitor, userService, kcAccessor);
 
-        JmxRepositoryService repoSvc = new JmxRepositoryService(tsaManagementClientService, requestValidator, requestTicketMonitor, contextService, userService, executorService);
+        JmxRepositoryService repoSvc = new JmxRepositoryService(tsaManagementClientService, requestValidator, requestTicketMonitor, contextService, userService, l1BridgeExecutorService, timeoutService);
         l1Agent = repoSvc;
 
         serviceLocator.loadService(RequestTicketMonitor.class, requestTicketMonitor);
@@ -185,7 +197,7 @@ public class TSAEnvironmentLoaderListener extends EnvironmentLoaderListener {
         RequestTicketMonitor requestTicketMonitor = new NullRequestTicketMonitor();
         RequestIdentityAsserter identityAsserter = new NullIdentityAsserter();
 
-        JmxRepositoryService repoSvc = new JmxRepositoryService(tsaManagementClientService, requestValidator, requestTicketMonitor, contextService, userService, executorService);
+        JmxRepositoryService repoSvc = new JmxRepositoryService(tsaManagementClientService, requestValidator, requestTicketMonitor, contextService, userService, l1BridgeExecutorService, timeoutService);
         l1Agent = repoSvc;
 
         serviceLocator.loadService(RequestTicketMonitor.class, requestTicketMonitor);
@@ -209,7 +221,7 @@ public class TSAEnvironmentLoaderListener extends EnvironmentLoaderListener {
 
       super.contextInitialized(sce);
     } catch (Exception e) {
-      e.printStackTrace();
+      LOG.warn("Error initializing TSAEnvironmentLoaderListener", e);
       throw new RuntimeException("Error initializing TSAEnvironmentLoaderListener", e);
     }
   }
@@ -224,11 +236,38 @@ public class TSAEnvironmentLoaderListener extends EnvironmentLoaderListener {
     if (jmxConnectorPool != null) {
       jmxConnectorPool.shutdown();
     }
-    if (executorService != null) {
-      executorService.shutdown();
+    if (l1BridgeExecutorService != null) {
+      l1BridgeExecutorService.shutdown();
+    }
+    if (tsaExecutorService != null) {
+      tsaExecutorService.shutdown();
     }
 
     super.contextDestroyed(sce);
+  }
+
+  private static final class ManagementThreadFactory implements ThreadFactory {
+    private final AtomicInteger threadNumberGenerator = new AtomicInteger(1);
+
+    private final ThreadGroup group = (System.getSecurityManager() != null) ?
+        System.getSecurityManager().getThreadGroup() : Thread.currentThread().getThreadGroup();
+    private final String threadNamePrefix;
+
+    private ManagementThreadFactory(String threadNamePrefix) {
+      this.threadNamePrefix = threadNamePrefix;
+    }
+
+    @Override
+    public Thread newThread(Runnable r) {
+      Thread thread = new Thread(group, r, threadNamePrefix + "-" + threadNumberGenerator.getAndIncrement(), 0);
+      if (thread.isDaemon()) {
+        thread.setDaemon(false);
+      }
+      if (thread.getPriority() != Thread.NORM_PRIORITY) {
+        thread.setPriority(Thread.NORM_PRIORITY);
+      }
+      return thread;
+    }
   }
 
 }
