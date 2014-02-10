@@ -13,6 +13,8 @@ import net.sf.ehcache.management.service.AgentService;
 import net.sf.ehcache.management.service.CacheManagerService;
 import net.sf.ehcache.management.service.CacheService;
 import net.sf.ehcache.management.service.EntityResourceFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.terracotta.management.ServiceExecutionException;
 import org.terracotta.management.resource.AgentEntity;
 import org.terracotta.management.resource.AgentMetadataEntity;
@@ -21,6 +23,7 @@ import org.terracotta.management.resource.Representable;
 import com.terracotta.management.security.ContextService;
 import com.terracotta.management.security.RequestTicketMonitor;
 import com.terracotta.management.security.UserService;
+import com.terracotta.management.service.TimeoutService;
 import com.terracotta.management.service.TsaManagementClientService;
 import com.terracotta.management.user.UserInfo;
 import com.terracotta.management.web.utils.TSAConfig;
@@ -31,17 +34,23 @@ import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Ludovic Orban
  */
 public class JmxRepositoryService implements EntityResourceFactory, CacheManagerService, CacheService, AgentService {
+
+  private static final Logger LOG = LoggerFactory.getLogger(JmxRepositoryService.class);
 
   private final TsaManagementClientService tsaManagementClientService;
   private final JmxEhcacheRequestValidator requestValidator;
@@ -49,16 +58,18 @@ public class JmxRepositoryService implements EntityResourceFactory, CacheManager
   private final ContextService contextService;
   private final UserService userService;
   private final ExecutorService executorService;
+  private final TimeoutService timeoutService;
 
   public JmxRepositoryService(TsaManagementClientService tsaManagementClientService, JmxEhcacheRequestValidator requestValidator,
                               RequestTicketMonitor ticketMonitor, ContextService contextService, UserService userService,
-                              ExecutorService executorService) {
+                              ExecutorService executorService, TimeoutService timeoutService) {
     this.tsaManagementClientService = tsaManagementClientService;
     this.requestValidator = requestValidator;
     this.ticketMonitor = ticketMonitor;
     this.contextService = contextService;
     this.userService = userService;
     this.executorService = executorService;
+    this.timeoutService = timeoutService;
   }
 
   private static <T> T deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
@@ -83,6 +94,56 @@ public class JmxRepositoryService implements EntityResourceFactory, CacheManager
       representables = Collections.emptySet();
     }
     return representables;
+  }
+
+  private <R,P> Collection<Future<R>> fanOutCall(Collection<P> parameters, final ParameterizedCallable<R, P> callable) {
+    List<Future<R>> futures = new ArrayList<Future<R>>();
+    for (final P parameter : parameters) {
+      try {
+        Future<R> future = executorService.submit(new Callable<R>() {
+          @Override
+          public R call() throws Exception {
+            return callable.call(parameter);
+          }
+        });
+        futures.add(future);
+      } catch (RejectedExecutionException ree) {
+        try {
+          LOG.warn("L1 Executor rejected callable, pausing before submitting next one...", ree);
+          Thread.sleep(100L);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
+    return futures;
+  }
+
+  private static interface ParameterizedCallable<R, P> {
+    R call(P param) throws Exception;
+  }
+
+  private static <T> Collection<T> collectEntitiesFromFutures(Collection<Future<Collection<T>>> futures, long timeoutInMillis, String methodName) {
+    int failedRequests = 0;
+    Collection<T> globalResult = new ArrayList<T>();
+    long timeLeft = timeoutInMillis;
+    for (Future<Collection<T>> future : futures) {
+      long before = System.nanoTime();
+      try {
+        Collection<T> entities = future.get(Math.max(1L, timeLeft), TimeUnit.MILLISECONDS);
+        globalResult.addAll(entities);
+      } catch (Exception e) {
+        future.cancel(true);
+        failedRequests++;
+        LOG.debug("Future execution error in {}", methodName, e);
+      } finally {
+        timeLeft -= TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - before);
+      }
+    }
+    if (failedRequests > 0) {
+      LOG.warn(failedRequests + "/" + futures.size() + " L1 agent(s) failed to respond to " + methodName);
+    }
+    return globalResult;
   }
 
   @Override
@@ -120,33 +181,19 @@ public class JmxRepositoryService implements EntityResourceFactory, CacheManager
     Set<String> nodes = requestValidator.getValidatedNodes();
     final UserInfo userInfo = contextService.getUserInfo();
 
-    Collection<Future<Collection<CacheManagerEntity>>> futures = new ArrayList<Future<Collection<CacheManagerEntity>>>();
+    Collection<Future<Collection<CacheManagerEntity>>> futures = fanOutCall(nodes, new ParameterizedCallable<Collection<CacheManagerEntity>, String>() {
+      @Override
+      public Collection<CacheManagerEntity> call(String node) throws Exception {
+        String ticket = ticketMonitor.issueRequestTicket();
+        String token = userService.putUserInfo(userInfo);
 
-    for (final String node : nodes) {
-      Future<Collection<CacheManagerEntity>> future = executorService.submit(new Callable<Collection<CacheManagerEntity>>() {
-        @Override
-        public Collection<CacheManagerEntity> call() throws Exception {
-          String ticket = ticketMonitor.issueRequestTicket();
-          String token = userService.putUserInfo(userInfo);
-
-          byte[] bytes = tsaManagementClientService.invokeMethod(node, DfltSamplerRepositoryServiceMBean.class, ticket, token, TSAConfig
-              .getSecurityCallbackUrl(), "createCacheManagerEntities", new Class<?>[] { Set.class, Set.class }, new Object[] { cacheManagerNames, attributes });
-          return rewriteAgentId((Collection<CacheManagerEntity>)deserialize(bytes), node);
-        }
-      });
-      futures.add(future);
-    }
-
-    Collection<CacheManagerEntity> globalResult = new ArrayList<CacheManagerEntity>();
-    for (Future<Collection<CacheManagerEntity>> future : futures) {
-      try {
-        Collection<CacheManagerEntity> cacheManagerEntities = future.get();
-        globalResult.addAll(cacheManagerEntities);
-      } catch (Exception e) {
-        throw new ServiceExecutionException(e);
+        byte[] bytes = tsaManagementClientService.invokeMethod(node, DfltSamplerRepositoryServiceMBean.class, ticket, token, TSAConfig
+            .getSecurityCallbackUrl(), "createCacheManagerEntities", new Class<?>[] { Set.class, Set.class }, new Object[] { cacheManagerNames, attributes });
+        return rewriteAgentId((Collection<CacheManagerEntity>)deserialize(bytes), node);
       }
-    }
-    return globalResult;
+    });
+
+    return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "createCacheManagerEntities");
   }
 
   @Override
@@ -154,33 +201,19 @@ public class JmxRepositoryService implements EntityResourceFactory, CacheManager
     Set<String> nodes = requestValidator.getValidatedNodes();
     final UserInfo userInfo = contextService.getUserInfo();
 
-    Collection<Future<Collection<CacheManagerConfigEntity>>> futures = new ArrayList<Future<Collection<CacheManagerConfigEntity>>>();
+    Collection<Future<Collection<CacheManagerConfigEntity>>> futures = fanOutCall(nodes, new ParameterizedCallable<Collection<CacheManagerConfigEntity>, String>() {
+      @Override
+      public Collection<CacheManagerConfigEntity> call(String node) throws Exception {
+        String ticket = ticketMonitor.issueRequestTicket();
+        String token = userService.putUserInfo(userInfo);
 
-    for (final String node : nodes) {
-      Future<Collection<CacheManagerConfigEntity>> future = executorService.submit(new Callable<Collection<CacheManagerConfigEntity>>() {
-        @Override
-        public Collection<CacheManagerConfigEntity> call() throws Exception {
-          String ticket = ticketMonitor.issueRequestTicket();
-          String token = userService.putUserInfo(userInfo);
-
-          byte[] bytes = tsaManagementClientService.invokeMethod(node, DfltSamplerRepositoryServiceMBean.class, ticket, token, TSAConfig
-              .getSecurityCallbackUrl(), "createCacheManagerConfigEntities", new Class<?>[] { Set.class }, new Object[] { cacheManagerNames });
-          return rewriteAgentId((Collection<CacheManagerConfigEntity>)deserialize(bytes), node);
-        }
-      });
-      futures.add(future);
-    }
-
-    Collection<CacheManagerConfigEntity> globalResult = new ArrayList<CacheManagerConfigEntity>();
-    for (Future<Collection<CacheManagerConfigEntity>> future : futures) {
-      try {
-        Collection<CacheManagerConfigEntity> cacheManagerConfigEntities = future.get();
-        globalResult.addAll(cacheManagerConfigEntities);
-      } catch (Exception e) {
-        throw new ServiceExecutionException(e);
+        byte[] bytes = tsaManagementClientService.invokeMethod(node, DfltSamplerRepositoryServiceMBean.class, ticket, token, TSAConfig
+            .getSecurityCallbackUrl(), "createCacheManagerConfigEntities", new Class<?>[] { Set.class }, new Object[] { cacheManagerNames });
+        return rewriteAgentId((Collection<CacheManagerConfigEntity>)deserialize(bytes), node);
       }
-    }
-    return globalResult;
+    });
+
+    return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "createCacheManagerConfigEntities");
   }
 
   @Override
@@ -188,34 +221,19 @@ public class JmxRepositoryService implements EntityResourceFactory, CacheManager
     Set<String> nodes = requestValidator.getValidatedNodes();
     final UserInfo userInfo = contextService.getUserInfo();
 
-    Collection<Future<Collection<CacheEntity>>> futures = new ArrayList<Future<Collection<CacheEntity>>>();
+    Collection<Future<Collection<CacheEntity>>> futures = fanOutCall(nodes, new ParameterizedCallable<Collection<CacheEntity>, String>() {
+      @Override
+      public Collection<CacheEntity> call(String node) throws Exception {
+        String token = userService.putUserInfo(userInfo);
+        String ticket = ticketMonitor.issueRequestTicket();
 
-    for (final String node : nodes) {
-      Future<Collection<CacheEntity>> future = executorService.submit(new Callable<Collection<CacheEntity>>() {
-        @Override
-        public Collection<CacheEntity> call() throws Exception {
-          String token = userService.putUserInfo(userInfo);
-          String ticket = ticketMonitor.issueRequestTicket();
-
-          byte[] bytes = tsaManagementClientService.invokeMethod(node, DfltSamplerRepositoryServiceMBean.class, ticket, token, TSAConfig
-              .getSecurityCallbackUrl(), "createCacheEntities", new Class<?>[] { Set.class, Set.class, Set.class }, new Object[] { cacheManagerNames, cacheNames, attributes });
-          return rewriteAgentId((Collection<CacheEntity>)deserialize(bytes), node);
-        }
-      });
-
-      futures.add(future);
-    }
-
-    Collection<CacheEntity> globalResult = new ArrayList<CacheEntity>();
-    for (Future<Collection<CacheEntity>> future : futures) {
-      try {
-        Collection<CacheEntity> cacheEntities = future.get();
-        globalResult.addAll(cacheEntities);
-      } catch (Exception e) {
-        throw new ServiceExecutionException(e);
+        byte[] bytes = tsaManagementClientService.invokeMethod(node, DfltSamplerRepositoryServiceMBean.class, ticket, token, TSAConfig
+            .getSecurityCallbackUrl(), "createCacheEntities", new Class<?>[] { Set.class, Set.class, Set.class }, new Object[] { cacheManagerNames, cacheNames, attributes });
+        return rewriteAgentId((Collection<CacheEntity>)deserialize(bytes), node);
       }
-    }
-    return globalResult;
+    });
+
+    return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "createCacheEntities");
   }
 
   @Override
@@ -223,34 +241,19 @@ public class JmxRepositoryService implements EntityResourceFactory, CacheManager
     Set<String> nodes = requestValidator.getValidatedNodes();
     final UserInfo userInfo = contextService.getUserInfo();
 
-    Collection<Future<Collection<CacheConfigEntity>>> futures = new ArrayList<Future<Collection<CacheConfigEntity>>>();
+    Collection<Future<Collection<CacheConfigEntity>>> futures = fanOutCall(nodes, new ParameterizedCallable<Collection<CacheConfigEntity>, String>() {
+      @Override
+      public Collection<CacheConfigEntity> call(String node) throws Exception {
+        String ticket = ticketMonitor.issueRequestTicket();
+        String token = userService.putUserInfo(userInfo);
 
-    for (final String node : nodes) {
-      Future<Collection<CacheConfigEntity>> future = executorService.submit(new Callable<Collection<CacheConfigEntity>>() {
-        @Override
-        public Collection<CacheConfigEntity> call() throws Exception {
-          String ticket = ticketMonitor.issueRequestTicket();
-          String token = userService.putUserInfo(userInfo);
-
-          byte[] bytes = tsaManagementClientService.invokeMethod(node, DfltSamplerRepositoryServiceMBean.class, ticket, token, TSAConfig
-              .getSecurityCallbackUrl(), "createCacheConfigEntities", new Class<?>[] { Set.class, Set.class }, new Object[] { cacheManagerNames, cacheNames });
-          return rewriteAgentId((Collection<CacheConfigEntity>)deserialize(bytes), node);
-        }
-      });
-
-      futures.add(future);
-    }
-
-    Collection<CacheConfigEntity> globalResult = new ArrayList<CacheConfigEntity>();
-    for (Future<Collection<CacheConfigEntity>> future : futures) {
-      try {
-        Collection<CacheConfigEntity> cacheStatisticSampleEntities = future.get();
-        globalResult.addAll(cacheStatisticSampleEntities);
-      } catch (Exception e) {
-        throw new ServiceExecutionException(e);
+        byte[] bytes = tsaManagementClientService.invokeMethod(node, DfltSamplerRepositoryServiceMBean.class, ticket, token, TSAConfig
+            .getSecurityCallbackUrl(), "createCacheConfigEntities", new Class<?>[] { Set.class, Set.class }, new Object[] { cacheManagerNames, cacheNames });
+        return rewriteAgentId((Collection<CacheConfigEntity>)deserialize(bytes), node);
       }
-    }
-    return globalResult;
+    });
+
+    return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "createCacheConfigEntities");
   }
 
   @Override
@@ -258,34 +261,19 @@ public class JmxRepositoryService implements EntityResourceFactory, CacheManager
     Set<String> nodes = requestValidator.getValidatedNodes();
     final UserInfo userInfo = contextService.getUserInfo();
 
-    Collection<Future<Collection<CacheStatisticSampleEntity>>> futures = new ArrayList<Future<Collection<CacheStatisticSampleEntity>>>();
+    Collection<Future<Collection<CacheStatisticSampleEntity>>> futures = fanOutCall(nodes, new ParameterizedCallable<Collection<CacheStatisticSampleEntity>, String>() {
+      @Override
+      public Collection<CacheStatisticSampleEntity> call(String node) throws Exception {
+        String token = userService.putUserInfo(userInfo);
+        String ticket = ticketMonitor.issueRequestTicket();
 
-    for (final String node : nodes) {
-      Future<Collection<CacheStatisticSampleEntity>> f = executorService.submit(new Callable<Collection<CacheStatisticSampleEntity>>() {
-        @Override
-        public Collection<CacheStatisticSampleEntity> call() throws Exception {
-          String token = userService.putUserInfo(userInfo);
-          String ticket = ticketMonitor.issueRequestTicket();
-
-          byte[] bytes = tsaManagementClientService.invokeMethod(node, DfltSamplerRepositoryServiceMBean.class, ticket, token, TSAConfig
-              .getSecurityCallbackUrl(), "createCacheStatisticSampleEntity", new Class<?>[] { Set.class, Set.class, Set.class }, new Object[] { cacheManagerNames, cacheNames, statNames });
-          return rewriteAgentId((Collection<CacheStatisticSampleEntity>)deserialize(bytes), node);
-        }
-      });
-
-      futures.add(f);
-    }
-
-    Collection<CacheStatisticSampleEntity> globalResult = new ArrayList<CacheStatisticSampleEntity>();
-    for (Future<Collection<CacheStatisticSampleEntity>> future : futures) {
-      try {
-        Collection<CacheStatisticSampleEntity> cacheStatisticSampleEntities = future.get();
-        globalResult.addAll(cacheStatisticSampleEntities);
-      } catch (Exception e) {
-        throw new ServiceExecutionException(e);
+        byte[] bytes = tsaManagementClientService.invokeMethod(node, DfltSamplerRepositoryServiceMBean.class, ticket, token, TSAConfig
+            .getSecurityCallbackUrl(), "createCacheStatisticSampleEntity", new Class<?>[] { Set.class, Set.class, Set.class }, new Object[] { cacheManagerNames, cacheNames, statNames });
+        return rewriteAgentId((Collection<CacheStatisticSampleEntity>)deserialize(bytes), node);
       }
-    }
-    return globalResult;
+    });
+
+    return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "createCacheStatisticSampleEntity");
   }
 
   @Override
@@ -302,42 +290,27 @@ public class JmxRepositoryService implements EntityResourceFactory, CacheManager
     }
 
     final UserInfo userInfo = contextService.getUserInfo();
-    Collection<Future<Collection<AgentMetadataEntity>>> futures = new ArrayList<Future<Collection<AgentMetadataEntity>>>();
 
-    for (final String id : ids) {
-      Future<Collection<AgentMetadataEntity>> future = executorService.submit(new Callable<Collection<AgentMetadataEntity>>() {
-        @Override
-        public Collection<AgentMetadataEntity> call() throws Exception {
-          String ticket = ticketMonitor.issueRequestTicket();
-          String token = userService.putUserInfo(userInfo);
+    Collection<Future<Collection<AgentMetadataEntity>>> futures = fanOutCall(ids, new ParameterizedCallable<Collection<AgentMetadataEntity>, String>() {
+      @Override
+      public Collection<AgentMetadataEntity> call(String id) throws Exception {
+        String ticket = ticketMonitor.issueRequestTicket();
+        String token = userService.putUserInfo(userInfo);
 
-          byte[] bytes = tsaManagementClientService.invokeMethod(id, DfltSamplerRepositoryServiceMBean.class, ticket, token, TSAConfig
-              .getSecurityCallbackUrl(), "getAgentsMetadata", new Class<?>[] { Set.class }, new Object[] { Collections.emptySet() });
-          return rewriteAgentId((Collection<AgentMetadataEntity>)deserialize(bytes), id);
-        }
-      });
-
-      futures.add(future);
-    }
-
-    Collection<AgentMetadataEntity> globalResult = new ArrayList<AgentMetadataEntity>();
-    for (Future<Collection<AgentMetadataEntity>> future : futures) {
-      try {
-        Collection<AgentMetadataEntity> agentMetadataEntities = future.get();
-        globalResult.addAll(agentMetadataEntities);
-      } catch (Exception e) {
-        e.printStackTrace();
-        throw new ServiceExecutionException(e);
+        byte[] bytes = tsaManagementClientService.invokeMethod(id, DfltSamplerRepositoryServiceMBean.class, ticket, token, TSAConfig
+            .getSecurityCallbackUrl(), "getAgentsMetadata", new Class<?>[] { Set.class }, new Object[] { Collections.emptySet() });
+        return rewriteAgentId((Collection<AgentMetadataEntity>)deserialize(bytes), id);
       }
-    }
-    return globalResult;
+    });
+
+    return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "getAgentsMetadata");
   }
 
   @Override
   public Collection<AgentEntity> getAgents(Set<String> idSet) throws ServiceExecutionException {
     Collection<AgentEntity> result = new ArrayList<AgentEntity>();
 
-    Map<String, Map<String, String>> nodes = tsaManagementClientService.getRemoteAgentNodeDetails();
+    Map<String, Map<String, String>> nodes = getAllRemoteAgentNodeDetails();
     if (idSet.isEmpty()) {
       idSet = nodes.keySet();
     }
@@ -355,6 +328,41 @@ public class JmxRepositoryService implements EntityResourceFactory, CacheManager
       result.add(e);
     }
 
+    return result;
+  }
+
+  private Map<String, Map<String, String>> getAllRemoteAgentNodeDetails() throws ServiceExecutionException {
+    Set<String> remoteAgentNodeNames = tsaManagementClientService.getRemoteAgentNodeNames();
+
+    Collection<Future<Map<String, Map<String, String>>>> futures = fanOutCall(remoteAgentNodeNames, new ParameterizedCallable<Map<String, Map<String, String>>, String>() {
+      @Override
+      public Map<String, Map<String, String>> call(String remoteAgentNodeName) throws Exception {
+        Map<String, String> nodeDetails = tsaManagementClientService.getRemoteAgentNodeDetails(remoteAgentNodeName);
+        HashMap<String, Map<String, String>> result = new HashMap<String, Map<String, String>>();
+        result.put(remoteAgentNodeName, nodeDetails);
+        return result;
+      }
+    });
+
+    Map<String, Map<String, String>> result = new HashMap<String, Map<String, String>>();
+    long timeLeft = timeoutService.getCallTimeout();
+    int failedRequests = 0;
+    for (Future<Map<String, Map<String, String>>> future : futures) {
+      long before = System.nanoTime();
+      try {
+        Map<String, Map<String, String>> map = future.get(Math.max(1L, timeLeft), TimeUnit.MILLISECONDS);
+        result.putAll(map);
+      } catch (Exception e) {
+        future.cancel(true);
+        failedRequests++;
+        LOG.debug("Future execution error in getAllRemoteAgentNodeDetails", e);
+      } finally {
+        timeLeft -= TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - before);
+      }
+    }
+    if (failedRequests > 0) {
+      LOG.warn(failedRequests + "/" + futures.size() + " L1 agent(s) failed to respond to getAllRemoteAgentNodeDetails");
+    }
     return result;
   }
 
