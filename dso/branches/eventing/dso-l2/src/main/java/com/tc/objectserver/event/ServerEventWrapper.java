@@ -71,4 +71,9 @@ public class ServerEventWrapper {
     return true;
   }
 
+  @Override
+  public String toString() {
+    return "ServerEventWrapper [type=" + type + ", gtxId=" + gtxId + ", event=" + event + "]";
+  }
+
 }

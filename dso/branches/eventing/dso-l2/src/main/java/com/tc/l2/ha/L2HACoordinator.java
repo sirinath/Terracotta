@@ -21,6 +21,8 @@ import com.tc.l2.handler.L2ObjectSyncRequestHandler;
 import com.tc.l2.handler.L2ObjectSyncSendHandler;
 import com.tc.l2.handler.L2StateChangeHandler;
 import com.tc.l2.handler.L2StateMessageHandler;
+import com.tc.l2.handler.RelayedServerEventRegistrationHandler;
+import com.tc.l2.handler.ServerEventRegistrationRelayHandler;
 import com.tc.l2.handler.ServerTransactionAckHandler;
 import com.tc.l2.handler.TransactionRelayHandler;
 import com.tc.l2.msg.GCResultMessage;
@@ -32,6 +34,7 @@ import com.tc.l2.msg.L2StateMessage;
 import com.tc.l2.msg.ObjectSyncCompleteMessage;
 import com.tc.l2.msg.ObjectSyncMessage;
 import com.tc.l2.msg.RelayedCommitTransactionMessage;
+import com.tc.l2.msg.RelayedServerEventRegistrationMessage;
 import com.tc.l2.msg.ServerRelayedTxnAckMessage;
 import com.tc.l2.msg.ServerSyncTxnAckMessage;
 import com.tc.l2.objectserver.L2IndexStateManager;
@@ -59,8 +62,11 @@ import com.tc.net.groups.GroupException;
 import com.tc.net.groups.GroupManager;
 import com.tc.net.groups.StripeIDStateManager;
 import com.tc.object.msg.MessageRecycler;
+import com.tc.object.msg.RegisterServerEventListenerMessage;
+import com.tc.object.msg.UnregisterServerEventListenerMessage;
 import com.tc.objectserver.api.ObjectManager;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
+import com.tc.objectserver.event.ServerEventRegistry;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.impl.DistributedObjectServer;
 import com.tc.objectserver.persistence.ClusterStatePersistor;
@@ -101,6 +107,8 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
   private final L2PassiveSyncStateManager                 l2PassiveSyncStateManager;
   private final L2ObjectStateManager                      l2ObjectStateManager;
 
+  private Sink                                            serverEventRegistrationRelaySink;
+
   // private final ClusterStatePersistor clusterStatePersistor;
 
   public L2HACoordinator(final TCLogger consoleLogger, final DistributedObjectServer server,
@@ -117,7 +125,7 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
                          final ServerTransactionFactory serverTransactionFactory,
                          DGCSequenceProvider dgcSequenceProvider, SequenceGenerator indexSequenceGenerator,
                          final ObjectIDSequence objectIDSequence, final DataStorage dataStorage,
-                         int electionTimInSecs) {
+                         final ServerEventRegistry serverEventRegistry, int electionTimInSecs) {
     this.consoleLogger = consoleLogger;
     this.server = server;
     this.groupManager = groupCommsManager;
@@ -130,7 +138,8 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
 
     init(stageManager, clusterStatePersistor, l2ObjectStateManager, l2IndexStateManager, objectManager,
          indexHACoordinator, transactionManager, gtxm, weightGeneratorFactory, recycler, stripeIDStateManager,
-         serverTransactionFactory, dgcSequenceProvider, objectIDSequence, dataStorage, electionTimInSecs);
+         serverTransactionFactory, dgcSequenceProvider, objectIDSequence, dataStorage, serverEventRegistry,
+         electionTimInSecs);
   }
 
   private void init(final StageManager stageManager, final ClusterStatePersistor statePersistor,
@@ -140,7 +149,8 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
                     final WeightGeneratorFactory weightGeneratorFactory, final MessageRecycler recycler,
                     final StripeIDStateManager stripeIDStateManager,
                     final ServerTransactionFactory serverTransactionFactory, DGCSequenceProvider dgcSequenceProvider,
-                    final ObjectIDSequence objectIDSequence, final DataStorage dataStorage, int electionTimeInSecs) {
+                    final ObjectIDSequence objectIDSequence, final DataStorage dataStorage,
+                    final ServerEventRegistry serverEventRegistry, int electionTimeInSecs) {
 
     registerForStateChangeEvents(indexHACoordinator);
 
@@ -182,10 +192,20 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
                                                                                   objectSyncAckManager,
                                                                                   this.server.getTaskRunner()), 1,
                                                           MAX_STAGE_SIZE).getSink();
+    
+    
 
     Sink transactionRelaySink = stageManager.createStage(ServerConfigurationContext.TRANSACTION_RELAY_STAGE,
                              new TransactionRelayHandler(objectStateManager, this.sequenceGenerator, gtxm), 1,
                              MAX_STAGE_SIZE).getSink();
+
+    serverEventRegistrationRelaySink = stageManager
+        .createStage(ServerConfigurationContext.SERVER_EVENT_REGISTRATION_RELAY_STAGE,
+                     new ServerEventRegistrationRelayHandler(objectStateManager), 1, MAX_STAGE_SIZE).getSink();
+    
+    final Sink relayedServerEventRegistrationSink = stageManager.createStage(ServerConfigurationContext.RELAYED_SERVER_EVENT_REGISTRATION_STAGE,
+                     new RelayedServerEventRegistrationHandler(serverEventRegistry), 1, MAX_STAGE_SIZE).getSink();
+
     final Sink ackProcessingSink = stageManager
         .createStage(ServerConfigurationContext.SERVER_TRANSACTION_ACK_PROCESSING_STAGE,
                      new ServerTransactionAckHandler(), 1, MAX_STAGE_SIZE).getSink();
@@ -242,6 +262,7 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
     this.groupManager.routeMessages(ServerSyncTxnAckMessage.class, ackProcessingSink);
     this.groupManager.routeMessages(L2StateMessage.class, stateMessageSink);
     this.groupManager.routeMessages(GCResultMessage.class, gcResultSink);
+    this.groupManager.routeMessages(RelayedServerEventRegistrationMessage.class, relayedServerEventRegistrationSink);
 
     GroupEventsDispatchHandler dispatchHandler = new GroupEventsDispatchHandler();
     dispatchHandler.addListener(this);
@@ -415,4 +436,17 @@ public class L2HACoordinator implements L2Coordinator, GroupEventsListener, Sequ
     return this.l2PassiveSyncStateManager;
   }
 
+  @Override
+  public void relayServerEventRegistrationToPassive(RegisterServerEventListenerMessage message) {
+    if(l2PassiveSyncStateManager.getL2Count() > 0) {
+      serverEventRegistrationRelaySink.add(message);
+    }
+  }
+
+  @Override
+  public void relayServerEventDeregistrationToPassive(UnregisterServerEventListenerMessage message) {
+    if (l2PassiveSyncStateManager.getL2Count() > 0) {
+      serverEventRegistrationRelaySink.add(message);
+    }
+  }
 }

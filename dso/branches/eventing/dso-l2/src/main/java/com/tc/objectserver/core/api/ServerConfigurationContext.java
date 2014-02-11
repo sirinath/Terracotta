@@ -59,6 +59,8 @@ public interface ServerConfigurationContext extends ConfigurationContext {
   public static final String OBJECTS_SYNC_SEND_STAGE                            = "object_sync_send_stage";
   public static final String OBJECTS_SYNC_STAGE                                 = "objects_sync_stage";
   public static final String TRANSACTION_RELAY_STAGE                            = "transaction_relay_stage";
+  public static final String SERVER_EVENT_REGISTRATION_RELAY_STAGE                     = "server_event_registration_relay_stage";
+  public static final String RELAYED_SERVER_EVENT_REGISTRATION_STAGE                   = "relayed_server_event_registration_stage";
   public static final String SERVER_TRANSACTION_ACK_PROCESSING_STAGE            = "server_transaction_ack_processing_stage";
   public static final String GROUP_EVENTS_DISPATCH_STAGE                        = "group_events_dispatch_stage";
   public static final String L2_STATE_MESSAGE_HANDLER_STAGE                     = "l2_state_message_handler_stage";

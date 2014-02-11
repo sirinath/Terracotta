@@ -50,6 +50,7 @@ import com.tc.objectserver.clustermetadata.ServerClusterMetaDataManager;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
 import com.tc.objectserver.core.impl.ServerConfigurationContextImpl;
+import com.tc.objectserver.event.ServerEventRegistry;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.handshakemanager.ServerClientHandshakeManager;
 import com.tc.objectserver.l1.api.ClientStateManager;
@@ -255,13 +256,13 @@ public class StandardDSOServerBuilder implements DSOServerBuilder {
                                              final DGCSequenceProvider dgcSequenceProvider,
                                              final SequenceGenerator indexSequenceGenerator,
                                              final ObjectIDSequence objectIDSequence, final DataStorage datastore,
-                                             int electionTimeInSecs) {
+                                             final ServerEventRegistry serverEventRegistry, int electionTimeInSecs) {
     return new L2HACoordinator(consoleLogger, server, stageManager, groupCommsManager, clusterStatePersistor,
                                objectManager, indexHACoordinator, l2PassiveSyncStateManager, l2ObjectStateManager,
                                l2IndexStateManager, transactionManager, gtxm, weightGeneratorFactory,
                                configurationSetupManager, recycler, this.thisGroupID, stripeStateManager,
                                serverTransactionFactory, dgcSequenceProvider, indexSequenceGenerator, objectIDSequence,
-        datastore, electionTimeInSecs);
+                               datastore, serverEventRegistry, electionTimeInSecs);
   }
 
   @Override

@@ -40,6 +40,7 @@ import com.tc.objectserver.api.ServerMapRequestManager;
 import com.tc.objectserver.clustermetadata.ServerClusterMetaDataManager;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.ServerConfigurationContext;
+import com.tc.objectserver.event.ServerEventRegistry;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.handshakemanager.ServerClientHandshakeManager;
 import com.tc.objectserver.l1.api.ClientStateManager;
@@ -147,7 +148,8 @@ public interface DSOServerBuilder extends TCDumper, PostInit {
                                       ServerTransactionFactory serverTransactionFactory,
                                       DGCSequenceProvider dgcSequenceProvider,
                                       SequenceGenerator indexSequenceGenerator, ObjectIDSequence objectIDSequence,
-                                      final DataStorage datastore, int electionTimeInSecs);
+                                      final DataStorage datastore, final ServerEventRegistry serverEventRegistry,
+                                      int electionTimeInSecs);
 
   L2Management createL2Management(TCServerInfoMBean tcServerInfoMBean,
                                   L2ConfigurationSetupManager configSetupManager,

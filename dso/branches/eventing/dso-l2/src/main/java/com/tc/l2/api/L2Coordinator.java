@@ -11,6 +11,8 @@ import com.tc.l2.state.StateChangeListener;
 import com.tc.l2.state.StateManager;
 import com.tc.l2.state.StateSyncManager;
 import com.tc.net.groups.GroupManager;
+import com.tc.object.msg.RegisterServerEventListenerMessage;
+import com.tc.object.msg.UnregisterServerEventListenerMessage;
 import com.tc.text.PrettyPrintable;
 
 public interface L2Coordinator extends StateChangeListener, PrettyPrintable {
@@ -30,5 +32,9 @@ public interface L2Coordinator extends StateChangeListener, PrettyPrintable {
   public StateSyncManager getStateSyncManager();
 
   public L2ObjectStateManager getL2ObjectStateManager();
+
+  public void relayServerEventRegistrationToPassive(RegisterServerEventListenerMessage message);
+
+  public void relayServerEventDeregistrationToPassive(UnregisterServerEventListenerMessage message);
 
 }
