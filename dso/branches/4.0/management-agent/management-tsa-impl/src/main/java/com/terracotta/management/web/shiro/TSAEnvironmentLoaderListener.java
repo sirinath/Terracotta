@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.terracotta.management.ServiceLocator;
 import org.terracotta.management.resource.services.validator.RequestValidator;
 
-import com.tc.config.schema.L2Info;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.terracotta.management.keychain.URIKeyName;
@@ -66,7 +65,6 @@ import com.terracotta.management.service.impl.pool.JmxConnectorPool;
 import com.terracotta.management.web.utils.TSAConfig;
 import com.terracotta.management.web.utils.TSASslSocketFactory;
 
-import java.lang.management.ManagementFactory;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -77,9 +75,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.management.JMException;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
 import javax.management.remote.rmi.RMIConnectorServer;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -94,13 +89,6 @@ public class TSAEnvironmentLoaderListener extends EnvironmentLoaderListener {
   private volatile JmxConnectorPool jmxConnectorPool;
   private volatile ThreadPoolExecutor l1BridgeExecutorService;
   private volatile ThreadPoolExecutor tsaExecutorService;
-
-  protected int getServerCount() throws JMException {
-    MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-    L2Info[] l2Infos = (L2Info[])mBeanServer.getAttribute(
-        new ObjectName("org.terracotta.internal:type=Terracotta Server,name=Terracotta Server"), "L2Info");
-    return l2Infos.length;
-  }
 
   @Override
   public void contextInitialized(ServletContextEvent sce) {
@@ -140,12 +128,11 @@ public class TSAEnvironmentLoaderListener extends EnvironmentLoaderListener {
       } else {
         jmxConnectorPool = new JmxConnectorPool("service:jmx:jmxmp://{0}:{1}");
       }
-      int l1Threads = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_REMOTEJMX_MAXTHREADS);
-      l1BridgeExecutorService = new ThreadPoolExecutor(l1Threads, l1Threads, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(l1Threads * 32, true), new ManagementThreadFactory("Management-Agent-L1"));
+      int maxThreads = TCPropertiesImpl.getProperties().getInt(TCPropertiesConsts.L2_REMOTEJMX_MAXTHREADS);
+      l1BridgeExecutorService = new ThreadPoolExecutor(maxThreads, maxThreads, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(maxThreads * 32, true), new ManagementThreadFactory("Management-Agent-L1"));
       l1BridgeExecutorService.allowCoreThreadTimeOut(true);
 
-      int l2Threads = getServerCount();
-      tsaExecutorService = new ThreadPoolExecutor(l2Threads, l2Threads, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(l2Threads * 32, true), new ManagementThreadFactory("Management-Agent-L2"));
+      tsaExecutorService = new ThreadPoolExecutor(maxThreads, maxThreads, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(maxThreads * 32, true), new ManagementThreadFactory("Management-Agent-L2"));
       tsaExecutorService.allowCoreThreadTimeOut(true);
 
       tsaManagementClientService = new TsaManagementClientServiceImpl(jmxConnectorPool, sslEnabled, tsaExecutorService, timeoutService);
