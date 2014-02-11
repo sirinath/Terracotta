@@ -25,7 +25,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * @author Eugene Shelestovich
  */
-public class InClusterServerEventNotifier implements ServerEventListener, DSOChannelManagerEventListener {
+public class InClusterServerEventNotifier implements ServerEventListener, DSOChannelManagerEventListener,
+    ServerEventRegistry {
 
   private static final TCLogger LOG = TCLogging.getLogger(InClusterServerEventNotifier.class);
 
@@ -69,7 +70,7 @@ public class InClusterServerEventNotifier implements ServerEventListener, DSOCha
         }
         break;
 
-      case END:
+      case END: // TODO: Handle when node is Passive
         Multimap<ClientID, ServerEvent> eventsForTransaction = eventMap.get(eventWrapper.getGtxId());
         for (ClientID clientId : eventsForTransaction.keySet()) {
           List<ServerEvent> events = (List<ServerEvent>) eventsForTransaction.get(clientId);
@@ -85,7 +86,10 @@ public class InClusterServerEventNotifier implements ServerEventListener, DSOCha
    * Registration is relatively rare operation comparing to event firing.
    * So we can loop through the registry instead of maintaining a reversed data structure.
    */
+  @Override
   public final void register(final ClientID clientId, final String destination, final Set<ServerEventType> eventTypes) {
+    LOG.error("############# Register Client: " + clientId + " for destination: " + destination + " and EventType: "
+              + eventTypes);
     lock.writeLock().lock();
     try {
       for (ServerEventType eventType : eventTypes) {
@@ -116,6 +120,7 @@ public class InClusterServerEventNotifier implements ServerEventListener, DSOCha
     }
   }
 
+  @Override
   public final void unregister(final ClientID clientId, final String destination, final Set<ServerEventType> eventTypes) {
     lock.writeLock().lock();
     try {

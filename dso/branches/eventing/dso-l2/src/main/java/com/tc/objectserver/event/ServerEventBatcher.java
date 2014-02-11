@@ -105,6 +105,8 @@ public class ServerEventBatcher implements Runnable {
     msg.setEvents(events);
     msg.send();
 
+    LOG.error("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ Sending events to client: " + events.size());// TODO: Remove it
+
     if (LOG.isDebugEnabled()) {
       LOG.debug("ServerEvents have been sent to client '" + clientId + "' for " + events.size() + " transactions.");
     }
