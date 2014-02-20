@@ -48,6 +48,7 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -192,8 +193,9 @@ public class TCTestCase extends TestCase {
   // called by timer thread (ie. NOT the main thread of test case)
   private void timeoutCallback(long elapsedTime) {
     String bar = "***************************************";
-    System.err.println("\n" + bar + "\n+ TCTestCase timeout alarm going off after " + millisToMinutes(elapsedTime)
-                       + " minutes at " + new Date() + "\n" + bar + "\n");
+    System.err
+        .println("\n" + bar + "\n+ TCTestCase timeout alarm going off after "
+                 + TimeUnit.MILLISECONDS.toMinutes(elapsedTime) + " minutes at " + new Date() + "\n" + bar + "\n");
     System.err.flush();
 
     doDumpServerDetails();
@@ -346,7 +348,7 @@ public class TCTestCase extends TestCase {
 
     final long delay = junitTimeout - timeoutThreshold;
 
-    System.err.println("Timeout task is scheduled to run in " + millisToMinutes(delay) + " minutes");
+    System.err.println("Timeout task is scheduled to run in " + TimeUnit.MILLISECONDS.toMinutes(delay) + " minutes");
 
     // cancel the old task
     if (timerTask != null) {
@@ -395,10 +397,6 @@ public class TCTestCase extends TestCase {
     } else {
       System.err.println("Heap dump only available on jdk1.6+");
     }
-  }
-
-  private long millisToMinutes(final long timeInMilliseconds) {
-    return (timeInMilliseconds / (1000 * 60));
   }
 
   public void setThreadDumpInterval(long interval) {
