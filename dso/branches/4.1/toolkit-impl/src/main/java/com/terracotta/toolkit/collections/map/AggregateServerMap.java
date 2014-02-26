@@ -21,6 +21,7 @@ import org.terracotta.toolkit.internal.store.ConfigFieldsInternal;
 import org.terracotta.toolkit.internal.store.ConfigFieldsInternal.LOCK_STRATEGY;
 import org.terracotta.toolkit.rejoin.RejoinException;
 import org.terracotta.toolkit.search.QueryBuilder;
+import org.terracotta.toolkit.search.SearchException;
 import org.terracotta.toolkit.search.SearchQueryResultSet;
 import org.terracotta.toolkit.search.ToolkitSearchQuery;
 import org.terracotta.toolkit.search.attribute.ToolkitAttributeExtractor;
@@ -42,9 +43,13 @@ import com.tc.object.ObjectID;
 import com.tc.object.ServerEventDestination;
 import com.tc.object.TCObject;
 import com.tc.object.TCObjectServerMap;
+import com.tc.object.search.SearchRequestIDGenerator;
 import com.tc.object.servermap.localcache.L1ServerMapLocalCacheStore;
 import com.tc.object.servermap.localcache.PinnedEntryFaultCallback;
+import com.tc.object.tx.TransactionCompleteListener;
+import com.tc.object.tx.TransactionID;
 import com.tc.platform.PlatformService;
+import com.tc.search.SearchRequestID;
 import com.tc.server.CustomLifespanVersionedServerEvent;
 import com.tc.server.ServerEvent;
 import com.tc.server.ServerEventType;
@@ -77,6 +82,7 @@ import com.terracotta.toolkit.search.SearchFactory;
 import com.terracotta.toolkit.search.SearchableEntity;
 import com.terracotta.toolkit.type.DistributedClusteredObjectLookup;
 import com.terracotta.toolkit.type.DistributedToolkitType;
+import com.terracottatech.search.SearchBuilder.Search;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -96,6 +102,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.tc.server.ServerEventType.EVICT;
@@ -115,6 +122,7 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
   private static final String                                              EHCACHE_GETALL_BATCH_SIZE_PROPERTY = "ehcache.getAll.batchSize";
   private static final int                                                 DEFAULT_GETALL_BATCH_SIZE          = 1000;
   private final static String                                              CONFIG_CHANGE_LOCK_ID              = "__tc_config_change_lock";
+  private final static String                                              SNAPSHOT_TXN_LOCK_ID               = "snapshot_txn_lock";
   private final static List<ToolkitObjectType>                             VALID_TYPES                        = Arrays
                                                                                                                   .asList(ToolkitObjectType.STORE,
                                                                                                                       ToolkitObjectType.CACHE);
@@ -132,6 +140,7 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
   private final ServerMapLocalStoreFactory                                 serverMapLocalStoreFactory;
   private final TerracottaClusterInfo                                      clusterInfo;
   private final PlatformService                                            platformService;
+  private final SearchRequestIDGenerator                                   searchReqIdGenerator;
   private final Callable<ToolkitMap<String, String>>                       schemaCreator;
   private final DistributedClusteredObjectLookup<InternalToolkitMap<K, V>> lookup;
   private final ToolkitObjectType                                          toolkitObjectType;
@@ -178,6 +187,7 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
         .getExistingValueOrException(config));
     localCacheStore = createLocalCacheStore();
     pinnedEntryFaultCallback = new PinnedEntryFaultCallbackImpl(this);
+    searchReqIdGenerator = new SearchRequestIDGenerator();
     this.timeSource = new SystemTimeSource();
     this.lockStrategy = getLockStrategyFromConfig(config);
     setupStripeObjects(stripeObjects);
@@ -510,9 +520,28 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
 
   @Override
   public SearchQueryResultSet executeQuery(ToolkitSearchQuery query) {
-    return searchBuilderFactory.createSearchExecutor(getName(), getToolkitObjectType(), this,
-        getAnyServerMap().isEventual(), platformService)
-        .executeQuery(query);
+    SearchQueryResultSet results = null;
+    SearchRequestID reqId = searchReqIdGenerator.getNextRequestID();
+    boolean doSnapshot = Search.BATCH_SIZE_UNLIMITED != query.getResultPageSize();
+    try {
+      if (doSnapshot) takeSnapshotForSearchQuery(reqId);
+      results = searchBuilderFactory.createSearchExecutor(getName(), getToolkitObjectType(), this,
+          getAnyServerMap().isEventual(), platformService)
+          .executeQuery(query, reqId);
+      
+    } finally {
+      if (results == null && doSnapshot) closeResultSet(reqId);
+    }
+    return results;
+  }
+
+  @Override
+  public void closeResultSet(SearchRequestID queryId) {
+    for (ToolkitObjectStripe<InternalToolkitMap<K, V>> stripe : stripeObjects) {
+      Iterator<InternalToolkitMap<K, V>> itr = stripe.iterator();
+      InternalToolkitMap<K, V> svrMap = itr.next();
+      svrMap.releaseSnapshot(queryId);
+    }
   }
 
   public void setApplyDestroyCallback(DestroyApplicator destroyCallback) {
@@ -684,6 +713,52 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
         mapIdToKeysMap.put(mapId, keysForThisServerMap);
       }
       keysForThisServerMap.add(key);
+    }
+  }
+
+  private void takeSnapshotForSearchQuery(SearchRequestID reqId) {
+    if (platformService.isExplicitlyLocked()) throw new SearchException(
+                                                                        "Paged search queries inside explicit lock scope not supported");
+
+    final CountDownLatch complete = new CountDownLatch(stripeObjects.length);
+    for (ToolkitObjectStripe<InternalToolkitMap<K, V>> stripe : stripeObjects) {
+      Iterator<InternalToolkitMap<K, V>> itr = stripe.iterator();
+      InternalToolkitMap<K, V> svrMap = itr.next();
+
+      ToolkitLockingApi.lock(SNAPSHOT_TXN_LOCK_ID, ToolkitLockTypeInternal.CONCURRENT, platformService);
+      platformService.addTransactionCompleteListener(new TransactionCompleteListener() {
+
+        @Override
+        public void transactionComplete(TransactionID txnID) {
+          complete.countDown();
+        }
+
+        @Override
+        public void transactionAborted(TransactionID txnID) {
+          complete.countDown();
+
+        }
+      });
+      try {
+        svrMap.takeSnapshot(reqId);
+        while (itr.hasNext()) {
+          svrMap = itr.next();
+          svrMap.addSelfToTxn();
+        }
+      } finally {
+        try {
+          ToolkitLockingApi.unlock(SNAPSHOT_TXN_LOCK_ID, ToolkitLockTypeInternal.CONCURRENT, platformService);
+        } catch (PlatformRejoinException e) {
+          throw new RejoinException(e);
+        }
+      }
+
+    }
+
+    try {
+      complete.await();
+    } catch (InterruptedException e) {
+      throw new ToolkitRuntimeException(e);
     }
   }
 
