@@ -5,6 +5,7 @@
 package com.tc.objectserver.impl;
 
 import org.apache.commons.io.FileUtils;
+import org.terracotta.corestorage.monitoring.MonitoredResource;
 
 import bsh.EvalError;
 import bsh.Interpreter;
@@ -127,7 +128,6 @@ import com.tc.object.msg.ObjectIDBatchRequestMessage;
 import com.tc.object.msg.ObjectIDBatchRequestResponseMessage;
 import com.tc.object.msg.ObjectNotFoundServerMapResponseMessageImpl;
 import com.tc.object.msg.ObjectsNotFoundMessageImpl;
-import com.tc.object.msg.RegisterServerEventListenerMessage;
 import com.tc.object.msg.RequestManagedObjectMessageImpl;
 import com.tc.object.msg.RequestManagedObjectResponseMessageImpl;
 import com.tc.object.msg.RequestRootMessageImpl;
@@ -137,9 +137,7 @@ import com.tc.object.msg.SearchQueryRequestMessageImpl;
 import com.tc.object.msg.SearchQueryResponseMessageImpl;
 import com.tc.object.msg.SearchResultsRequestMessageImpl;
 import com.tc.object.msg.SearchResultsResponseMessageImpl;
-import com.tc.object.msg.ServerEventBatchMessageImpl;
 import com.tc.object.msg.SyncWriteTransactionReceivedMessage;
-import com.tc.object.msg.UnregisterServerEventListenerMessage;
 import com.tc.object.net.DSOChannelManager;
 import com.tc.object.net.DSOChannelManagerImpl;
 import com.tc.object.net.DSOChannelManagerMBean;
@@ -166,9 +164,8 @@ import com.tc.objectserver.dgc.impl.GCControllerImpl;
 import com.tc.objectserver.dgc.impl.GCStatsEventPublisher;
 import com.tc.objectserver.dgc.impl.GarbageCollectionInfoPublisherImpl;
 import com.tc.objectserver.dgc.impl.MarkAndSweepGarbageCollector;
-import com.tc.objectserver.event.InClusterServerEventNotifier;
-import com.tc.objectserver.event.ServerEventBatcher;
-import com.tc.objectserver.event.ServerEventPublisher;
+import com.tc.objectserver.event.ClientChannelMonitorImpl;
+import com.tc.objectserver.event.InClusterServerEventBuffer;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 import com.tc.objectserver.gtx.ServerGlobalTransactionManagerImpl;
 import com.tc.objectserver.handler.ApplyTransactionChangeHandler;
@@ -182,7 +179,6 @@ import com.tc.objectserver.handler.InvalidateObjectsHandler;
 import com.tc.objectserver.handler.LowWaterMarkCallbackHandler;
 import com.tc.objectserver.handler.ManagedObjectRequestHandler;
 import com.tc.objectserver.handler.ProcessTransactionHandler;
-import com.tc.objectserver.handler.RegisterServerEventListenerHandler;
 import com.tc.objectserver.handler.RequestLockUnLockHandler;
 import com.tc.objectserver.handler.RequestObjectIDBatchHandler;
 import com.tc.objectserver.handler.RequestRootHandler;
@@ -279,6 +275,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -287,9 +284,6 @@ import java.util.Timer;
 
 import javax.management.MBeanServer;
 import javax.management.remote.JMXConnectorServer;
-
-import java.util.Collection;
-import org.terracotta.corestorage.monitoring.MonitoredResource;
 
 /**
  * Startup and shutdown point. Builds and starts the server
@@ -729,6 +723,14 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     final SampledCumulativeCounter globalServerMapGetSnapshotRequestsCounter = (SampledCumulativeCounter) this.sampledCounterManager
         .createCounter(sampledCumulativeCounterConfig);
 
+    final ServerTransactionFactory serverTransactionFactory = new ServerTransactionFactory();
+
+    // cache server event related objects
+    final InClusterServerEventBuffer serverEventbuffer = new InClusterServerEventBuffer();
+    final ClientChannelMonitorImpl clientChannelMonitorImpl = new ClientChannelMonitorImpl(channelManager,
+                                                                                           serverTransactionFactory);
+    toInit.add(clientChannelMonitorImpl);
+
     final TransactionStore transactionStore = new TransactionStoreImpl(transactionPersistor,
                                                                        globalTransactionIDSequence);
     final Stage lwmCallbackStage = stageManager.createStage(ServerConfigurationContext.LOW_WATERMARK_CALLBACK_STAGE,
@@ -736,7 +738,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     final ServerGlobalTransactionManager gtxm = new ServerGlobalTransactionManagerImpl(sequenceValidator, transactionStore,
                                                                                        gidSequenceProvider, globalTransactionIDSequence,
                                                                                        lwmCallbackStage.getSink(),
-                                                                                       persistor.getPersistenceTransactionProvider());
+                                                                                       persistor.getPersistenceTransactionProvider(), serverEventbuffer);
 
     final TransactionalStagesCoordinatorImpl txnStageCoordinator = new TransactionalStagesCoordinatorImpl(stageManager);
     this.txnObjectManager = new TransactionalObjectManagerImpl(this.objectManager, gtxm, txnStageCoordinator);
@@ -766,10 +768,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
 
     stageManager.createStage(ServerConfigurationContext.TRANSACTION_LOOKUP_STAGE, new TransactionLookupHandler(), 1,
         maxStageSize);
-
-    // cache server event related objects
-    final EventBus serverEventBus = new EventBus("server-event-bus");
-    final ServerEventPublisher serverEventPublisher = new ServerEventPublisher(serverEventBus);
 
     final Stage processTx = stageManager.createStage(ServerConfigurationContext.PROCESS_TRANSACTION_STAGE,
                                                      new ProcessTransactionHandler(transactionBatchManager), 1,
@@ -834,8 +832,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                         this.clientStateManager, channelStats);
     this.dumpHandler.registerForDump(new CallbackDumpAdapter(this.serverMapRequestManager));
 
-    final ServerTransactionFactory serverTransactionFactory = new ServerTransactionFactory();
-
     resourceManager = new ResourceManagerImpl(channelManager, haConfig.getThisGroupID());
     dumpHandler.registerForDump(new CallbackDumpAdapter(resourceManager));
     channelManager.addEventListener(resourceManager);
@@ -854,8 +850,9 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     // Lookup stage should never be blocked trying to add to apply stage
     int applyStageThreads = L2Utils.getOptimalApplyStageWorkerThreads(restartable);
     stageManager.createStage(ServerConfigurationContext.APPLY_CHANGES_STAGE,
-                             new ApplyTransactionChangeHandler(instanceMonitor, this.transactionManager, this.serverMapEvictor, persistor
-                                 .getPersistenceTransactionProvider(), taskRunner, serverEventPublisher), applyStageThreads, 1, -1);
+                             new ApplyTransactionChangeHandler(instanceMonitor, this.transactionManager, this.serverMapEvictor,
+                             persistor.getPersistenceTransactionProvider(), taskRunner, serverEventbuffer, clientChannelMonitorImpl),
+                             applyStageThreads, 1, -1);
 
     txnStageCoordinator.lookUpSinks();
     
@@ -894,16 +891,9 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     final Stage clusterMetaDataStage = stageManager.createStage(ServerConfigurationContext.CLUSTER_METADATA_STAGE,
         new ServerClusterMetaDataHandler(), 1, maxStageSize);
 
-    final ServerEventBatcher batcher = new ServerEventBatcher(channelManager, taskRunner);
-    final InClusterServerEventNotifier inClusterServerEventNotifier = new InClusterServerEventNotifier(channelManager, batcher);
-    serverEventBus.register(inClusterServerEventNotifier);
-
-    final Stage registerServerEventListenerStage = stageManager.createStage(ServerConfigurationContext.REGISTER_SERVER_EVENT_LISTENER_STAGE,
-        new RegisterServerEventListenerHandler(inClusterServerEventNotifier), 1, maxStageSize);
-
     initRouteMessages(messageRouter, processTx, rootRequest, requestLock, objectRequestStage, oidRequest,
                       transactionAck, clientHandshake, txnLwmStage, jmxRemoteTunnelStage, clusterMetaDataStage,
-                      serverMapRequestStage, searchQueryRequestStage, registerServerEventListenerStage);
+                      serverMapRequestStage, searchQueryRequestStage);
 
     long reconnectTimeout = l2DSOConfig.clientReconnectWindow();
 
@@ -1100,8 +1090,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                    final Stage requestLock, final Stage objectRequestStage, final Stage oidRequest,
                                    final Stage transactionAck, final Stage clientHandshake, final Stage txnLwmStage,
                                    final Stage jmxRemoteTunnelStage, final Stage clusterMetaDataStage,
-                                   final Stage serverMapRequestStage, final Stage searchQueryRequestStage,
-                                   final Stage registerServerEventListenerStage) {
+                                   final Stage serverMapRequestStage, final Stage searchQueryRequestStage) {
     final Sink hydrateSink = this.hydrateStage.getSink();
     messageRouter.routeMessageType(TCMessageType.COMMIT_TRANSACTION_MESSAGE, processTx.getSink(), hydrateSink);
     messageRouter.routeMessageType(TCMessageType.LOCK_REQUEST_MESSAGE, requestLock.getSink(), hydrateSink);
@@ -1134,11 +1123,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     messageRouter.routeMessageType(TCMessageType.SEARCH_QUERY_REQUEST_MESSAGE, searchQueryRequestStage.getSink(),
                                    hydrateSink);
     messageRouter.routeMessageType(TCMessageType.SEARCH_RESULTS_REQUEST_MESSAGE, searchQueryRequestStage.getSink(),
-                                   hydrateSink);
-
-    messageRouter.routeMessageType(TCMessageType.REGISTER_SERVER_EVENT_LISTENER_MESSAGE, registerServerEventListenerStage.getSink(),
-                                   hydrateSink);
-    messageRouter.routeMessageType(TCMessageType.UNREGISTER_SERVER_EVENT_LISTENER_MESSAGE, registerServerEventListenerStage.getSink(),
                                    hydrateSink);
   }
 
@@ -1206,9 +1190,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
     messageTypeClassMapping.put(TCMessageType.INVALIDATE_OBJECTS_MESSAGE, InvalidateObjectsMessage.class);
     messageTypeClassMapping.put(TCMessageType.RESOURCE_MANAGER_THROTTLE_STATE_MESSAGE,
                                 ResourceManagerThrottleMessage.class);
-    messageTypeClassMapping.put(TCMessageType.REGISTER_SERVER_EVENT_LISTENER_MESSAGE, RegisterServerEventListenerMessage.class);
-    messageTypeClassMapping.put(TCMessageType.UNREGISTER_SERVER_EVENT_LISTENER_MESSAGE, UnregisterServerEventListenerMessage.class);
-    messageTypeClassMapping.put(TCMessageType.SERVER_EVENT_BATCH_MESSAGE, ServerEventBatchMessageImpl.class);
     return messageTypeClassMapping;
   }
 
