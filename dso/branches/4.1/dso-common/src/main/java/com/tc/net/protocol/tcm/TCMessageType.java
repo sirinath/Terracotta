@@ -85,7 +85,6 @@ public final class TCMessageType {
   public static final int           TYPE_SERVER_EVENT_BATCH_MESSAGE                   = 74;
   public static final int           TYPE_SEARCH_RESULTS_REQUEST_MESSAGE               = 75;
   public static final int           TYPE_SEARCH_RESULTS_RESPONSE_MESSAGE              = 76;
-  public static final int           TYPE_SEARCH_RESULTS_CLOSE_MESSAGE                 = 77;
 
   public static final TCMessageType PING_MESSAGE                                      = new TCMessageType();
   public static final TCMessageType PONG_MESSAGE                                      = new TCMessageType();
@@ -138,7 +137,6 @@ public final class TCMessageType {
   public static final TCMessageType SEARCH_RESULTS_REQUEST_MESSAGE                    = new TCMessageType();
   public static final TCMessageType SEARCH_QUERY_RESPONSE_MESSAGE                     = new TCMessageType();
   public static final TCMessageType SEARCH_RESULTS_RESPONSE_MESSAGE                   = new TCMessageType();
-  public static final TCMessageType SEARCH_RESULTS_CLOSE_MESSAGE                      = new TCMessageType();
 
   public static final TCMessageType GET_ALL_SIZE_SERVER_MAP_REQUEST_MESSAGE           = new TCMessageType();
   public static final TCMessageType GET_ALL_SIZE_SERVER_MAP_RESPONSE_MESSAGE          = new TCMessageType();
