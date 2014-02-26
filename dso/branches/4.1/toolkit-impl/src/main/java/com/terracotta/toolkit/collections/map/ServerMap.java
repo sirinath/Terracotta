@@ -1739,4 +1739,26 @@ public class ServerMap<K, V> extends AbstractTCToolkitObject implements Internal
   private boolean compare(V v1, V v2, ToolkitValueComparator<V> comparator) {
     return comparator.equals(v1, v2);
   }
+
+  @Override
+  public void registerListener(Set<ServerEventType> eventTypes, boolean skipRejoinChecks) {
+    assertNotNull(eventTypes);
+    eventualConcurrentLock.lock();
+    try {
+      tcObjectServerMap.doRegisterListener(eventTypes, skipRejoinChecks);
+    } finally {
+      eventualConcurrentLock.unlock();
+    }
+  }
+
+  @Override
+  public void unregisterListener(Set<ServerEventType> eventTypes) {
+    assertNotNull(eventTypes);
+    eventualConcurrentLock.lock();
+    try {
+      tcObjectServerMap.doUnregisterListener(eventTypes);
+    } finally {
+      eventualConcurrentLock.unlock();
+    }
+  }
 }

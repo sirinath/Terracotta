@@ -143,4 +143,8 @@ public interface InternalToolkitMap<K, V> extends ConcurrentMap<K, V>, TCServerM
   void takeSnapshot(SearchRequestID id);
 
   void releaseSnapshot(SearchRequestID queryId);
+
+  void registerListener(Set<ServerEventType> eventTypes, boolean skipRejoinChecks);
+
+  void unregisterListener(Set<ServerEventType> types);
 }
