@@ -119,8 +119,8 @@ public class ClusterStateMessage extends AbstractGroupMessage {
         out.writeLong(nextAvailableDGCId);
         out.writeString(clusterID);
         out.writeInt(connectionIDs.size());
-        for (final Object connectionID : connectionIDs) {
-          writeConnectionID((ConnectionID)connectionID, out);
+        for (final Object id : connectionIDs) {
+          writeConnectionID((ConnectionID) id, out);
         }
         new GroupToStripeMapSerializer(stripeIDMap).serializeTo(out);
         break;
