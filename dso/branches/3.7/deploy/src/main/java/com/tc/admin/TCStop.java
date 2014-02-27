@@ -150,7 +150,7 @@ public class TCStop {
 
       if(manager.isSecure() || securedSpecified) {
         final Class<?> securityManagerClass = Class.forName("com.tc.net.core.security.TCClientSecurityManager");
-        securityManagerClass.newInstance();
+        securityManagerClass.getConstructor(boolean.class).newInstance(true);
         secured = true;
       }
 
