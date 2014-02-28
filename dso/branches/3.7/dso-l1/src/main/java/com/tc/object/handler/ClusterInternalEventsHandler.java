@@ -48,7 +48,7 @@ public class ClusterInternalEventsHandler extends AbstractEventHandler {
                                                                                     60L,
                                                                                     TimeUnit.SECONDS,
                                                                                     new LinkedBlockingQueue<Runnable>(),
-                                                                                    daemonThreadFactory);
+                                                                                    daemonThreadFactory, new ThreadPoolExecutor.DiscardPolicy());
 
     public Future submit(Runnable runnable) {
       return eventExecutor.submit(runnable);
