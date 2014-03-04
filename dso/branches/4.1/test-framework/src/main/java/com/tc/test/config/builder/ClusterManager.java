@@ -21,7 +21,15 @@ import com.terracottatech.config.TcConfigDocument;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
@@ -51,7 +59,7 @@ public class ClusterManager {
   private final TcConfig tcConfig;
   private String maxDirectMemorySize = DEFAULT_MAX_DIRECT_MEMORY_SIZE;
 
-  private Map<String, String> systemProperties = new TreeMap<String, String>();
+  private final Map<String, String> systemProperties = new TreeMap<String, String>();
 
   public ClusterManager(Class<?> testClass, TcConfig tcConfig) throws IOException, XmlException {
     this(new File(TestConfigUtil.getTcBaseDirPath(), "temp" + File.separator + testClass.getSimpleName()), tcConfig, true);
@@ -257,6 +265,7 @@ public class ClusterManager {
         final AtomicBoolean success = new AtomicBoolean(false);
 
         ContentExchange exchange = new ContentExchange(true) {
+          @Override
           protected void onResponseComplete() throws IOException {
             // if we get JSON back (even an error) then we can assume the agent started
             Collection<String> contentTypes = getResponseFields().getValuesCollection("content-type");
@@ -337,7 +346,8 @@ public class ClusterManager {
         boolean contains = result.contains("\"agencyOf\": \"Ehcache\"");
         inputStream.close();
         if(!contains) {
-          LOG.info("TSA agent NOT listening on port, we try again {}", port);
+          LOG.info("TSA agent NOT aggregating L1s on port {} , we try again", port);
+          LOG.info("{} returned {}", url, result);
           ThreadUtil.reallySleep(1000L);
           continue;
         }
@@ -360,6 +370,7 @@ public class ClusterManager {
         final AtomicBoolean success = new AtomicBoolean(false);
 
         ContentExchange exchange = new ContentExchange(true) {
+          @Override
           protected void onResponseComplete() throws IOException {
            if(getResponseContent().contains("\"agencyOf\": \"Ehcache\"")) {
              success.set(true);
