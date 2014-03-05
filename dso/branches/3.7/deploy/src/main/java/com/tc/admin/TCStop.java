@@ -28,9 +28,7 @@ import java.io.Console;
 import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -95,7 +93,7 @@ public class TCStop {
         password = commandLineBuilder.getOptionValue('w');
       } else {
         final Console console = System.console();
-        if(console != null) {
+        if (console != null) {
           password = new String(console.readPassword("Enter password: ")); // Hu?!
         } else {
           password = CommandLineBuilder.readPassword();
@@ -111,7 +109,7 @@ public class TCStop {
 
         tmpArgs.add("-f");
         final String absolutePath = configFile.getAbsolutePath();
-        if(securedSpecified && absolutePath.indexOf('@') == -1 && userNameSpecified) {
+        if (securedSpecified && absolutePath.indexOf('@') == -1 && userNameSpecified) {
           tmpArgs.add(userName + "@" + absolutePath);
         } else {
           tmpArgs.add(absolutePath);
@@ -124,21 +122,26 @@ public class TCStop {
       ConfigurationSetupManagerFactory factory = new StandardConfigurationSetupManagerFactory(
                                                                                               args,
                                                                                               StandardConfigurationSetupManagerFactory.ConfigMode.L2,
-                                                                                              changeHandler, new PwProvider() {
-        @Override
-        public char[] getPasswordFor(final URI uri) {
-          return getPassword();
-        }
+                                                                                              changeHandler,
+                                                                                              new PwProvider() {
+                                                                                                @Override
+                                                                                                public char[] getPasswordFor(final URI uri) {
+                                                                                                  return getPassword();
+                                                                                                }
 
-        @Override
-        public char[] getPasswordForTC(final String user, final String host, final int port) {
-          return getPassword();
-        }
+                                                                                                @Override
+                                                                                                public char[] getPasswordForTC(final String user,
+                                                                                                                               final String host,
+                                                                                                                               final int port) {
+                                                                                                  return getPassword();
+                                                                                                }
 
-        private char[] getPassword() {
-          return password != null ? password.toCharArray() : null;
-        }
-      });
+                                                                                                private char[] getPassword() {
+                                                                                                  return password != null ? password
+                                                                                                      .toCharArray()
+                                                                                                      : null;
+                                                                                                }
+                                                                                              });
 
       String name = null;
       if (nameSpecified) {
@@ -148,7 +151,7 @@ public class TCStop {
       L2ConfigurationSetupManager manager = factory.createL2TVSConfigurationSetupManager(name);
       String[] servers = manager.allCurrentlyKnownServers();
 
-      if(manager.isSecure() || securedSpecified) {
+      if (manager.isSecure() || securedSpecified) {
         final Class<?> securityManagerClass = Class.forName("com.tc.net.core.security.TCClientSecurityManager");
         securityManagerClass.getConstructor(boolean.class).newInstance(true);
         secured = true;
@@ -174,7 +177,8 @@ public class TCStop {
 
       CommonL2Config serverConfig = manager.commonL2ConfigFor(name);
 
-      host = serverConfig.host();
+      host = serverConfig.jmxPort().getBind();
+      if (host == null || host.equals("0.0.0.0")) host = serverConfig.host();
       if (host == null) host = name;
       if (host == null) host = DEFAULT_HOST;
       port = serverConfig.jmxPort().getIntValue();
@@ -281,26 +285,15 @@ public class TCStop {
     }
   }
 
-  private ServerGroupInfo getCurrentServerGroup(TCServerInfoMBean tcServerInfo) throws UnknownHostException {
+  private ServerGroupInfo getCurrentServerGroup(TCServerInfoMBean tcServerInfo) {
     ServerGroupInfo[] serverGroupInfos = tcServerInfo.getServerGroupInfo();
-    InetAddress ipAddress = null;
-    ipAddress = getIpAddressOfServer(host);
     for (ServerGroupInfo serverGroupInfo : serverGroupInfos) {
       L2Info[] members = serverGroupInfo.members();
       for (L2Info l2Info : members) {
-        if (l2Info.getInetAddress().equals(ipAddress) && l2Info.jmxPort() == port) { return serverGroupInfo; }
+        if (l2Info.name().equals(tcServerInfo.getL2Identifier())) { return serverGroupInfo; }
       }
     }
     return null;
-  }
-
-  private InetAddress getIpAddressOfServer(final String name) throws UnknownHostException {
-    InetAddress address;
-    address = InetAddress.getByName(name);
-    if (address.isLoopbackAddress()) {
-      address = InetAddress.getLocalHost();
-    }
-    return address;
   }
 
   private boolean isPassiveStandBy(L2Info l2Info) throws Exception {
