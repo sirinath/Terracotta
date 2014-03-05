@@ -343,8 +343,7 @@ public class ClusterManager {
         }
 
         String result = writer.toString();
-        boolean contains = result.contains("\"agencyOf\": \"Ehcache\"")
-                           || result.contains("\"agencyOf\" : \"Ehcache\"");
+        boolean contains = result.matches("\"agencyOf\"[\\s]*:[\\s]*\"Ehcache\"");
         inputStream.close();
         if(!contains) {
           LOG.info("TSA agent NOT aggregating L1s on port {} , we try again", port);
