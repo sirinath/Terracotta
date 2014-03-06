@@ -32,7 +32,7 @@
     <javax.servlet.version>3.0.0.v201112011016</javax.servlet.version>
     <slf4j.version>1.6.6</slf4j.version>
     <search.version>1.4.6</search.version>
-    <security-version>1.3.12</security-version>
+    <security-version>1.3.13</security-version>
     <management-core-version>1.2.3</management-core-version>
     <management.apps.parent.version>1.2.3-SNAPSHOT</management.apps.parent.version>
     <session-management.version>4.2.0-SNAPSHOT</session-management.version>
