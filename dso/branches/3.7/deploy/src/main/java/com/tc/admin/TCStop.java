@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -208,6 +209,9 @@ public class TCStop {
       if (root instanceof ConnectException) {
         consoleLogger.error("Unable to connect to host '" + host + "', port " + port
                             + ". Are you sure there is a Terracotta server instance running there?");
+      }
+      if (root instanceof GeneralSecurityException) {
+        consoleLogger.error("There is a problem with you secured setup: " + root.getMessage());
       }
       System.exit(1);
     }
