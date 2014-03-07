@@ -11,6 +11,7 @@ import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.object.ServerDBBackupMBean;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 import javax.management.MBeanServerConnection;
 import javax.management.NotificationFilter;
@@ -27,6 +28,7 @@ public class ServerDBBackupRunner {
   private final int          port;
   private final String       username;
   private final String       password;
+  private final boolean secured;
   public static final String DEFAULT_HOST = "localhost";
   public static final int    DEFAULT_PORT = 9520;
   private JMXConnector       jmxConnector;
@@ -38,6 +40,7 @@ public class ServerDBBackupRunner {
                                  "hostname");
     commandLineBuilder.addOption("p", "jmxport", true, "Terracotta Server instance JMX port", Integer.class, false,
                                  "jmx-port");
+    commandLineBuilder.addOption("s", "secured", false, "secured", String.class, false);
     commandLineBuilder.addOption("u", "username", true, "username", String.class, false);
     commandLineBuilder.addOption("w", "password", true, "password", String.class, false);
     commandLineBuilder.addOption("d", "directory", true, "Directory to back up to", String.class, false);
@@ -54,6 +57,13 @@ public class ServerDBBackupRunner {
     }
     if (commandLineBuilder.hasOption('h')) {
       commandLineBuilder.usageAndDie("backup-data.bat/backup-data.sh");
+    }
+
+    boolean secured = false;
+    if (commandLineBuilder.hasOption('s')) {
+      final Class<?> securityManagerClass = Class.forName("com.tc.net.core.security.TCClientSecurityManager");
+      securityManagerClass.getConstructor(boolean.class).newInstance(true);
+      secured = true;
     }
 
     String username = null;
@@ -90,7 +100,7 @@ public class ServerDBBackupRunner {
 
     ServerDBBackupRunner serverDBBackupRunner = null;
     try {
-      serverDBBackupRunner = new ServerDBBackupRunner(host, port, username, password);
+      serverDBBackupRunner = new ServerDBBackupRunner(host, port, username, password, secured);
       serverDBBackupRunner.runBackup(path);
     } catch (Exception se) {
       System.err.println(se.getMessage());
@@ -103,14 +113,15 @@ public class ServerDBBackupRunner {
   }
 
   public ServerDBBackupRunner(String host, int port) {
-    this(host, port, null, null);
+    this(host, port, null, null, false);
   }
 
-  public ServerDBBackupRunner(String host, int port, String username, String password) {
+  public ServerDBBackupRunner(String host, int port, String username, String password, boolean secured) {
     this.host = host;
     this.port = port;
     this.username = username;
     this.password = password;
+    this.secured = secured;
   }
 
   public void runBackup(String path) throws IOException {
@@ -119,7 +130,7 @@ public class ServerDBBackupRunner {
 
   public void runBackup(String path, NotificationListener listener, NotificationFilter filter, Object obj,
                         boolean closeJMXAndListener) throws IOException {
-    jmxConnector = CommandLineBuilder.getJMXConnector(username, password, host, port);
+    jmxConnector = CommandLineBuilder.getJMXConnector(username, password, host, port, secured);
     MBeanServerConnection mbs = getMBeanServerConnection(jmxConnector, host, port);
     if (mbs == null) throw new RuntimeException("");
     ServerDBBackupMBean mbean = getServerDBBackupMBean(mbs);
@@ -157,11 +168,25 @@ public class ServerDBBackupRunner {
     try {
       mbs = jmxConnector.getMBeanServerConnection();
     } catch (IOException e1) {
-      System.err.println("Unable to connect to host '" + host + "', port " + port
-                         + ". Are you sure there is a Terracotta Server instance running there?");
+      Throwable root = getRootCause(e1);
+      if (root instanceof GeneralSecurityException) {
+        System.err.println("There is a problem with you secured setup: " + root.getMessage());
+      } else {
+        System.err.println("Unable to connect to host '" + host + "', port " + port
+                           + ". Are you sure there is a Terracotta server instance running there?");
+      }
       return null;
     }
     return mbs;
+  }
+
+  private static Throwable getRootCause(Throwable e) {
+    Throwable t = e;
+    while (t != null) {
+      e = t;
+      t = t.getCause();
+    }
+    return e;
   }
 
   public void removeListenerAndCloseJMX(NotificationListener listener) {
@@ -192,7 +217,7 @@ public class ServerDBBackupRunner {
   }
 
   public String getDefaultBackupPath() {
-    final JMXConnector jmxConn = CommandLineBuilder.getJMXConnector(username, password, host, port);
+    final JMXConnector jmxConn = CommandLineBuilder.getJMXConnector(username, password, host, port, secured);
     MBeanServerConnection mbs = getMBeanServerConnection(jmxConn, host, port);
     if (mbs == null) return null;
     ServerDBBackupMBean mbean = getServerDBBackupMBean(mbs);
