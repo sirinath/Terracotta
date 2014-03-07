@@ -20,6 +20,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.security.GeneralSecurityException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
@@ -38,6 +40,7 @@ public class ClusterDumper {
   private final int              port;
   private final String           username;
   private final String           password;
+  private final boolean          secured;
 
   private static final String    FILENAME_FORMAT = "cluster-thread-dump-%s.zip";
   private static final int       ZIP_BUFFER_SIZE = 2048;
@@ -55,6 +58,7 @@ public class ClusterDumper {
                                  "l2-jmx-port");
     commandLineBuilder.addOption("c", "Take only client dumps.", String.class, false);
     commandLineBuilder.addOption("s", "Take only server dumps.", String.class, false);
+    commandLineBuilder.addOption(null, "secured", false, "secured", String.class, false);
     commandLineBuilder.addOption("u", "username", true, "username", String.class, false);
     commandLineBuilder.addOption("w", "password", true, "password", String.class, false);
     commandLineBuilder.addOption("d", "Take cluster state dump. Check server/client logs for the dump.", String.class,
@@ -84,6 +88,13 @@ public class ClusterDumper {
       System.out.println("Taking dumps only for client(s).");
     }
 
+    boolean secured = false;
+    if (commandLineBuilder.hasOption("secured")) {
+      final Class<?> securityManagerClass = Class.forName("com.tc.net.core.security.TCClientSecurityManager");
+      securityManagerClass.getConstructor(boolean.class).newInstance(true);
+      secured = true;
+    }
+
     String username = null;
     String password = null;
     if (commandLineBuilder.hasOption('u')) {
@@ -108,7 +119,7 @@ public class ClusterDumper {
     }
 
     host = host == null ? DEFAULT_HOST : host;
-    ClusterDumper dumper = new ClusterDumper(host, port, username, password);
+    ClusterDumper dumper = new ClusterDumper(host, port, username, password, secured);
     try {
       System.out.println("Connecting " + host + ":" + port + "...");
       if (commandLineBuilder.hasOption('d')) {
@@ -117,12 +128,28 @@ public class ClusterDumper {
         dumper.takeClusterThreadDump(server, client);
       }
     } catch (IOException ioe) {
-      System.out.println("Unable to connect to host '" + host + "', port " + port
-                         + ". Are you sure there is a Terracotta server instance running there?");
+      Throwable root = getRootCause(ioe);
+      if (root instanceof ConnectException) {
+        System.err.println("Unable to connect to host '" + host + "', port " + port
+                           + ". Are you sure there is a Terracotta server instance running there?");
+      }
+      if (root instanceof GeneralSecurityException) {
+        System.err.println("There is a problem with you security setup: " + root.getMessage());
+      }
+      System.exit(1);
     } catch (SecurityException se) {
       System.out.println(se.getMessage());
       commandLineBuilder.usageAndDie();
     }
+  }
+
+  private static Throwable getRootCause(Throwable e) {
+    Throwable t = e;
+    while (t != null) {
+      e = t;
+      t = t.getCause();
+    }
+    return e;
   }
 
   private static int parsePort(String portString) {
@@ -137,14 +164,15 @@ public class ClusterDumper {
   }
 
   public ClusterDumper(String host, int port) {
-    this(host, port, null, null);
+    this(host, port, null, null, false);
   }
 
-  public ClusterDumper(String host, int port, String userName, String password) {
+  public ClusterDumper(String host, int port, String userName, String password, boolean secured) {
     this.host = host;
     this.port = port;
     this.username = userName;
     this.password = password;
+    this.secured = secured;
   }
 
   public void takeClusterStateDump(boolean server, boolean client) throws Exception {
@@ -184,7 +212,7 @@ public class ClusterDumper {
           String hostName = member.host();
           int jmxPort = member.jmxPort();
           System.out.println("Trying to take Server State Dump for " + hostName + ":" + jmxPort);
-          jmxConnector = CommandLineBuilder.getJMXConnector(username, password, hostName, jmxPort);
+          jmxConnector = CommandLineBuilder.getJMXConnector(username, password, hostName, jmxPort, secured);
           final MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
           mbean = MBeanServerInvocationProxy.newMBeanProxy(mbs, L2MBeanNames.DUMPER, L2DumperMBean.class, false);
           mbean.doServerDump();
@@ -217,7 +245,7 @@ public class ClusterDumper {
           String hostName = member.host();
           int jmxPort = member.jmxPort();
           System.out.println("Trying to take Server Thread Dump for " + hostName + ":" + jmxPort);
-          jmxConnector = CommandLineBuilder.getJMXConnector(username, password, hostName, jmxPort);
+          jmxConnector = CommandLineBuilder.getJMXConnector(username, password, hostName, jmxPort, secured);
           final MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
           mbean = MBeanServerInvocationProxy.newMBeanProxy(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class,
                                                            false);
@@ -292,7 +320,7 @@ public class ClusterDumper {
   private ServerGroupInfo[] getServerGroupInfo() throws Exception {
     ServerGroupInfo[] serverGrpInfos = null;
     TCServerInfoMBean mbean = null;
-    final JMXConnector jmxConnector = CommandLineBuilder.getJMXConnector(username, password, host, port);
+    final JMXConnector jmxConnector = CommandLineBuilder.getJMXConnector(username, password, host, port, secured);
     final MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
     mbean = MBeanServerInvocationProxy.newMBeanProxy(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, false);
     serverGrpInfos = mbean.getServerGroupInfo();
@@ -306,7 +334,7 @@ public class ClusterDumper {
     JMXConnector jmxConnector = null;
 
     try {
-      jmxConnector = CommandLineBuilder.getJMXConnector(username, password, hostname, jmxPort);
+      jmxConnector = CommandLineBuilder.getJMXConnector(username, password, hostname, jmxPort, secured);
       final MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
       mbean = MBeanServerInvocationProxy
           .newMBeanProxy(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, false);
@@ -331,7 +359,7 @@ public class ClusterDumper {
     System.out.println("=========================================\n");
     JMXConnector jmxConnector = null;
     try {
-      jmxConnector = CommandLineBuilder.getJMXConnector(username, password, hostName, jmxPort);
+      jmxConnector = CommandLineBuilder.getJMXConnector(username, password, hostName, jmxPort, secured);
       final MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
       Set allL1DumperMBeans = mbs
           .queryNames(new ObjectName(L1MBeanNames.L1INFO_PUBLIC.getCanonicalName() + ",*"), null);
@@ -371,7 +399,7 @@ public class ClusterDumper {
     System.out.println("=========================================\n");
     JMXConnector jmxConnector = null;
     try {
-      jmxConnector = CommandLineBuilder.getJMXConnector(username, password, hostName, jmxPort);
+      jmxConnector = CommandLineBuilder.getJMXConnector(username, password, hostName, jmxPort, secured);
       final MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
       Set allL1DumperMBeans;
       allL1DumperMBeans = TerracottaManagement.getAllL1DumperMBeans(mbs);
