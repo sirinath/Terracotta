@@ -34,6 +34,7 @@
     <offheap-store.version>1.1.5</offheap-store.version>
     <search.version>1.3.0</search.version>
     <security-version>1.3.1</security-version>
+    <shiro.version>1.2.3</shiro.version>
     <management-core-version>1.1.4</management-core-version>
     <management.version>2.7.7-SNAPSHOT</management.version>
     <terracotta-license.version>1.1.0</terracotta-license.version>
@@ -85,6 +86,16 @@
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>org.apache.shiro</groupId>
+        <artifactId>shiro-web</artifactId>
+        <version>${shiro.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.shiro</groupId>
+        <artifactId>shiro-core</artifactId>
+        <version>${shiro.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.terracotta.internal</groupId>
         <artifactId>core-storage-api</artifactId>
