@@ -15,7 +15,9 @@ import com.tc.management.beans.TCServerInfoMBean;
 import com.tc.management.beans.object.ObjectManagementMonitorMBean;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetAddress;
+import java.security.GeneralSecurityException;
 
 import javax.management.MBeanServerConnection;
 import javax.management.remote.JMXConnector;
@@ -31,6 +33,7 @@ public class GCRunner {
   private int                   port;
   private final String          username;
   private final String          password;
+  private final boolean         secured;
 
   public static final String    DEFAULT_HOST  = "localhost";
   public static final int       DEFAULT_PORT  = 9520;
@@ -43,6 +46,7 @@ public class GCRunner {
                                  "l2-hostname");
     commandLineBuilder.addOption("p", "jmxport", true, "Terracotta Server instance JMX port", Integer.class, false,
                                  "l2-jmx-port");
+    commandLineBuilder.addOption("s", "secured", false, "secured", String.class, false);
     commandLineBuilder.addOption("u", "username", true, "username", String.class, false);
     commandLineBuilder.addOption("w", "password", true, "password", String.class, false);
     commandLineBuilder.addOption("h", "help", String.class, false);
@@ -56,6 +60,13 @@ public class GCRunner {
 
     if (commandLineBuilder.hasOption('h')) {
       commandLineBuilder.usageAndDie();
+    }
+
+    boolean secured = false;
+    if (commandLineBuilder.hasOption('s')) {
+      final Class<?> securityManagerClass = Class.forName("com.tc.net.core.security.TCClientSecurityManager");
+      securityManagerClass.getConstructor(boolean.class).newInstance(true);
+      secured = true;
     }
 
     String username = null;
@@ -85,14 +96,30 @@ public class GCRunner {
 
     try {
       consoleLogger.info("Invoking DGC on " + host + ":" + port);
-      new GCRunner(host, port, username, password).runGC();
+      new GCRunner(host, port, username, password, secured).runGC();
     } catch (IOException ioe) {
-      consoleLogger.error("Unable to connect to host '" + host + "', port " + port
-                          + ". Are you sure there is a Terracotta server instance running there?");
+      Throwable root = getRootCause(ioe);
+      if (root instanceof ConnectException) {
+        System.err.println("Unable to connect to host '" + host + "', port " + port
+                           + ". Are you sure there is a Terracotta server instance running there?");
+      }
+      if (root instanceof GeneralSecurityException) {
+        System.err.println("There is a problem with you security setup: " + root.getMessage());
+      }
+      System.exit(1);
     } catch (SecurityException se) {
       consoleLogger.error(se.getMessage());
       commandLineBuilder.usageAndDie();
     }
+  }
+
+  private static Throwable getRootCause(Throwable e) {
+    Throwable t = e;
+    while (t != null) {
+      e = t;
+      t = t.getCause();
+    }
+    return e;
   }
 
   private static int parsePort(String portString) {
@@ -107,14 +134,15 @@ public class GCRunner {
   }
 
   public GCRunner(String host, int port) {
-    this(host, port, null, null);
+    this(host, port, null, null, false);
   }
 
-  public GCRunner(String host, int port, String userName, String password) {
+  public GCRunner(String host, int port, String userName, String password, boolean secured) {
     this.host = host;
     this.port = port;
     this.username = userName;
     this.password = password;
+    this.secured = secured;
   }
 
   public void runGC() throws Exception {
@@ -124,7 +152,7 @@ public class GCRunner {
     }
 
     ObjectManagementMonitorMBean mbean = null;
-    final JMXConnector jmxConnector = CommandLineBuilder.getJMXConnector(username, password, host, port);
+    final JMXConnector jmxConnector = CommandLineBuilder.getJMXConnector(username, password, host, port, secured);
     try {
       final MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
       mbean = MBeanServerInvocationProxy.newMBeanProxy(mbs, L2MBeanNames.OBJECT_MANAGEMENT,
@@ -175,7 +203,7 @@ public class GCRunner {
   private ServerGroupInfo[] getServerGroupInfo() throws Exception {
     ServerGroupInfo[] serverGrpInfos = null;
     TCServerInfoMBean mbean = null;
-    final JMXConnector jmxConnector = CommandLineBuilder.getJMXConnector(username, password, host, port);
+    final JMXConnector jmxConnector = CommandLineBuilder.getJMXConnector(username, password, host, port, secured);
     try {
       final MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
       mbean = MBeanServerInvocationProxy
@@ -193,7 +221,7 @@ public class GCRunner {
     JMXConnector jmxConnector = null;
 
     try {
-      jmxConnector = CommandLineBuilder.getJMXConnector(username, password, hostname, jmxPort);
+      jmxConnector = CommandLineBuilder.getJMXConnector(username, password, hostname, jmxPort, secured);
       final MBeanServerConnection mbs = jmxConnector.getMBeanServerConnection();
       mbean = MBeanServerInvocationProxy
           .newMBeanProxy(mbs, L2MBeanNames.TC_SERVER_INFO, TCServerInfoMBean.class, false);
