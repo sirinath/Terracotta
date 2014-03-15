@@ -576,7 +576,7 @@ public final class ServerMapLocalCacheImpl implements ServerMapLocalCache {
         AbstractLocalCacheStoreValue value = (AbstractLocalCacheStoreValue) remove(key);
         initiateLockRecall(removeLockIDMetaMapping(key, value));
         remoteRemoveObjectIfPossible(value);
-        if (wasPinned) {
+        if (wasPinned && value != null) {
           notifyPinnedEntryInvalidated(key, value.isEventualConsistentValue());
         }
       }
