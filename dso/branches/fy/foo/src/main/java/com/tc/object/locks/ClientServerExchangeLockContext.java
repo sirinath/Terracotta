@@ -3,8 +3,6 @@
  */
 package com.tc.object.locks;
 
-import org.apache.commons.lang.builder.HashCodeBuilder;
-
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
@@ -21,7 +19,6 @@ public class ClientServerExchangeLockContext implements TCSerializable {
   private ThreadID threadID;
   private State    state;
   private long     timeout;
-  private int      hashCode;
 
   public ClientServerExchangeLockContext() {
     // to make TCSerializable happy
@@ -37,7 +34,6 @@ public class ClientServerExchangeLockContext implements TCSerializable {
     this.threadID = threadID;
     this.state = state;
     this.timeout = timeout;
-    this.hashCode = calculateHash();
   }
 
   public NodeID getNodeID() {
@@ -101,16 +97,8 @@ public class ClientServerExchangeLockContext implements TCSerializable {
     return this;
   }
 
-  private int calculateHash() {
-    return new HashCodeBuilder(5503, 6737).append(lockID).append(nodeID).append(threadID).toHashCode();
-  }
-
   public long timeout() {
     return this.timeout;
-  }
-
-  public int hasCode() {
-    return this.hashCode;
   }
 
   @Override

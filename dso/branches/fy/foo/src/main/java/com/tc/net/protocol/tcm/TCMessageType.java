@@ -4,9 +4,6 @@
 package com.tc.net.protocol.tcm;
 
 import com.tc.exception.TCRuntimeException;
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
-import com.tc.util.Util;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -158,7 +155,6 @@ public final class TCMessageType {
   // ******** You need not modify anything below *********
   //
   // //////////////////////////////////////////////////////
-  private static final TCLogger          logger     = TCLogging.getLogger(TCMessageType.class);
   private static final Map<Integer, TCMessageType> typeMap    = new HashMap<Integer, TCMessageType>();
   private static final TCMessageType[]   allTypes;
   private static final String            typePrefix = "TYPE_";
@@ -279,7 +275,7 @@ public final class TCMessageType {
     }
 
     if (!intFields.isEmpty()) {
-      final String unused = Util.enumerateArray(intFields.keySet().toArray());
+      final String unused = Arrays.asList(intFields.keySet()).toString();
       throw new RuntimeException("TCMessageType: Unused integer constants (please remove): " + unused);
     }
 
@@ -302,10 +298,6 @@ public final class TCMessageType {
         }
       }
     });
-
-    if (logger.isDebugEnabled()) {
-      logger.debug(Util.enumerateArray(rv));
-    }
 
     return rv;
   }

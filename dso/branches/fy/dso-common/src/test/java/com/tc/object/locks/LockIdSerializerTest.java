@@ -7,17 +7,10 @@ import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCByteBufferOutputStream;
-import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
-import com.tc.object.bytecode.Manageable;
-import com.tc.object.bytecode.Manager;
-import com.tc.object.loaders.ClassProvider;
 import com.tc.util.Assert;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 
 import junit.framework.TestCase;
 
@@ -78,13 +71,13 @@ public class LockIdSerializerTest extends TestCase {
   }
 
   public void literalLockTest(Object literal) {
-    DsoLiteralLockID lock = new DsoLiteralLockID(manager, literal);
+    DsoLiteralLockID lock = new DsoLiteralLockID(literal);
     Assert.assertEquals(lock, passThrough(lock));
   }
 
   public void unclusteredLockTest(Object literal) {
     try {
-      new DsoLiteralLockID(manager, literal);
+      new DsoLiteralLockID(literal);
       Assert.fail("Expected IllegalArgumentException");
     } catch (IllegalArgumentException e) {
       // expected
@@ -117,38 +110,5 @@ public class LockIdSerializerTest extends TestCase {
 
   static enum MyEnum {
     A, B, C
-  }
-
-  static Manager manager = (Manager) Proxy.newProxyInstance(LockIDSerializer.class.getClassLoader(),
-                                                            new Class[] { Manager.class }, new DumbClassProvider());
-
-  static class DumbClassProvider implements ClassProvider, InvocationHandler {
-
-    static ClassLoader CLASS_LOADER = LockIDSerializer.class.getClassLoader();
-
-    @Override
-    public Class getClassFor(String className) {
-      throw new AssertionError();
-    }
-
-    /*
-     * Copied from ManagerImpl
-     */
-    public boolean isLiteralAutolock(final Object o) {
-      if (o instanceof Manageable) { return false; }
-      return (!(o instanceof Class)) && (!(o instanceof ObjectID)) && LiteralValues.isLiteralInstance(o);
-    }
-
-    @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-      if ("getClassProvider".equals(method.getName())) {
-        return this;
-      } else if ("isLiteralAutolock".equals(method.getName())) {
-        return isLiteralAutolock(args[0]);
-      } else {
-        throw new AssertionError("Cannot handle " + method);
-      }
-    }
-
   }
 }

@@ -90,17 +90,7 @@ public class GetValueServerMapResponseMessageImpl extends DSOMessageBase impleme
           TCByteBufferOutputStream list = (TCByteBufferOutputStream)value;
           outStream.writeByte(DNA_ID);
           outStream.writeInt(list.getBytesWritten());
-          if ( logger.isDebugEnabled() ) {
-            outStream.write(list.toArray());
-            try {
-              value = new ObjectDNAImpl(this.serializer, false).deserializeFrom(new TCByteBufferInputStream(list.toArray()));
-              logger.debug(value);
-            } catch ( IOException ioe ) {
-              logger.debug("bad serialization", ioe);
-            }
-          } else {
-            outStream.write(list.toArray());
-          }
+          outStream.write(list.toArray());
         }
         encoder.encode(responseValue.getCreationTime(), outStream);
         encoder.encode(responseValue.getLastAccessedTime(), outStream);

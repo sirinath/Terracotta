@@ -162,7 +162,7 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
         for (int i = 0; i < count; i++) {
           final byte name = bbis.readByte();
           if (!hydrateValue(name)) {
-            logger.error(" Hydrate Error - " + toString());
+            // logger.error(" Hydrate Error - " + toString());
             throw new UnknownNameException(getClass(), name);
           }
         }

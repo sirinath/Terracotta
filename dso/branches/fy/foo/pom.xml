@@ -16,36 +16,20 @@
   </parent>
   
   <groupId>org.terracotta.internal</groupId>
-  <artifactId>dso-common</artifactId>
+  <artifactId>foo</artifactId>
   <packaging>jar</packaging>
-  <name>dso-common</name>
-  
+  <name>foo</name>
+
   <properties>  
     <skip.deploy>true</skip.deploy>
   </properties>
   
   <dependencies>
+    <!-- XXX: we don't want deps here!! -->
     <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>tc-l1-reconnect-properties</artifactId>
+      <groupId>com.terracottatech</groupId>
+      <artifactId>search</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.terracotta.internal</groupId>
-      <artifactId>dso-l1-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta.internal</groupId>
-      <artifactId>foo</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta.internal</groupId>
-      <artifactId>common</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>   
   </dependencies>
   
 </project>
