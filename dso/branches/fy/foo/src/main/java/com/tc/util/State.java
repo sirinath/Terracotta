@@ -9,7 +9,7 @@ public class State implements Serializable {
   private final String name;
 
   public State(String name) {
-    Assert.assertNotNull(name);
+    if (name == null) { throw new AssertionError(); }
     this.name = name;
   }
 

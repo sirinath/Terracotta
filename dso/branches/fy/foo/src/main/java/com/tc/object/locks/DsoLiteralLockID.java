@@ -6,7 +6,6 @@ package com.tc.object.locks;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.object.LiteralValues;
-import com.tc.object.bytecode.Manager;
 import com.tc.object.dna.impl.ClassInstance;
 import com.tc.object.dna.impl.EnumInstance;
 import com.tc.object.dna.impl.UTF8ByteDataHolder;
@@ -28,8 +27,8 @@ public class DsoLiteralLockID implements LockID {
     // please tc serialization
   }
 
-  public DsoLiteralLockID(Manager mgr, Object literal) throws IllegalArgumentException {
-    this.literal = translateLiteral(mgr, literal);
+  public DsoLiteralLockID(Object literal) throws IllegalArgumentException {
+    this.literal = translateLiteral(literal);
   }
 
   public String asString() {
@@ -161,7 +160,7 @@ public class DsoLiteralLockID implements LockID {
     throw new ClassCastException("DsoLiteralLockID instances can't be compared");
   }
 
-  private static Object translateLiteral(Manager mgr, Object literal) throws IllegalArgumentException {
+  private static Object translateLiteral(Object literal) throws IllegalArgumentException {
     LiteralValues type = LiteralValues.valueFor(literal);
     switch (type) {
       case ENUM:

@@ -49,6 +49,8 @@
 
     <module>management</module>
     <module>management-agent</module>
+
+    <module>foo</module>
   </modules>
 
   <profiles>

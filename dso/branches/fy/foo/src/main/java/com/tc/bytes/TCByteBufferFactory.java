@@ -3,12 +3,6 @@
  */
 package com.tc.bytes;
 
-import com.tc.lang.TCThreadGroup;
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
-import com.tc.properties.TCPropertiesConsts;
-import com.tc.properties.TCPropertiesImpl;
-import com.tc.util.Assert;
 import com.tc.util.VicariousThreadLocal;
 
 import java.util.concurrent.LinkedBlockingQueue;
@@ -27,16 +21,10 @@ public class TCByteBufferFactory {
   private static final int                 WARN_THRESHOLD          = 10 * 1024 * 1024;                                                // 10MiB
   private static final TCByteBuffer[]      EMPTY_BB_ARRAY          = new TCByteBuffer[0];
   private static final TCByteBuffer        ZERO_BYTE_BUFFER        = TCByteBufferImpl.wrap(new byte[0]);
-  private static final TCLogger            logger                  = TCLogging.getLogger(TCByteBufferFactory.class);
 
-  private static final boolean             disablePooling          = !(TCPropertiesImpl.getProperties()
-                                                                       .getBoolean(TCPropertiesConsts.TC_BYTEBUFFER_POOLING_ENABLED));
-  private static final int                 poolMaxBufCount         = (TCPropertiesImpl.getProperties()
-                                                                       .getInt(TCPropertiesConsts.TC_BYTEBUFFER_THREADLOCAL_POOL_MAXCOUNT,
-                                                                               2000));
-  private static final int                 commonPoolMaxBufCount   = (TCPropertiesImpl.getProperties()
-                                                                       .getInt(TCPropertiesConsts.TC_BYTEBUFFER_COMMON_POOL_MAXCOUNT,
-                                                                               3000));
+  private static final boolean             disablePooling          = false;
+  private static final int                 poolMaxBufCount         = 1024;
+  private static final int                 commonPoolMaxBufCount   = 1024;
 
   // always use ThreadLocal variables for accessing the buffer pools.
   private static final LinkedBlockingQueue directCommonFreePool    = new LinkedBlockingQueue(commonPoolMaxBufCount);
@@ -45,13 +33,13 @@ public class TCByteBufferFactory {
   private static final ThreadLocal         directFreePool          = new VicariousThreadLocal() {
                                                                      @Override
                                                                      protected Object initialValue() {
-                                                                       if (TCThreadGroup.currentThreadInTCThreadGroup()) {
+                                                                       if (currentThreadInTCThreadGroup()) {
                                                                          return new LinkedBlockingQueue(poolMaxBufCount);
                                                                        } else {
-                                                                         logger.debug("Buf pool direct for "
-                                                                                      + Thread.currentThread()
-                                                                                          .getName()
-                                                                                      + " - using Common Pool");
+                                                                         // logger.debug("Buf pool direct for "
+                                                                         // + Thread.currentThread()
+                                                                         // .getName()
+                                                                         // + " - using Common Pool");
                                                                          return directCommonFreePool;
                                                                        }
                                                                      }
@@ -59,17 +47,24 @@ public class TCByteBufferFactory {
   private static final ThreadLocal         nonDirectFreePool       = new VicariousThreadLocal() {
                                                                      @Override
                                                                      protected Object initialValue() {
-                                                                       if (TCThreadGroup.currentThreadInTCThreadGroup()) {
+                                                                       if (currentThreadInTCThreadGroup()) {
                                                                          return new LinkedBlockingQueue(poolMaxBufCount);
                                                                        } else {
-                                                                         logger.debug("Buf pool nonDirect for "
-                                                                                      + Thread.currentThread()
-                                                                                          .getName()
-                                                                                      + " - using Common Pool");
+                                                                         // logger.debug("Buf pool nonDirect for "
+                                                                         // + Thread.currentThread()
+                                                                         // .getName()
+                                                                         // + " - using Common Pool");
                                                                          return nonDirectCommonFreePool;
                                                                        }
                                                                      }
+
+
                                                                    };
+
+  private static boolean currentThreadInTCThreadGroup() {
+    // XXX: dupe code with TCThreadGroup!!!
+    return Thread.currentThread().getThreadGroup().getClass().getName().endsWith("TCThreaGroup");
+  }
 
   private static TCByteBuffer createNewInstance(boolean direct, int capacity, int index, int totalCount) {
     try {
@@ -82,8 +77,9 @@ public class TCByteBufferFactory {
       return rv;
     } catch (OutOfMemoryError oome) {
       // try to log some useful context. Most OOMEs don't have stack traces unfortunately
-      logger.error("OOME trying to allocate " + (direct ? "direct" : "non-direct") + " buffer of size " + capacity
-                   + " (index " + index + " of count " + totalCount + ")");
+      // XXX: logger.error("OOME trying to allocate " + (direct ? "direct" : "non-direct") + " buffer of size " +
+      // capacity
+      // + " (index " + index + " of count " + totalCount + ")");
       throw oome;
     }
   }
@@ -101,7 +97,7 @@ public class TCByteBufferFactory {
   public static TCByteBuffer getInstance(final boolean direct, int size) {
 
     if (size > WARN_THRESHOLD) {
-      logger.warn("Asking for a large amount of memory: " + size + " bytes");
+      // XXX: logger.warn("Asking for a large amount of memory: " + size + " bytes");
     }
     if (size < 0) { throw new IllegalArgumentException("Requested length cannot be less than zero"); }
     if (size == 0) { return ZERO_BYTE_BUFFER; }
@@ -143,7 +139,7 @@ public class TCByteBufferFactory {
    */
   public static TCByteBuffer[] getFixedSizedInstancesForLength(final boolean direct, final int length) {
     if (length > WARN_THRESHOLD) {
-      logger.warn("Asking for a large amount of memory: " + length + " bytes");
+      // XXX: logger.warn("Asking for a large amount of memory: " + length + " bytes");
     }
 
     if (length < 0) { throw new IllegalArgumentException("Requested length cannot be less than zero"); }
@@ -191,14 +187,16 @@ public class TCByteBufferFactory {
     LinkedBlockingQueue poolQueue = direct ? ((LinkedBlockingQueue) (directFreePool.get()))
         : ((LinkedBlockingQueue) (nonDirectFreePool.get()));
 
-    Assert.assertNotNull(poolQueue);
+    if (poolQueue == null) {
+ throw new AssertionError();
+    }
 
     try {
       if ((buf = (TCByteBuffer) poolQueue.poll(0, TimeUnit.MILLISECONDS)) != null) {
         buf.checkedOut();
       }
     } catch (InterruptedException e) {
-      logger.warn("interrupted while getting buffer from pool");
+      // logger.warn("interrupted while getting buffer from pool");
       Thread.currentThread().interrupt();
       return null;
     }
@@ -224,7 +222,7 @@ public class TCByteBufferFactory {
         try {
           bufferPool.offer(buf);
         } catch (InterruptedException e) {
-          logger.warn("interrupted while trying to return buffer", e);
+          // logger.warn("interrupted while trying to return buffer", e);
           Thread.currentThread().interrupt();
         }
       }
