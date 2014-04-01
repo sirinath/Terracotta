@@ -35,12 +35,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newHashMap;
 
 /**
  * @author steve
@@ -70,13 +68,13 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
   private GlobalTransactionID lowWatermark;
   private ObjectStringSerializer serializer;
 
-  private final List changes = newArrayList();
-  private final List dmis = newArrayList();
-  private final Collection notifies = newArrayList();
-  private final Map newRoots = newHashMap();
-  private final List<LockID> lockIDs = newArrayList();
-  private final Map<LogicalChangeID, LogicalChangeResult> logicalChangeResults = newHashMap();
-  private final List<ServerEvent> events = newArrayList();
+  private final List                                      changes               = new ArrayList();
+  private final List                                      dmis                  = new ArrayList();
+  private final Collection                                notifies              = new ArrayList();
+  private final Map                                       newRoots              = new HashMap();
+  private final List<LockID>                              lockIDs               = new ArrayList();
+  private final Map<LogicalChangeID, LogicalChangeResult> logicalChangeResults  = new HashMap();
+  private final List<ServerEvent>                         events                = new ArrayList();
 
   public BroadcastTransactionMessageImpl(final SessionID sessionID, final MessageMonitor monitor,
                                          final TCByteBufferOutputStream out, final MessageChannel channel,
@@ -256,7 +254,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
 
   @Override
   public Collection getNotifies() {
-    return newArrayList(this.notifies);
+    return new ArrayList(this.notifies);
   }
 
   @Override

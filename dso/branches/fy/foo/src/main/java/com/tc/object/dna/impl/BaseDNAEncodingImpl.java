@@ -6,16 +6,15 @@ package com.tc.object.dna.impl;
 import com.tc.io.TCDataInput;
 import com.tc.io.TCDataOutput;
 import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
+import com.tc.logging.TCLoggingService;
 import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.compression.CompressedData;
 import com.tc.object.compression.StringCompressionUtil;
 import com.tc.object.dna.api.DNAEncodingInternal;
 import com.tc.object.loaders.ClassProvider;
-import com.tc.properties.TCPropertiesConsts;
-import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Assert;
+import com.tc.util.ServiceUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -52,7 +51,8 @@ public abstract class BaseDNAEncodingImpl implements DNAEncodingInternal {
   static final byte                           SUB_ARRAY_ACTION_TYPE                = 7;
   static final byte                           META_DATA_ACTION_TYPE                = 8;
 
-  private static final TCLogger               logger                               = TCLogging
+  private static final TCLogger               logger                               = ServiceUtil
+                                                                                       .loadService(TCLoggingService.class)
                                                                                        .getLogger(BaseDNAEncodingImpl.class);
 
   protected static final byte                 TYPE_ID_REFERENCE                    = 1;
@@ -79,17 +79,21 @@ public abstract class BaseDNAEncodingImpl implements DNAEncodingInternal {
   private static final byte                   ARRAY_TYPE_PRIMITIVE                 = 1;
   private static final byte                   ARRAY_TYPE_NON_PRIMITIVE             = 2;
 
-  private static final boolean                STRING_COMPRESSION_ENABLED           = TCPropertiesImpl
-                                                                                       .getProperties()
-                                                                                       .getBoolean(TCPropertiesConsts.L1_TRANSACTIONMANAGER_STRINGS_COMPRESS_ENABLED);
-  protected static final boolean              STRING_COMPRESSION_LOGGING_ENABLED   = TCPropertiesImpl
-                                                                                       .getProperties()
-                                                                                       .getBoolean(TCPropertiesConsts.L1_TRANSACTIONMANAGER_STRINGS_COMPRESS_LOGGING_ENABLED);
-  private static final int                    STRING_COMPRESSION_MIN_SIZE          = TCPropertiesImpl
-                                                                                       .getProperties()
-                                                                                       .getInt(TCPropertiesConsts.L1_TRANSACTIONMANAGER_STRINGS_COMPRESS_MINSIZE);
+  private static final boolean                STRING_COMPRESSION_ENABLED;
+  protected static final boolean              STRING_COMPRESSION_LOGGING_ENABLED;
+  private static final int                    STRING_COMPRESSION_MIN_SIZE;
+
   private static final ObjectStringSerializer NULL_SERIALIZER                      = new NullObjectStringSerializer();
 
+  static {
+    StringCompressionConfig config = ServiceUtil.loadService(StringCompressionConfig.class);
+    
+    STRING_COMPRESSION_ENABLED           = config.enabled();
+    STRING_COMPRESSION_LOGGING_ENABLED   = config.loggingEnabled();
+    STRING_COMPRESSION_MIN_SIZE = config.minSize();
+  }
+  
+  
   protected final ClassProvider               classProvider;
 
   public BaseDNAEncodingImpl(final ClassProvider classProvider) {
