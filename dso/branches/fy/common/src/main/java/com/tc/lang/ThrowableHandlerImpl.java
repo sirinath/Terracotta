@@ -33,7 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Handles Throwable appropriately by printing messages to the logger, etc. Deal with nasty problems that can occur as
  * the Terracotta Client is shutting down.
  */
-public class ThrowableHandler {
+public class ThrowableHandlerImpl implements ThrowableHandler {
   // XXX: The dispatching in this class is retarded, but I wanted to move as much of the exception handling into a
   // single place first, then come up with fancy ways of dealing with them. --Orion 03/20/2006
 
@@ -57,13 +57,14 @@ public class ThrowableHandler {
    * 
    * @param logger Logger
    */
-  public ThrowableHandler(TCLogger logger) {
+  public ThrowableHandlerImpl(TCLogger logger) {
     this.logger = logger;
     helper = new ExceptionHelperImpl();
     helper.addHelper(new RuntimeExceptionHelper());
     registerStartupExceptionCallbackHandlers();
   }
 
+  @Override
   public void addHelper(ExceptionHelper toAdd) {
     helper.addHelper(toAdd);
   }
@@ -79,6 +80,7 @@ public class ThrowableHandler {
     addCallbackOnExitExceptionHandler(TCDataFileLockingException.class, new CallbackStartupExceptionLoggingAdapter());
   }
 
+  @Override
   public void addCallbackOnExitDefaultHandler(CallbackOnExitHandler callbackOnExitHandler) {
     callbackOnExitDefaultHandlers.add(callbackOnExitHandler);
   }
@@ -93,6 +95,7 @@ public class ThrowableHandler {
    * @param thread Thread receiving Throwable
    * @param t Throwable
    */
+  @Override
   public void handleThrowable(final Thread thread, final Throwable t) {
     handlePossibleOOME(t);
 
@@ -152,7 +155,8 @@ public class ThrowableHandler {
    * {@code -XX:+HeapDumpOnOutOfMemoryError} should take care of debug information.
    * Considering {@code -XX:OnOutOfMemoryError=<cmd>} option might be also a good idea.
    */
-  void handlePossibleOOME(final Throwable t) {
+  @Override
+  public void handlePossibleOOME(final Throwable t) {
     Throwable rootCause = Throwables.getRootCause(t);
     if (rootCause instanceof OutOfMemoryError) {
       try {

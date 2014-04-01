@@ -5,8 +5,11 @@ package com.tc.net.protocol;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.TCInternalError;
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLoggingService;
 import com.tc.util.Assert;
 import com.tc.util.HexDump;
+import com.tc.util.ServiceUtil;
 import com.tc.util.StringUtil;
 import com.tc.util.concurrent.SetOnceFlag;
 
@@ -16,6 +19,8 @@ import com.tc.util.concurrent.SetOnceFlag;
  * @author teck
  */
 public class AbstractTCNetworkMessage implements TCNetworkMessage {
+  protected static final TCLogger logger                = ServiceUtil.loadService(TCLoggingService.class)
+                                                            .getLogger(TCNetworkMessage.class);
   private static final int        MESSAGE_DUMP_MAXBYTES = 4 * 1024;
 
   protected AbstractTCNetworkMessage(TCNetworkHeader header, boolean seal) {
@@ -125,6 +130,7 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
     try {
       return toString0();
     } catch (Exception e) {
+      logger.warn("Exception in toString()", e);
       return "EXCEPTION in toString(): " + e.getMessage();
     }
   }
@@ -271,7 +277,7 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
       }
       entireMessageData = null;
     } else {
-      // logger.warn("Entire Message is null ! Probably recycle was called twice ! ");
+      logger.warn("Entire Message is null ! Probably recycle was called twice ! ");
       Thread.dumpStack();
     }
   }
@@ -286,7 +292,7 @@ public class AbstractTCNetworkMessage implements TCNetworkMessage {
         try {
           sentCallback.run();
         } catch (Exception e) {
-          // logger.error("Caught exception running sent callback", e);
+          logger.error("Caught exception running sent callback", e);
         }
       }
     }

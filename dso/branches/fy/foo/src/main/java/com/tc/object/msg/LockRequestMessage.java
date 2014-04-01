@@ -16,13 +16,11 @@ import com.tc.object.locks.LockID;
 import com.tc.object.locks.RecallBatchContext;
 import com.tc.object.locks.ServerLockLevel;
 import com.tc.object.locks.ThreadID;
-import com.tc.object.locks.ThreadIDFactory;
 import com.tc.object.session.SessionID;
 import com.tc.util.Assert;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -46,8 +44,6 @@ public class LockRequestMessage extends DSOMessageBase implements MultiThreadedE
   public static enum RequestType {
     LOCK, UNLOCK, WAIT, RECALL_COMMIT, QUERY, TRY_LOCK, INTERRUPT_WAIT, BATCHED_RECALL_COMMIT;
   }
-
-  private static final ThreadIDFactory               threadIDFactory = new ThreadIDFactory();
 
   private final Set<ClientServerExchangeLockContext> contexts        = new LinkedHashSet<ClientServerExchangeLockContext>();
   private final LinkedList<RecallBatchContext>       recallContexts  = new LinkedList<RecallBatchContext>();
@@ -106,8 +102,8 @@ public class LockRequestMessage extends DSOMessageBase implements MultiThreadedE
         break;
       case RECALL_COMMIT:
         putNVPair(LOCK_ID, lockID);
-        for (Iterator i = contexts.iterator(); i.hasNext();) {
-          putNVPair(CONTEXT, (TCSerializable) i.next());
+        for (Object element : contexts) {
+          putNVPair(CONTEXT, (TCSerializable) element);
         }
         break;
       case BATCHED_RECALL_COMMIT:
@@ -153,7 +149,7 @@ public class LockRequestMessage extends DSOMessageBase implements MultiThreadedE
         }
         return true;
       case THREAD_ID:
-        threadID = threadIDFactory.getOrCreate(getLongValue());
+        threadID = new ThreadID(getLongValue());
         return true;
       case REQUEST_TYPE:
         try {

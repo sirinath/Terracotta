@@ -20,6 +20,7 @@ import com.tc.l2.msg.ObjectSyncMessage;
 import com.tc.l2.state.Enrollment;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandler;
+import com.tc.lang.ThrowableHandlerImpl;
 import com.tc.logging.TCLogging;
 import com.tc.net.NodeID;
 import com.tc.net.ServerID;
@@ -77,7 +78,7 @@ public class TCGroupManagerImplTest extends TCTestCase {
     groupEventListeners = new TestGroupEventListener[n];
     nodes = new Node[n];
     error = new AtomicReference<Throwable>();
-    throwableHandler = new ThrowableHandler(TCLogging.getLogger(getClass())) {
+    throwableHandler = new ThrowableHandlerImpl(TCLogging.getLogger(getClass())) {
       @Override
       public void handleThrowable(final Thread thread, final Throwable t) {
         if (error.compareAndSet(null, t)) {
@@ -107,9 +108,9 @@ public class TCGroupManagerImplTest extends TCTestCase {
   }
 
   private void tearGroups() throws Exception {
-    for (int i = 0; i < groups.length; ++i) {
-      System.out.println("Shutting down " + groups[i]);
-      groups[i].shutdown();
+    for (TCGroupManagerImpl group : groups) {
+      System.out.println("Shutting down " + group);
+      group.shutdown();
     }
     ThreadUtil.reallySleep(200);
     throwExceptionIfNecessary();
@@ -593,7 +594,7 @@ public class TCGroupManagerImplTest extends TCTestCase {
     final Integer upbound = Integer.valueOf(50);
 
     // setup throwable ThreadGroup to catch AssertError from threads.
-    TCThreadGroup threadGroup = new TCThreadGroup(new ThrowableHandler(null), "TCGroupManagerImplTestGroup");
+    TCThreadGroup threadGroup = new TCThreadGroup(new ThrowableHandlerImpl(null), "TCGroupManagerImplTestGroup");
     ThreadUtil.reallySleep(1000);
 
     Thread t1 = new SenderThread(threadGroup, "Node-0", mgr1, upbound);
