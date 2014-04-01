@@ -5,6 +5,10 @@
 
 package com.tc.net.groups;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.terracotta.corestorage.KeyValueStorage;
@@ -22,7 +26,7 @@ import com.tc.l2.context.ManagedObjectSyncContext;
 import com.tc.l2.msg.ObjectSyncMessage;
 import com.tc.l2.msg.ObjectSyncMessageFactory;
 import com.tc.lang.TCThreadGroup;
-import com.tc.lang.ThrowableHandler;
+import com.tc.lang.ThrowableHandlerImpl;
 import com.tc.net.NodeID;
 import com.tc.net.ServerID;
 import com.tc.net.protocol.transport.NullConnectionPolicy;
@@ -59,10 +63,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 public class TCGroupSendLargeObjectSyncMessageTest extends TCTestCase {
   private final static String LOCALHOST   = "localhost";
   private static final long   millionOids = 1024 * 1024;
@@ -91,7 +91,7 @@ public class TCGroupSendLargeObjectSyncMessageTest extends TCTestCase {
     final int p2 = pc.chooseRandom2Port();
     final Node[] allNodes = new Node[] { new Node(LOCALHOST, p1, p1 + 1), new Node(LOCALHOST, p2, p2 + 1) };
 
-    final StageManager stageManager1 = new StageManagerImpl(new TCThreadGroup(new ThrowableHandler(null)),
+    final StageManager stageManager1 = new StageManagerImpl(new TCThreadGroup(new ThrowableHandlerImpl(null)),
                                                             new QueueFactory());
     final TCGroupManagerImpl gm1 = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, p1, p1 + 1,
                                                           stageManager1, null);
@@ -101,7 +101,7 @@ public class TCGroupSendLargeObjectSyncMessageTest extends TCTestCase {
     final MyListener l1 = new MyListener();
     gm1.registerForMessages(ObjectSyncMessage.class, l1);
 
-    final StageManager stageManager2 = new StageManagerImpl(new TCThreadGroup(new ThrowableHandler(null)),
+    final StageManager stageManager2 = new StageManagerImpl(new TCThreadGroup(new ThrowableHandlerImpl(null)),
                                                             new QueueFactory());
     final TCGroupManagerImpl gm2 = new TCGroupManagerImpl(new NullConnectionPolicy(), LOCALHOST, p2, p2 + 1,
                                                           stageManager2, null);

@@ -3,6 +3,7 @@
  */
 package com.tc.bytes;
 
+import com.tc.util.Assert;
 import com.tc.util.State;
 
 import java.nio.ByteBuffer;
@@ -507,7 +508,7 @@ public class TCByteBufferImpl implements TCByteBuffer, BufferPool {
     rv += ((get() & 0xFF) << 8);
     rv += ((get() & 0xFF));
 
-    if (rv < 0 || rv > 0xFFFF) { throw new AssertionError(); }
+    Assert.eval((rv >= 0) && (rv <= 0xFFFF));
 
     return rv;
   }
