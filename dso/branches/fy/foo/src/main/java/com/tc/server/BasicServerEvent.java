@@ -1,7 +1,5 @@
 package com.tc.server;
 
-import org.apache.commons.lang.ArrayUtils;
-
 import java.util.Arrays;
 
 /**
@@ -11,6 +9,8 @@ import java.util.Arrays;
  */
 public final class BasicServerEvent implements VersionedServerEvent {
 
+  private static final byte[] EMPTY_BYTE_ARRAY = new byte[] {};
+
   private final String cacheName;
   private final Object key;
   private final long version;
@@ -19,7 +19,7 @@ public final class BasicServerEvent implements VersionedServerEvent {
   private byte[] value;
 
   public BasicServerEvent(final ServerEventType type, final Object key, final String cacheName) {
-    this(type, key, ArrayUtils.EMPTY_BYTE_ARRAY, DEFAULT_VERSION, cacheName);
+    this(type, key, EMPTY_BYTE_ARRAY, DEFAULT_VERSION, cacheName);
   }
 
   public BasicServerEvent(final ServerEventType type, final Object key, final byte[] value, final String cacheName) {
@@ -27,7 +27,7 @@ public final class BasicServerEvent implements VersionedServerEvent {
   }
 
   public BasicServerEvent(final ServerEventType type, final Object key, final long version, final String cacheName) {
-    this(type, key, ArrayUtils.EMPTY_BYTE_ARRAY, version, cacheName);
+    this(type, key, EMPTY_BYTE_ARRAY, version, cacheName);
   }
 
   public BasicServerEvent(final ServerEventType type, final Object key, final byte[] value, final long version, final String cacheName) {

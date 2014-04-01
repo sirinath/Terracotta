@@ -3,7 +3,9 @@
  */
 package com.tc.util;
 
-import org.apache.commons.lang.ArrayUtils;
+import static com.tc.util.Conversion.MemorySizeUnits.GIGA;
+import static com.tc.util.Conversion.MemorySizeUnits.KILO;
+import static com.tc.util.Conversion.MemorySizeUnits.MEGA;
 
 import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.TCException;
@@ -14,10 +16,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static com.tc.util.Conversion.MemorySizeUnits.GIGA;
-import static com.tc.util.Conversion.MemorySizeUnits.KILO;
-import static com.tc.util.Conversion.MemorySizeUnits.MEGA;
 
 /**
  * Data conversion algorithms and whatnot can be found in java.io.DataInput and java.io.DataOutput. Contains methods for
@@ -33,6 +31,7 @@ public class Conversion {
   private static final Pattern MEMORY_SIZE_PATTERN  = Pattern.compile("[0-9]*([.][0-9]+)? *([bkmg])?");
   private static final Pattern SIZE_MODIFIER_PATTERN = Pattern.compile("[bkmg]");
   private final static DecimalFormat twoDForm = new DecimalFormat();
+  private static final byte[]        EMPTY_BYTE_ARRAY      = new byte[] {};
   static {
     twoDForm.applyLocalizedPattern("#" + new DecimalFormatSymbols().getDecimalSeparator() + "##");
   }
@@ -186,7 +185,7 @@ public class Conversion {
    */
   public static byte[] string2Bytes(String string) {
     try {
-      return (string == null) ? ArrayUtils.EMPTY_BYTE_ARRAY : string.getBytes("UTF-8");
+      return (string == null) ? EMPTY_BYTE_ARRAY : string.getBytes("UTF-8");
     } catch (UnsupportedEncodingException e) {
       throw new TCRuntimeException(e);
     }
