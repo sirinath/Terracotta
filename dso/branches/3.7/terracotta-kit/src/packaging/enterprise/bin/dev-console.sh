@@ -26,6 +26,7 @@ CP=$TC_INSTALL_DIR/lib/tc.jar
 
 JAVA_OPTS="-Xmx128m -Dsun.java2d.pmoffscreen=false -Dtc.install-root=${TC_INSTALL_DIR} $JAVA_OPTS"
 exec "${JAVA_HOME}/bin/java" \
+  -Dtc.install-root="${TC_INSTALL_DIR}" \
   ${JAVA_OPTS} \
   -cp "$CP" \
   com.tc.admin.EnterpriseAdminClient "$@"
