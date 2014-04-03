@@ -14,5 +14,6 @@ if not defined JAVA_HOME (
 set JAVA_HOME="%JAVA_HOME:"=%"
 
 set CLASSPATH=%TC_INSTALL_DIR%\lib\tc.jar
+set JAVA_OPTS=-Dtc.install-root=%TC_INSTALL_DIR% %JAVA_OPTS%
 %JAVA_HOME%\bin\java %JAVA_OPTS% -cp %CLASSPATH% com.tc.server.util.ClusterDumper %*
 endlocal
