@@ -14,7 +14,6 @@ import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ObjectID;
-import com.tc.object.dmi.DmiDescriptor;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.LogicalChangeID;
 import com.tc.object.dna.api.LogicalChangeResult;
@@ -56,7 +55,6 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
   private final static byte SERIALIZER_ID = 9;
   private final static byte NOTIFIED = 10;
   private final static byte ROOT_NAME_ID_PAIR = 11;
-  private final static byte DMI_ID = 12;
   private final static byte LOGICAL_CHANGE_RESULT = 13;
   private final static byte SERVER_EVENT = 14;
 
@@ -69,7 +67,6 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
   private ObjectStringSerializer serializer;
 
   private final List                                      changes               = new ArrayList();
-  private final List                                      dmis                  = new ArrayList();
   private final Collection                                notifies              = new ArrayList();
   private final Map                                       newRoots              = new HashMap();
   private final List<LockID>                              lockIDs               = new ArrayList();
@@ -116,10 +113,6 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
       ObjectID value = (ObjectID) this.newRoots.get(key);
       putNVPair(ROOT_NAME_ID_PAIR, new RootIDPair(key, value));
     }
-    for (final Object dmi : this.dmis) {
-      DmiDescriptor dd = (DmiDescriptor) dmi;
-      putNVPair(DMI_ID, dd);
-    }
     for (final Entry<LogicalChangeID, LogicalChangeResult> entry : logicalChangeResults.entrySet()) {
       putNVPair(LOGICAL_CHANGE_RESULT, new LogicalChangeResultPair(entry.getKey(), entry.getValue()));
     }
@@ -165,10 +158,6 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
         RootIDPair rootIDPair = (RootIDPair) getObject(new RootIDPair());
         this.newRoots.put(rootIDPair.getRootName(), rootIDPair.getRootID());
         return true;
-      case DMI_ID:
-        DmiDescriptor dd = (DmiDescriptor) getObject(new DmiDescriptor());
-        this.dmis.add(dd);
-        return true;
       case LOGICAL_CHANGE_RESULT:
         LogicalChangeResultPair resultPair = (LogicalChangeResultPair) getObject(new LogicalChangeResultPair());
         this.logicalChangeResults.put(resultPair.getId(), resultPair.getResult());
@@ -186,7 +175,7 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
   public void initialize(final List chges, final ObjectStringSerializer aSerializer, final LockID[] lids,
                          final long cid, final TransactionID txID, final NodeID client, final GlobalTransactionID gtx,
                          final TxnType txnType, final GlobalTransactionID lowGlobalTransactionIDWatermark,
-                         final Collection theNotifies, final Map roots, final DmiDescriptor[] dmiDescs,
+                         final Collection theNotifies, final Map roots,
                          final Map<LogicalChangeID, LogicalChangeResult> logicalInvokeResults,
                          final Collection<ServerEvent> events) {
     Assert.assertNotNull(txnType);
@@ -202,7 +191,6 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
     this.serializer = aSerializer;
     this.notifies.addAll(theNotifies);
     this.newRoots.putAll(roots);
-    Collections.addAll(this.dmis, dmiDescs);
     this.logicalChangeResults.putAll(logicalInvokeResults);
     this.events.addAll(events);
   }
@@ -347,11 +335,6 @@ public class BroadcastTransactionMessageImpl extends DSOMessageBase implements B
       return result;
     }
 
-  }
-
-  @Override
-  public List getDmiDescriptors() {
-    return this.dmis;
   }
 
   public Map<LogicalChangeID, LogicalChangeResult> getLogicalChangeResults() {
