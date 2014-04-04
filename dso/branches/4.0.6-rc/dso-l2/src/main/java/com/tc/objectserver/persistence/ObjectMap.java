@@ -6,14 +6,10 @@ import org.terracotta.corestorage.KeyValueStorageConfig;
 import org.terracotta.corestorage.KeyValueStorageMutationListener;
 import org.terracotta.corestorage.StorageManager;
 
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.core.api.ManagedObject;
 import com.tc.objectserver.managedobject.ManagedObjectSerializer;
 import com.tc.objectserver.managedobject.ManagedObjectStateSerializer;
-import com.tc.util.Conversion;
-import com.tc.util.concurrent.ThreadUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -22,9 +18,6 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -33,7 +26,6 @@ import java.util.Set;
  * @author tim
  */
 class ObjectMap implements KeyValueStorage<ObjectID, ManagedObject> {
-  private static final TCLogger LOGGER = TCLogging.getLogger(ObjectMap.class);
   private static final String OBJECT_DB = "object_db";
 
   private final KeyValueStorage<Long, byte[]> backingMap;
@@ -42,25 +34,6 @@ class ObjectMap implements KeyValueStorage<ObjectID, ManagedObject> {
   ObjectMap(ManagedObjectPersistor persistor, StorageManager storageManager) {
     this.backingMap = storageManager.getKeyValueStorage(OBJECT_DB, Long.class, byte[].class);
     this.serializer = new ManagedObjectSerializer(new ManagedObjectStateSerializer(), persistor);
-    Thread t = new Thread(new Runnable() {
-      @Override
-      public void run() {
-        while (true) {
-          try {
-            Field backingField = backingMap.getClass().getDeclaredField("backing");
-            backingField.setAccessible(true);
-            Object backing = backingField.get(backingMap);
-            Method getDataAllocatedMemory = backing.getClass().getMethod("getDataAllocatedMemory");
-            LOGGER.info("ObjectMap reserved space: " + Conversion.memoryBytesAsSize((Long) getDataAllocatedMemory.invoke(backing)));
-          } catch (Exception e) {
-
-          }
-          ThreadUtil.reallySleep(1000);
-        }
-      }
-    });
-    t.setDaemon(true);
-    t.start();
   }
 
   public static void addConfigTo(Map<String, KeyValueStorageConfig<?, ?>> configMap, KeyValueStorageMutationListener<Long, byte[]> listener,

@@ -25,7 +25,7 @@ public class TestConfig {
   private int                                        dgcIntervalInSec        = 3600;
   private boolean                                    dgcVerbose              = false;
   private boolean                                    restartable             = false;
-  private int                                        clientReconnectWindow   = 15;
+  private int                                        clientReconnectWindow   = 120;
 
   public TestConfig(String configName) {
     this.configName = configName;
