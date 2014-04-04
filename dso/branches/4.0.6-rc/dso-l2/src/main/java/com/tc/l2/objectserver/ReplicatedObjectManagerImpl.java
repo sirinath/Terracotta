@@ -136,7 +136,7 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
                   "Passive : " + msg.messageFrom() + " was restarted before active." +
                   L2HAZapNodeRequestProcessor.getErrorString(new Throwable()));
             } else if (checkForSufficientResources(msg)) {
-              nodeIDSyncingPassives.put(msg.messageFrom(), new PassiveSyncState(curState));
+              nodeIDSyncingPassives.put(msg.messageFrom(), new PassiveSyncState());
             }
           } else {
             logger.error("Received wrong response for ObjectListSyncMessage Request  from " + msg.messageFrom()
@@ -551,7 +551,6 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
     private void add2L2StateManager(final Map<NodeID, PassiveSyncState> toAdd) {
       for (Entry<NodeID, PassiveSyncState> e : toAdd.entrySet()) {
         final NodeID nodeID = e.getKey();
-        final PassiveSyncState value = e.getValue();
         startSyncFor(nodeID);
       }
     }
@@ -587,7 +586,7 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
         } else {
           logger
               .info("Couldnt disable DGC, probably because DGC is currently running. So scheduling passive sync up for later after DGC completion");
-          syncingPassives.put(nodeID, new PassiveSyncState(currentState));
+          syncingPassives.put(nodeID, new PassiveSyncState());
         }
       }
       if (toAdd) {
@@ -650,18 +649,9 @@ public class ReplicatedObjectManagerImpl implements ReplicatedObjectManager, Gro
   }
 
   private static class PassiveSyncState {
-    protected final State         currentState;
 
-    public PassiveSyncState() {
-      this(new State("NO_STATE"));
-    }
-
-    public PassiveSyncState(State currentState) {
-      this.currentState = currentState;
-    }
-
-    public State getCurrentState() {
-      return currentState;
+    PassiveSyncState() {
+      //
     }
 
   }
