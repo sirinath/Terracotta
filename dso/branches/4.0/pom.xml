@@ -87,7 +87,14 @@
         <module>../toolkit-lrt-system-tests</module>
       </modules>        
     </profile>
-    
+
+    <profile>
+      <id>system-tests</id>
+      <modules>
+        <module>../management-ent-system-tests</module>
+      </modules>
+    </profile>
+
     <!-- activate by default if 'terracotta-toolkit-api' module exists. 
          You have to check out this module manually under 'community/devwork' -->
      <profile>
