@@ -3,11 +3,8 @@
  */
 package com.tc.object.locks;
 
-import org.apache.commons.lang.builder.HashCodeBuilder;
-
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
-import com.tc.object.locks.ThreadID;
 
 import java.io.IOException;
 
@@ -65,8 +62,17 @@ public class NotifyImpl implements Notify {
     this.lockID = l;
     this.threadID = id;
     this.all = isAll;
-    hashCode = new HashCodeBuilder(5503, 6737).append(lockID).append(threadID).append(isAll).toHashCode();
-    initialized = true;
+    this.hashCode = calculateHashCode();
+    this.initialized = true;
+  }
+
+  private int calculateHashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + (all ? 1231 : 1237);
+    result = prime * result + ((lockID == null) ? 0 : lockID.hashCode());
+    result = prime * result + ((threadID == null) ? 0 : threadID.hashCode());
+    return result;
   }
 
   /**
@@ -103,6 +109,7 @@ public class NotifyImpl implements Notify {
     return hashCode;
   }
 
+
   @Override
   public boolean equals(Object o) {
     if (!(o instanceof NotifyImpl)) return false;
@@ -114,6 +121,7 @@ public class NotifyImpl implements Notify {
   public String toString() {
     return getClass().getName() + "[" + lockID + ", " + threadID + ", " + "all: " + all + "]";
   }
+
 
   /**
    * @return Thread identfier
