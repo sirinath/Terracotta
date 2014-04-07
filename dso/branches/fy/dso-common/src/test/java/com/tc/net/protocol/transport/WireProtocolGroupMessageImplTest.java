@@ -165,7 +165,7 @@ public class WireProtocolGroupMessageImplTest extends TestCase {
 
   private TCNetworkMessage getDSOMessage(final MessageMonitor monitor, final SequenceGenerator seq) {
     TCNetworkMessage msg = new PingMessage(monitor);
-    ((PingMessage) msg).initialize(seq);
+    ((PingMessage) msg).initialize(seq.getNextSequence());
     msg.seal();
     return msg;
   }

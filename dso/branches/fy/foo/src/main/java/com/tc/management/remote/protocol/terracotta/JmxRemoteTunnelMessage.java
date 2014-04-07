@@ -22,8 +22,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import javax.management.remote.message.Message;
-
 public class JmxRemoteTunnelMessage extends DSOMessageBase implements TCSerializable {
 
   private static final byte TUNNEL_MESSAGE = 0;
@@ -33,7 +31,7 @@ public class JmxRemoteTunnelMessage extends DSOMessageBase implements TCSerializ
   private static final byte DATA_FLAG      = 1 << 1;
   private static final byte FIN_FLAG       = 1 << 2;
 
-  private Message           tunneledMessage;
+  private Object            tunneledMessage;
   private byte              flag;
 
   public JmxRemoteTunnelMessage(SessionID sessionID, MessageMonitor monitor, TCByteBufferOutputStream out,
@@ -48,10 +46,11 @@ public class JmxRemoteTunnelMessage extends DSOMessageBase implements TCSerializ
     flag = DATA_FLAG;
   }
 
+  @Override
   protected boolean hydrateValue(final byte name) throws IOException {
     switch (name) {
       case TUNNEL_MESSAGE:
-        setTunneledMessage((Message) getObject(this));
+        setTunneledMessage(getObject(this));
         return true;
       case FLAG:
         setFlag(getByteValue());
@@ -61,11 +60,13 @@ public class JmxRemoteTunnelMessage extends DSOMessageBase implements TCSerializ
     }
   }
 
+  @Override
   protected void dehydrateValues() {
     putNVPair(FLAG, flag);
     putNVPair(TUNNEL_MESSAGE, this);
   }
 
+  @Override
   public synchronized void serializeTo(TCByteBufferOutput serialOutput) {
     try {
       final ByteArrayOutputStream bao = new ByteArrayOutputStream(1024);
@@ -82,6 +83,7 @@ public class JmxRemoteTunnelMessage extends DSOMessageBase implements TCSerializ
     }
   }
 
+  @Override
   public synchronized Object deserializeFrom(TCByteBufferInput serialInput) throws IOException {
     try {
       flag = serialInput.readByte();
@@ -112,11 +114,11 @@ public class JmxRemoteTunnelMessage extends DSOMessageBase implements TCSerializ
     return flag == FIN_FLAG;
   }
 
-  synchronized void setTunneledMessage(final Message tunneledMessage) {
+  synchronized void setTunneledMessage(final Object tunneledMessage) {
     this.tunneledMessage = tunneledMessage;
   }
 
-  synchronized Message getTunneledMessage() {
+  synchronized Object getTunneledMessage() {
     return tunneledMessage;
   }
 

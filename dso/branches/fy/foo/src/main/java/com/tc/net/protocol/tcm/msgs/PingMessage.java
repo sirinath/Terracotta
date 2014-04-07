@@ -11,7 +11,6 @@ import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.msg.DSOMessageBase;
 import com.tc.object.session.SessionID;
-import com.tc.util.SequenceGenerator;
 
 import java.io.IOException;
 
@@ -37,8 +36,8 @@ public class PingMessage extends DSOMessageBase {
     this( new SessionID(0), monitor, new TCByteBufferOutputStream(), null, TCMessageType.PING_MESSAGE);
   }
 
-  public void initialize(SequenceGenerator sg) {
-    this.sequence = sg.getNextSequence();
+  public void initialize(long sequence) {
+    this.sequence = sequence;
   }
 
   public PingMessage createResponse() {

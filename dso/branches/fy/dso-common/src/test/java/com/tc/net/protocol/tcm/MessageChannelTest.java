@@ -554,7 +554,7 @@ public class MessageChannelTest extends TCTestCase {
 
   private PingMessage createMessage() {
     PingMessage ping = (PingMessage) clientChannel.createMessage(TCMessageType.PING_MESSAGE);
-    ping.initialize(sq);
+    ping.initialize(sq.getNextSequence());
     return ping;
   }
 
