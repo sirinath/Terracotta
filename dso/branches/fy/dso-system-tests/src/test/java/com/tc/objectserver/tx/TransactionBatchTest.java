@@ -25,6 +25,7 @@ import com.tc.object.tx.ClientTransactionBatchWriter;
 import com.tc.object.tx.ClientTransactionBatchWriter.FoldedInfo;
 import com.tc.object.tx.ClientTransactionBatchWriter.FoldingConfig;
 import com.tc.object.tx.ClientTransactionImpl;
+import com.tc.object.tx.FoldingConfigHelper;
 import com.tc.object.tx.TestClientTransaction;
 import com.tc.object.tx.TransactionContext;
 import com.tc.object.tx.TransactionContextImpl;
@@ -72,14 +73,16 @@ public class TransactionBatchTest extends TestCase {
 
   private ClientTransactionBatchWriter newWriter(final ObjectStringSerializer serializer) {
     return new ClientTransactionBatchWriter(GroupID.NULL_ID, new TxnBatchID(1), serializer, this.encoding,
-                                            this.messageFactory, FoldingConfig.createFromProperties(TCPropertiesImpl
+                                            this.messageFactory,
+                                            FoldingConfigHelper.createFromProperties(TCPropertiesImpl
                                                 .getProperties()));
   }
 
   private ClientTransactionBatchWriter newWriter(final ObjectStringSerializer serializer, final boolean foldEnabled,
                                                  final int lockLimit, final int objectLimit) {
     return new ClientTransactionBatchWriter(GroupID.NULL_ID, new TxnBatchID(1), serializer, this.encoding,
-                                            this.messageFactory, new FoldingConfig(foldEnabled, objectLimit, lockLimit));
+                                            this.messageFactory, new FoldingConfig(foldEnabled, objectLimit, lockLimit,
+                                                                                   false));
   }
 
   public void testGetMinTransaction() throws Exception {
@@ -160,7 +163,8 @@ public class TransactionBatchTest extends TestCase {
     txn2.setTransactionContext(tc);
 
     this.writer = new ClientTransactionBatchWriter(GroupID.NULL_ID, batchID, serializer, this.encoding, mf,
-                                                   FoldingConfig.createFromProperties(TCPropertiesImpl.getProperties()));
+                                                   FoldingConfigHelper.createFromProperties(TCPropertiesImpl
+                                                       .getProperties()));
 
     final SequenceGenerator sequenceGenerator = new SequenceGenerator();
     final TransactionIDGenerator tidGenerator = new TransactionIDGenerator();
