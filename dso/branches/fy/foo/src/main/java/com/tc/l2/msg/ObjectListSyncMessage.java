@@ -4,7 +4,6 @@
  */
 package com.tc.l2.msg;
 
-import com.google.common.base.Objects;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.net.groups.AbstractGroupMessage;
@@ -100,12 +99,9 @@ public class ObjectListSyncMessage extends AbstractGroupMessage {
 
   @Override
   public String toString() {
-    return Objects.toStringHelper(this)
-        .add("type", getTypeString())
-        .add("syncAllowed", syncAllowed)
-        .add("currentState", currentState)
-        .add("dataStorageSize", dataStorageSize)
-        .add("offheapSize", offheapSize)
+    return new StringBuffer(getClass().getSimpleName()).append("(").append("type=").append(getTypeString())
+        .append(",syncAllowed=").append(syncAllowed).append(",currentState=").append(currentState)
+        .append(",dataStorageSize=").append(dataStorageSize).append(",offheapSize=").append(offheapSize).append(")")
         .toString();
   }
 
