@@ -24,7 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class ClusterState {
+public class ClusterStateImpl implements ClusterState {
 
   private static final TCLogger                     logger                 = TCLogging.getLogger(ClusterState.class);
 
@@ -48,7 +48,7 @@ public class ClusterState {
   private boolean                                   nextGlobalTxnIDChanged = false;
   private boolean                                   nextDGCIDChanged       = false;
 
-  public ClusterState(ClusterStatePersistor clusterStatePersistor, ObjectIDSequence oidSequence,
+  public ClusterStateImpl(ClusterStatePersistor clusterStatePersistor, ObjectIDSequence oidSequence,
                       ConnectionIDFactory connectionIdFactory, GlobalTransactionIDSequenceProvider gidSequenceProvider,
                       GroupID thisGroupID, StripeIDStateManager stripeIDStateManager,
                       DGCSequenceProvider dgcSequenceProvider) {
@@ -77,6 +77,7 @@ public class ClusterState {
     }
   }
 
+  @Override
   public void setNextAvailableObjectID(long nextAvailOID) {
     if (nextAvailOID < nextAvailObjectID) {
       // Could happen when two actives fight it out. Dont want to assert, let the state manager fight it out.
@@ -88,22 +89,27 @@ public class ClusterState {
     this.nextAvailObjectID = nextAvailOID;
   }
 
+  @Override
   public long getNextAvailableObjectID() {
     return nextAvailObjectID;
   }
 
+  @Override
   public long getNextAvailableChannelID() {
     return nextAvailChannelID;
   }
 
+  @Override
   public long getNextAvailableGlobalTxnID() {
     return nextAvailGlobalTxnID;
   }
 
+  @Override
   public long getNextAvailableDGCID() {
     return nextAvailableDGCId;
   }
 
+  @Override
   public void setNextAvailableGlobalTransactionID(long nextAvailGID) {
     if (nextAvailGID < nextAvailGlobalTxnID) {
       // Could happen when two actives fight it out. Dont want to assert, let the state manager fight it out.
@@ -115,6 +121,7 @@ public class ClusterState {
     this.nextAvailGlobalTxnID = nextAvailGID;
   }
 
+  @Override
   public void setNextAvailableChannelID(long nextAvailableCID) {
     if (nextAvailableCID < nextAvailChannelID) {
       // Could happen when two actives fight it out. Dont want to assert, let the state manager fight it out.
@@ -125,6 +132,7 @@ public class ClusterState {
     this.nextAvailChannelID = nextAvailableCID;
   }
 
+  @Override
   public void setNextAvailableDGCId(long nextDGCId) {
     if (nextDGCId < this.nextAvailableDGCId) {
       // Could happen when two actives fight it out. Dont want to assert, let the state manager fight it out.
@@ -136,10 +144,12 @@ public class ClusterState {
     this.nextAvailableDGCId = nextDGCId;
   }
 
+  @Override
   public void syncActiveState() {
     syncConnectionIDsToDisk();
   }
 
+  @Override
   public void syncSequenceState() {
     if (nextObjectIDChanged) {
       syncOIDSequenceToDisk();
@@ -157,6 +167,7 @@ public class ClusterState {
     connectionIdFactory.init(stripeID.getName(), nextAvailChannelID, connections);
   }
 
+  @Override
   public StripeID getStripeID() {
     return stripeID;
   }
@@ -165,6 +176,7 @@ public class ClusterState {
     return stripeID.isNull();
   }
 
+  @Override
   public void setStripeID(String uid) {
     if (!isStripeIDNull() && !stripeID.getName().equals(uid)) {
       logger.error("StripeID doesnt match !! Mine : " + stripeID + " Active sent clusterID as : " + uid);
@@ -205,6 +217,7 @@ public class ClusterState {
     nextGlobalTxnIDChanged = false;
   }
 
+  @Override
   public void setCurrentState(State state) {
     this.currentState = state;
     syncCurrentStateToDB();
@@ -214,6 +227,7 @@ public class ClusterState {
     clusterStatePersistor.setCurrentL2State(currentState);
   }
 
+  @Override
   public void addNewConnection(ConnectionID connID) {
     if (connID.getChannelID() >= nextAvailChannelID) {
       nextAvailChannelID = connID.getChannelID() + 1;
@@ -221,6 +235,7 @@ public class ClusterState {
     connections.add(connID);
   }
 
+  @Override
   public void removeConnection(ConnectionID connectionID) {
     boolean removed = connections.remove(connectionID);
     if (!removed) {
@@ -228,10 +243,12 @@ public class ClusterState {
     }
   }
 
+  @Override
   public Set getAllConnections() {
     return new HashSet(connections);
   }
 
+  @Override
   public void generateStripeIDIfNeeded() {
     if (isStripeIDNull()) {
       // This is the first time an L2 goes active in the cluster of L2s. Generate a new stripeID. this will stick.
@@ -239,10 +256,12 @@ public class ClusterState {
     }
   }
 
+  @Override
   public Map<GroupID, StripeID> getStripeIDMap() {
     return stripeIDStateManager.getStripeIDMap(false);
   }
 
+  @Override
   public void addToStripeIDMap(GroupID gid, StripeID sid) {
     stripeIDStateManager.verifyOrSaveStripeID(gid, sid, true);
   }

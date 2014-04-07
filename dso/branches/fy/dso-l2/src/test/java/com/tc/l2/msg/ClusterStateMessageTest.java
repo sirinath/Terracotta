@@ -7,6 +7,7 @@ package com.tc.l2.msg;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.l2.ha.ClusterState;
+import com.tc.l2.ha.ClusterStateImpl;
 import com.tc.net.GroupID;
 import com.tc.net.groups.DummyStripeIDStateManager;
 import com.tc.net.groups.StripeIDStateManager;
@@ -31,8 +32,8 @@ public class ClusterStateMessageTest extends TestCase {
   private static final int CLUSTER_STATE_1 = 1;
   private static final int CLUSTER_STATE_2 = 2;
 
-  private ClusterState     clusterState_1;
-  private ClusterState     clusterState_2;
+  private ClusterStateImpl clusterState_1;
+  private ClusterStateImpl clusterState_2;
 
   @Override
   public void setUp() {
@@ -57,11 +58,11 @@ public class ClusterStateMessageTest extends TestCase {
     StripeIDStateManager stripeIDStateManager = new DummyStripeIDStateManager();
     DGCSequenceProvider dgcSequenceProvider = new DGCSequenceProvider(new TestMutableSequence());
     if (clusterState == CLUSTER_STATE_1) {
-      clusterState_1 = new ClusterState(clusterStateStore, oidSequence, connectionIdFactory, gidSequenceProvider,
-                                        new GroupID(1), stripeIDStateManager, dgcSequenceProvider);
+      clusterState_1 = new ClusterStateImpl(clusterStateStore, oidSequence, connectionIdFactory, gidSequenceProvider,
+                                            new GroupID(1), stripeIDStateManager, dgcSequenceProvider);
       clusterState_1.setStripeID("foobar");
     } else {
-      clusterState_2 = new ClusterState(clusterStateStore, oidSequence, connectionIdFactory, gidSequenceProvider,
+      clusterState_2 = new ClusterStateImpl(clusterStateStore, oidSequence, connectionIdFactory, gidSequenceProvider,
                                         new GroupID(1), stripeIDStateManager, dgcSequenceProvider);
       clusterState_2.setStripeID("foobar");
     }
@@ -86,8 +87,8 @@ public class ClusterStateMessageTest extends TestCase {
     assertEquals(cs.getAllConnections().size(), cs1.getAllConnections().size());
 
     Iterator iter1 = cs1.getAllConnections().iterator();
-    for (Iterator iter = cs.getAllConnections().iterator(); iter.hasNext();) {
-      assertEquals(((ConnectionID) iter.next()).getID(), ((ConnectionID) iter1.next()).getID());
+    for (Object element : cs.getAllConnections()) {
+      assertEquals(((ConnectionID) element).getID(), ((ConnectionID) iter1.next()).getID());
     }
 
     assertEquals(cs.getStripeID(), cs1.getStripeID());
