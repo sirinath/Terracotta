@@ -34,6 +34,7 @@ import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
 import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.objectserver.core.api.DSOGlobalServerStatsImpl;
+import com.tc.objectserver.tx.TransactionBatchReaderImpl.TransactionSizeCounterCallback;
 import com.tc.properties.TCProperties;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
@@ -171,7 +172,7 @@ public class TransactionBatchTest extends TestCase {
     final TransactionBatchReaderImpl reader = new TransactionBatchReaderImpl(this.writer.getData(), clientID,
                                                                              serializer,
                                                                              new ActiveServerTransactionFactory(),
-                                                                             stats);
+                                                                             newCallback(stats));
     // let transactionSize counter sample
     ThreadUtil.reallySleep(2000);
     assertTransactionSize(this.writer.getData(), 2, stats.getTransactionSizeCounter());
@@ -279,7 +280,7 @@ public class TransactionBatchTest extends TestCase {
     final TransactionBatchReaderImpl reader = new TransactionBatchReaderImpl(this.writer.getData(), clientID,
                                                                              serializer,
                                                                              new ActiveServerTransactionFactory(),
-                                                                             stats);
+                                                                             newCallback(stats));
     // let transactionSize counter sample
     ThreadUtil.reallySleep(2000);
     assertTransactionSize(writer.getData(), 1, stats.getTransactionSizeCounter());
@@ -320,6 +321,15 @@ public class TransactionBatchTest extends TestCase {
           fail("count is " + count);
       }
     }
+  }
+
+  private TransactionSizeCounterCallback newCallback(final DSOGlobalServerStats stats) {
+    return new TransactionSizeCounterCallback() {
+      @Override
+      public void increment(long numerator, long denominator) {
+        stats.getTransactionSizeCounter().increment(numerator, denominator);
+      }
+    };
   }
 
   private void assertTransactionSize(TCByteBuffer[] actualData, int actualNumTxns,

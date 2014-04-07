@@ -9,7 +9,7 @@ import com.tc.io.TCByteBufferInput.Mark;
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
+import com.tc.logging.TCLoggingService;
 import com.tc.net.NodeID;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.api.MetaDataReader;
@@ -23,8 +23,8 @@ import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.object.tx.TxnBatchID;
 import com.tc.object.tx.TxnType;
-import com.tc.objectserver.core.api.DSOGlobalServerStats;
 import com.tc.util.SequenceID;
+import com.tc.util.ServiceUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ import java.util.Map;
  */
 public class TransactionBatchReaderImpl implements TransactionBatchReader {
 
-  private static final TCLogger                        logger      = TCLogging
+  private static final TCLogger                        logger      = ServiceUtil.loadService(TCLoggingService.class)
                                                                        .getLogger(TransactionBatchReaderImpl.class);
 
   private static final int                             HEADER_SIZE = 13;
@@ -60,7 +60,7 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
 
   public TransactionBatchReaderImpl(final TCByteBuffer[] data, final NodeID nodeID,
                                     final ObjectStringSerializer serializer, final ServerTransactionFactory txnFactory,
-                                    final DSOGlobalServerStats globalSeverStats) throws IOException {
+                                    final TransactionSizeCounterCallback counterCallback) throws IOException {
     this.data = data;
     this.txnFactory = txnFactory;
     this.in = new TCByteBufferInputStream(data);
@@ -70,9 +70,9 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
     this.txnToRead = this.numTxns;
     this.serializer = serializer;
     this.containsSyncWriteTransaction = this.in.readBoolean();
-    if (globalSeverStats != null) {
+    if (counterCallback != null) {
       // transactionSize = Sum of Size of transactions / number of transactions
-      globalSeverStats.getTransactionSizeCounter().increment(this.in.getTotalLength(), this.numTxns);
+      counterCallback.increment(this.in.getTotalLength(), this.numTxns);
     }
   }
 
@@ -224,6 +224,12 @@ public class TransactionBatchReaderImpl implements TransactionBatchReader {
   @Override
   public ObjectStringSerializer getSerializer() {
     return this.serializer;
+  }
+
+  public static interface TransactionSizeCounterCallback {
+
+    void increment(long numerator, long denominator);
+
   }
 
   private static final class MarkInfo {
