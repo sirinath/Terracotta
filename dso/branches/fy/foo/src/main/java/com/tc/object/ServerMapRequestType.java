@@ -3,7 +3,7 @@
  */
 package com.tc.object;
 
-import com.tc.net.protocol.tcm.ClientMessageChannel;
+import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.msg.ServerMapRequestMessage;
 
@@ -24,7 +24,7 @@ public enum ServerMapRequestType {
     return values[ordinal];
   }
 
-  public ServerMapRequestMessage createRequestMessage(final ClientMessageChannel channel) {
+  public ServerMapRequestMessage createRequestMessage(final MessageChannel channel) {
     return (ServerMapRequestMessage) channel.createMessage(requestMessageType);
   }
 
