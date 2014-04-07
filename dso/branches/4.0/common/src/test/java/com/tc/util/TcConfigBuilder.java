@@ -1,3 +1,6 @@
+/*
+ * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
+ */
 package com.tc.util;
 
 import org.apache.commons.io.IOUtils;
@@ -56,7 +59,7 @@ public class TcConfigBuilder {
     }
   }
 
-  private TcConfigBuilder(TcConfigDocument tcd) {
+  public TcConfigBuilder(TcConfigDocument tcd) {
     tcConfigDocument = tcd;
     tcConfig = tcConfigDocument.getTcConfig();
   }
