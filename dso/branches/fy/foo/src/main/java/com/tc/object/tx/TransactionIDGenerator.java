@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class TransactionIDGenerator {
 
-  private AtomicLong id = new AtomicLong(0);
+  private final AtomicLong id = new AtomicLong(0);
 
   public TransactionID nextTransactionID() {
     return new TransactionID(id.incrementAndGet());
