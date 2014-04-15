@@ -211,7 +211,7 @@ public class TCStop {
                             + ". Are you sure there is a Terracotta server instance running there?");
       }
       if (root instanceof GeneralSecurityException) {
-        consoleLogger.error("There is a problem with you secured setup: " + root.getMessage());
+        consoleLogger.error("There is a problem with your secured setup: " + root.getMessage());
       }
       System.exit(1);
     }
