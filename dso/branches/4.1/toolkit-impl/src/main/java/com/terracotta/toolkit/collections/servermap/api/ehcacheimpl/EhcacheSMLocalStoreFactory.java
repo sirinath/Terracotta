@@ -16,12 +16,18 @@ import net.sf.ehcache.constructs.classloader.InternalClassLoaderAwareCache;
 import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 import net.sf.ehcache.terracotta.InternalEhcache;
 
+import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
 import com.terracotta.toolkit.collections.servermap.api.ServerMapLocalStore;
 import com.terracotta.toolkit.collections.servermap.api.ServerMapLocalStoreConfig;
 import com.terracotta.toolkit.collections.servermap.api.ServerMapLocalStoreFactory;
 
+import java.lang.reflect.Method;
+
 public class EhcacheSMLocalStoreFactory implements ServerMapLocalStoreFactory {
-  private final CacheManager defaultCacheManager;
+  private static final TCLogger LOGGER = TCLogging.getLogger(EhcacheSMLocalStoreFactory.class);
+
+  private final CacheManager    defaultCacheManager;
 
   public EhcacheSMLocalStoreFactory(CacheManager defaultCacheManager) {
     this.defaultCacheManager = defaultCacheManager;
@@ -40,7 +46,7 @@ public class EhcacheSMLocalStoreFactory implements ServerMapLocalStoreFactory {
     final String localCacheName = "local_shadow_cache_for_" + cacheManager.getName() + "_" + config.getLocalStoreName();
     ehcache = (InternalEhcache) cacheManager.getEhcache(localCacheName);
     if (ehcache == null) {
-      ehcache = createCache(localCacheName, config);
+      ehcache = createCache(localCacheName, config, cacheManager);
       new EhcacheInitializationHelper(cacheManager).initializeEhcache(ehcache);
     }
     return ehcache;
@@ -63,7 +69,8 @@ public class EhcacheSMLocalStoreFactory implements ServerMapLocalStoreFactory {
     return cacheManager;
   }
 
-  private static InternalEhcache createCache(String cacheName, ServerMapLocalStoreConfig config) {
+  private static InternalEhcache createCache(String cacheName, ServerMapLocalStoreConfig config,
+                                             CacheManager cacheManager) {
     CacheConfiguration cacheConfig = new CacheConfiguration(cacheName, 0)
         .persistence(new PersistenceConfiguration().strategy(Strategy.NONE))
         .memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.CLOCK).overflowToDisk(false);
@@ -91,6 +98,37 @@ public class EhcacheSMLocalStoreFactory implements ServerMapLocalStoreFactory {
       cacheConfig.pinning(new PinningConfiguration().store(PinningConfiguration.Store.LOCALMEMORY));
     }
 
-    return new InternalClassLoaderAwareCache(new Cache(cacheConfig), ServerMapLocalStoreFactory.class.getClassLoader());
+    return newCache(cacheConfig);
   }
+
+  private static InternalEhcache newCache(CacheConfiguration cacheConfig) {
+    // classloader for these caches needs to see toolkit internal types
+    final ClassLoader loader = EhcacheSMLocalStoreFactory.class.getClassLoader();
+
+    if (SET_CLASSLOADER_METHOD != null) {
+      try {
+        SET_CLASSLOADER_METHOD.invoke(cacheConfig, loader);
+        return new Cache(cacheConfig);
+      } catch (Exception e) {
+        LOGGER.warn("Exception setting classloader (" + e.getMessage() + "), returning wrapped cache instance");
+      }
+    }
+
+    return new InternalClassLoaderAwareCache(new Cache(cacheConfig), loader);
+  }
+
+  private static final Method SET_CLASSLOADER_METHOD;
+
+  static {
+    Method m = null;
+    try {
+      m = CacheConfiguration.class.getMethod("setClassLoader", ClassLoader.class);
+    } catch (Exception e) {
+      LOGGER.info(CacheConfiguration.class.getName()
+                  + " is missing setClassLoader() method, consider upgrading your ehcache version");
+    }
+
+    SET_CLASSLOADER_METHOD = m;
+  }
+
 }
