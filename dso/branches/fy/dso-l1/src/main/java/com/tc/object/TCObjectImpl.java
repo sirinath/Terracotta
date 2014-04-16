@@ -35,12 +35,14 @@ public abstract class TCObjectImpl implements TCObject {
 
   protected final ObjectID      objectID;
   protected final TCClass       tcClazz;
+  private final ClientObjectManager objectManager;
   private WeakReference         peerObject;
   private byte                  flags                     = 0;
 
-  protected TCObjectImpl(final ObjectID id, final Object peer, final TCClass clazz, final boolean isNew) {
+  protected TCObjectImpl(final ObjectID id, final Object peer, final TCClass clazz, final boolean isNew, ClientObjectManager objectManager) {
     this.objectID = id;
     this.tcClazz = clazz;
+    this.objectManager = objectManager;
     if (peer != null) {
       setPeerObject(getObjectManager().newWeakObjectReference(id, peer));
     }
@@ -63,7 +65,7 @@ public abstract class TCObjectImpl implements TCObject {
   }
 
   protected ClientObjectManager getObjectManager() {
-    return this.tcClazz.getObjectManager();
+    return objectManager;
   }
 
   @Override

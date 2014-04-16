@@ -43,7 +43,7 @@ public class TCObjectSelfTransactionApplyTest extends TestCase {
 
   public void testApply() throws Exception {
     ObjectID oid = new ObjectID(1001);
-    MyMockSerializedEntry serializedEntry = new MyMockSerializedEntry(oid, "1001".getBytes(), null);
+    MyMockSerializedEntry serializedEntry = new MyMockSerializedEntry(oid, "1001".getBytes(), null, null);
     serializedEntry.setLastAccessedTime(100);
     ClientObjectManager objectManager = Mockito.mock(ClientObjectManager.class);
     Mockito.when(objectManager.lookupQuiet(oid)).thenReturn(serializedEntry);
@@ -73,8 +73,8 @@ public class TCObjectSelfTransactionApplyTest extends TestCase {
   }
 
   private static class MyMockSerializedEntry extends MockSerializedEntry {
-    public MyMockSerializedEntry(ObjectID id, byte[] array, TCClass tcClazz) {
-      super(id, array, tcClazz);
+    public MyMockSerializedEntry(ObjectID id, byte[] array, TCClass tcClazz, ClientObjectManager objectManager) {
+      super(id, array, tcClazz, objectManager);
     }
 
     @Override
@@ -253,7 +253,7 @@ public class TCObjectSelfTransactionApplyTest extends TestCase {
         int len = ois.readInt();
         byte[] b = new byte[len];
         ois.readFully(b);
-        MyMockSerializedEntry entry = new MyMockSerializedEntry(oid, b, null);
+        MyMockSerializedEntry entry = new MyMockSerializedEntry(oid, b, null, null);
         entry.setLastAccessedTime(lastAccessedTime);
         return entry;
       } catch (Throwable t) {

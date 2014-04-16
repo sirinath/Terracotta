@@ -1155,7 +1155,7 @@ public class ServerMapLocalCacheImplTest extends TestCase {
 
   public MockSerializedEntry createMockSerializedEntry(String value, long id) {
     byte[] bytes = value.getBytes();
-    return new MockSerializedEntry(new ObjectID(id), bytes, null);
+    return new MockSerializedEntry(new ObjectID(id), bytes, null, null);
   }
 
 }

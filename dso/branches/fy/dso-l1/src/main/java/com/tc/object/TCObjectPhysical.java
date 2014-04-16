@@ -19,8 +19,8 @@ import java.util.Map.Entry;
 public class TCObjectPhysical extends TCObjectImpl {
   private Map references = null;
 
-  public TCObjectPhysical(ObjectID id, Object peer, TCClass tcc, boolean isNew) {
-    super(id, peer, tcc, isNew);
+  public TCObjectPhysical(ObjectID id, Object peer, TCClass tcc, boolean isNew, ClientObjectManager objectManager) {
+    super(id, peer, tcc, isNew, objectManager);
   }
 
   private Map getReferences() {

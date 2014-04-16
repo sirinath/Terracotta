@@ -3,22 +3,22 @@
  */
 package com.tc.object.servermap.localcache.impl;
 
+import com.tc.object.ClientObjectManager;
 import com.tc.object.ObjectID;
 import com.tc.object.TCClass;
 import com.tc.object.TCObjectSelfImpl;
-
 import java.util.Arrays;
 
 public class MockSerializedEntry extends TCObjectSelfImpl {
   private final byte[] myArray;
   private long         lastAccessed;
 
-  public MockSerializedEntry(ObjectID id, byte[] array, TCClass tcClazz) {
-    this(id, array, tcClazz, System.currentTimeMillis());
+  public MockSerializedEntry(ObjectID id, byte[] array, TCClass tcClazz, ClientObjectManager objectManager) {
+    this(id, array, tcClazz, System.currentTimeMillis(), objectManager);
   }
 
-  public MockSerializedEntry(ObjectID id, byte[] array, TCClass tcClazz, long lastAccessedTime) {
-    this.initializeTCObject(id, tcClazz, false);
+  public MockSerializedEntry(ObjectID id, byte[] array, TCClass tcClazz, long lastAccessedTime, ClientObjectManager objectManager) {
+    this.initializeTCObject(id, tcClazz, false, objectManager);
     this.myArray = array;
     this.lastAccessed = lastAccessedTime;
   }

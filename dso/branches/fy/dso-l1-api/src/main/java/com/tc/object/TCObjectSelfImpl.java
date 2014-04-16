@@ -23,15 +23,17 @@ public class TCObjectSelfImpl implements TCObjectSelf {
   private volatile transient TCClass  tcClazz;
   private volatile transient boolean  isNew;
   private volatile transient long     version;
-
+  private volatile ClientObjectManager objectManager;
+  
   // DO NOT ADD ANY CONSTRUCTORS AS THEY WILL BE SKIPPED WHILE MERGE
 
   @Override
-  public void initializeTCObject(final ObjectID id, final TCClass clazz, final boolean isNewObject) {
+  public void initializeTCObject(final ObjectID id, final TCClass clazz, final boolean isNewObject, ClientObjectManager objectManager) {
     if (oid != null) { throw new AssertionError("Old oid=" + oid + " id=" + id); }
     oid = id;
     tcClazz = clazz;
     isNew = isNewObject;
+    this.objectManager = objectManager;
   }
 
   @Override
@@ -122,7 +124,7 @@ public class TCObjectSelfImpl implements TCObjectSelf {
 
   @Override
   public void logicalInvoke(int method, String methodName, Object[] parameters) {
-    tcClazz.getObjectManager().getTransactionManager().logicalInvoke(this, method, methodName, parameters);
+    objectManager.getTransactionManager().logicalInvoke(this, method, methodName, parameters);
   }
 
   @Override

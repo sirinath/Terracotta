@@ -3,13 +3,14 @@
  */
 package com.tc.bytes;
 
-import com.tc.lang.TCThreadGroup;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLoggingService;
 import com.tc.util.Assert;
 import com.tc.util.ServiceUtil;
 import com.tc.util.VicariousThreadLocal;
-
+import java.util.Collections;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -45,10 +46,12 @@ public class TCByteBufferFactory {
   private static final LinkedBlockingQueue directCommonFreePool    = new LinkedBlockingQueue(commonPoolMaxBufCount);
   private static final LinkedBlockingQueue nonDirectCommonFreePool = new LinkedBlockingQueue(commonPoolMaxBufCount);
 
+  private static final Set<ThreadGroup> handledGroups = Collections.newSetFromMap(new WeakHashMap<ThreadGroup, Boolean>());
+  
   private static final ThreadLocal         directFreePool          = new VicariousThreadLocal() {
                                                                      @Override
                                                                      protected Object initialValue() {
-                                                                       if (TCThreadGroup.currentThreadInTCThreadGroup()) {
+                                                                       if (handledGroups.contains(Thread.currentThread().getThreadGroup())) {
                                                                          return new LinkedBlockingQueue(poolMaxBufCount);
                                                                        } else {
                                                                          logger.debug("Buf pool direct for "
@@ -62,7 +65,7 @@ public class TCByteBufferFactory {
   private static final ThreadLocal         nonDirectFreePool       = new VicariousThreadLocal() {
                                                                      @Override
                                                                      protected Object initialValue() {
-                                                                       if (TCThreadGroup.currentThreadInTCThreadGroup()) {
+                                                                       if (handledGroups.contains(Thread.currentThread().getThreadGroup())) {
                                                                          return new LinkedBlockingQueue(poolMaxBufCount);
                                                                        } else {
                                                                          logger.debug("Buf pool nonDirect for "
@@ -138,6 +141,10 @@ public class TCByteBufferFactory {
     return createNewInstance(direct, bufferSize, 0, 1);
   }
 
+  public static void registerThreadGroup(ThreadGroup group) {
+    handledGroups.add(group);
+  }
+  
   /**
    * Get enough fixed sized TCByteBuffer instances to contain the given number of bytes
    * 
