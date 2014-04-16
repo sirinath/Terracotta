@@ -31,9 +31,9 @@ public class TCObjectImplTest extends BaseDSOTestCase {
     final TestObject to2 = new TestObject("TestObject2", null);
     final ObjectID id1 = new ObjectID(1);
     final ObjectID id2 = new ObjectID(2);
-    objectManager.add(id2, new TCObjectPhysical(id2, to2, clazz, false));
+    objectManager.add(id2, new TCObjectPhysical(id2, to2, clazz, false, objectManager));
 
-    final TCObjectImpl tcObj = new TCObjectPhysical(id1, to1, clazz, false);
+    final TCObjectImpl tcObj = new TCObjectPhysical(id1, to1, clazz, false, objectManager);
     tcObj.resolveReference(TestObject.class.getName() + ".test1");
     tcObj.resolveReference(TestObject.class.getName() + ".test2");
     assertTrue(to1.test1 == null);// nothing should happen from that
@@ -226,11 +226,6 @@ public class TCObjectImplTest extends BaseDSOTestCase {
 
     public String getFieldNameByOffset(final long fieldOffset) {
       throw new ImplementMe();
-    }
-
-    @Override
-    public ClientObjectManager getObjectManager() {
-      return this.objectManager;
     }
 
     @Override

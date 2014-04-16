@@ -164,7 +164,7 @@ public class MockPlatformService implements PlatformService {
     TCObject tcObject = new MockTCObject(ObjectID.NULL_ID, obj);
     if(SerializedMapValue.class.isAssignableFrom(obj.getClass())) {
       SerializedMapValue manageable = (SerializedMapValue) obj;
-      manageable.initializeTCObject(ObjectID.NULL_ID, new MockTCClass(false, true), false);
+      manageable.initializeTCObject(ObjectID.NULL_ID, new MockTCClass(false, true), false, null);
       manageable.__tc_managed(manageable);
     }else if(Manageable.class.isAssignableFrom(obj.getClass())) {
       Manageable manageable = (Manageable) obj;

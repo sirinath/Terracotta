@@ -8,8 +8,8 @@ import com.tc.abortable.AbortedOperationException;
 
 public class TCObjectLogical extends TCObjectImpl {
 
-  public TCObjectLogical(final ObjectID id, final Object peer, final TCClass tcc, final boolean isNew) {
-    super(id, peer, tcc, isNew);
+  public TCObjectLogical(final ObjectID id, final Object peer, final TCClass tcc, final boolean isNew, ClientObjectManager objectManager) {
+    super(id, peer, tcc, isNew, objectManager);
   }
 
   @Override

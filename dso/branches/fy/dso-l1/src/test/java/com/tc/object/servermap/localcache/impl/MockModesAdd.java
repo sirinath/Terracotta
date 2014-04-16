@@ -71,7 +71,7 @@ public class MockModesAdd {
   }
 
   public static MockSerializedEntry createMockSerializedEntry(int oid, byte[] array) {
-    MockSerializedEntry entry = new MockSerializedEntry(new ObjectID(oid), array, null);
+    MockSerializedEntry entry = new MockSerializedEntry(new ObjectID(oid), array, null, null);
     return entry;
   }
 

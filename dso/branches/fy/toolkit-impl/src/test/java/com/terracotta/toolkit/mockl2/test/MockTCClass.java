@@ -6,7 +6,6 @@ package com.terracotta.toolkit.mockl2.test;
 
 
 import com.tc.exception.ImplementMe;
-import com.tc.object.ClientObjectManager;
 import com.tc.object.ObjectID;
 import com.tc.object.TCClass;
 import com.tc.object.TCObject;
@@ -135,11 +134,6 @@ public class MockTCClass implements TCClass {
   @Override
   public Class getPeerClass() {
     return getClass();
-  }
-
-  @Override
-  public ClientObjectManager getObjectManager() {
-    throw new ImplementMe();
   }
 
   @Override

@@ -73,7 +73,6 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
   }
 
   private final GroupID                       groupID;
-  private final ClientObjectManager           objectManager;
   private final RemoteServerMapManager        serverMapManager;
   private final Manager                       manager;
   private volatile ServerMapLocalCache        cache;
@@ -90,10 +89,9 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
                                final RemoteServerMapManager serverMapManager, final ObjectID id, final Object peer,
                                final TCClass tcc, final boolean isNew,
                                final L1ServerMapLocalCacheManager globalLocalCacheManager) {
-    super(id, peer, tcc, isNew);
+    super(id, peer, tcc, isNew, objectManager);
     this.tcObjectSelfStore = globalLocalCacheManager;
     this.groupID = new GroupID(id.getGroupID());
-    this.objectManager = objectManager;
     this.serverMapManager = serverMapManager;
     this.manager = manager;
     this.globalLocalCacheManager = globalLocalCacheManager;
@@ -486,7 +484,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
 
       if (value != null) {
         addStrongValueToCache(this.manager.generateLockIdentifier(lockID), key, value,
-                              objectManager.lookupExistingObjectID(value), MapOperationType.GET);
+                              getObjectManager().lookupExistingObjectID(value), MapOperationType.GET);
       }
       return value;
     } finally {
@@ -499,9 +497,9 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
     if (value != null && !LiteralValues.isLiteralInstance(value)) {
       if (isEventual) {
         //
-        addEventualValueToCache(key, value, this.objectManager.lookupExistingObjectID(value), MapOperationType.GET);
+        addEventualValueToCache(key, value, getObjectManager().lookupExistingObjectID(value), MapOperationType.GET);
       } else {
-        addIncoherentValueToCache(key, value, this.objectManager.lookupExistingObjectID(value), MapOperationType.GET);
+        addIncoherentValueToCache(key, value, getObjectManager().lookupExistingObjectID(value), MapOperationType.GET);
       }
     }
   }
@@ -695,7 +693,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
 
       if (oid.isNull()) { return null; }
 
-      final Object returnValue = this.objectManager.lookupObjectQuiet(oid);
+      final Object returnValue = getObjectManager().lookupObjectQuiet(oid);
       if (returnValue instanceof ExpirableMapEntry) {
         ExpirableMapEntry expirableMapEntry = (ExpirableMapEntry) returnValue;
         expirableMapEntry.setCreationTime(value.getCreationTime());
@@ -713,7 +711,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
 
   private TCObjectServerMapImpl lookupTCObjectServerMapImpl(final ObjectID mapID) throws AbortedOperationException {
     try {
-      return (TCObjectServerMapImpl) this.objectManager.lookup(mapID);
+      return (TCObjectServerMapImpl) getObjectManager().lookup(mapID);
     } catch (ClassNotFoundException e) {
       throw new RuntimeException("ClassNotFoundException for mapID " + mapID);
     }
@@ -1001,7 +999,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
   private ObjectID shareObject(Object param) {
     boolean isLiteral = LiteralValues.isLiteralInstance(param);
     if (!isLiteral) {
-      TCObject object = this.objectManager.lookupOrCreate(param, this.groupID);
+      TCObject object = getObjectManager().lookupOrCreate(param, this.groupID);
       return object.getObjectID();
     }
     return ObjectID.NULL_ID;
@@ -1028,7 +1026,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
 
   @Override
   public void addMetaData(MetaDataDescriptor mdd) {
-    this.objectManager.getTransactionManager().addMetaDataDescriptor(this, (MetaDataDescriptorInternal) mdd);
+    getObjectManager().getTransactionManager().addMetaDataDescriptor(this, (MetaDataDescriptorInternal) mdd);
   }
 
   @Override
@@ -1046,7 +1044,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
   }
 
   private void setupLocalCache(L1ServerMapLocalCacheStore serverMapLocalStore, PinnedEntryFaultCallback callback) {
-    this.cache = globalLocalCacheManager.getOrCreateLocalCache(this.objectID, objectManager, manager,
+    this.cache = globalLocalCacheManager.getOrCreateLocalCache(this.objectID, getObjectManager(), manager,
                                                                localCacheEnabled, serverMapLocalStore, callback);
   }
 

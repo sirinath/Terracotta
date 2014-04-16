@@ -554,26 +554,26 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
         if (getLocalDepthCounter().get() == 0) {
           final TCField[] tcFields = new TCField[] { new MockTCField("object") };
           final TCClass tcClass = new MockTCClass(this.clientObjectManager, true, true, tcFields);
-          tcObj = new TCObjectPhysical(id, null, tcClass, isNew);
+          tcObj = new TCObjectPhysical(id, null, tcClass, isNew, this.clientObjectManager);
           tcObj.setReference("object", new ObjectID(2));
           getLocalDepthCounter().increment();
         } else {
           final TCField[] tcFields = new TCField[] { new MockTCField("object") };
           final TCClass tcClass = new MockTCClass(this.clientObjectManager, true, true, tcFields);
-          tcObj = new TCObjectPhysical(id, null, tcClass, isNew);
+          tcObj = new TCObjectPhysical(id, null, tcClass, isNew, this.clientObjectManager);
           getLocalDepthCounter().increment();
         }
       } else if (id.toLong() == 2) {
         if (getLocalDepthCounter().get() == 0) {
           final TCField[] tcFields = new TCField[] { new MockTCField("object") };
           final TCClass tcClass = new MockTCClass(this.clientObjectManager, true, true, tcFields);
-          tcObj = new TCObjectPhysical(id, null, tcClass, isNew);
+          tcObj = new TCObjectPhysical(id, null, tcClass, isNew, this.clientObjectManager);
           tcObj.setReference("object", new ObjectID(1));
           getLocalDepthCounter().increment();
         } else {
           final TCField[] tcFields = new TCField[] { new MockTCField("object") };
           final TCClass tcClass = new MockTCClass(this.clientObjectManager, true, true, tcFields);
-          tcObj = new TCObjectPhysical(id, null, tcClass, isNew);
+          tcObj = new TCObjectPhysical(id, null, tcClass, isNew, this.clientObjectManager);
           getLocalDepthCounter().increment();
         }
       }

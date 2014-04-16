@@ -89,11 +89,6 @@ public interface TCClass {
   public boolean isLogical();
 
   /**
-   * @return The client object manager for this client
-   */
-  public ClientObjectManager getObjectManager();
-
-  /**
    * @return TCClass of the super class of the peer
    */
   public TCClass getSuperclass();

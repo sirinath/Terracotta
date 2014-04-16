@@ -132,11 +132,6 @@ public class MockTCClass implements TCClass {
   }
 
   @Override
-  public ClientObjectManager getObjectManager() {
-    throw new ImplementMe();
-  }
-
-  @Override
   public boolean isProxyClass() {
     return false;
   }
