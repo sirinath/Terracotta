@@ -329,6 +329,7 @@ public class TCClassImpl implements TCClass {
     return this.isLogical;
   }
 
+  @Override
   public ClientObjectManager getObjectManager() {
     return this.objectManager;
   }
@@ -337,12 +338,12 @@ public class TCClassImpl implements TCClass {
   public TCObject createTCObject(final ObjectID id, final Object pojo, final boolean isNew) {
     if (pojo instanceof TCObjectSelf) {
       TCObjectSelf self = (TCObjectSelf) pojo;
-      self.initializeTCObject(id, this, isNew, getObjectManager());
+      self.initializeTCObject(id, this, isNew);
       return self;
     } else if (this.isLogical) {
-      return new TCObjectLogical(id, pojo, this, isNew, getObjectManager());
+      return new TCObjectLogical(id, pojo, this, isNew);
     } else {
-      return new TCObjectPhysical(id, pojo, this, isNew, getObjectManager());
+      return new TCObjectPhysical(id, pojo, this, isNew);
     }
   }
 

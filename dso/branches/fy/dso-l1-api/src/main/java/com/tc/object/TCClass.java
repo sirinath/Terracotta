@@ -3,6 +3,9 @@
  */
 package com.tc.object;
 
+import com.tc.object.ObjectID;
+import com.tc.object.TCObject;
+import com.tc.object.TraversedReferences;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.field.TCField;
@@ -87,6 +90,11 @@ public interface TCClass {
    * @return True if this is a logically instrumented class
    */
   public boolean isLogical();
+
+  /**
+   * @return The client object manager for this client
+   */
+  public ClientObjectManager getObjectManager();
 
   /**
    * @return TCClass of the super class of the peer

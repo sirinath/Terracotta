@@ -160,6 +160,11 @@ public class TestClassFactory implements TCClassFactory {
     }
 
     @Override
+    public ClientObjectManager getObjectManager() {
+      return clientObjectManager;
+    }
+
+    @Override
     public boolean isProxyClass() {
       return false;
     }

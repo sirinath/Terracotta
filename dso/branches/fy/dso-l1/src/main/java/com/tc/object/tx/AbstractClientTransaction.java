@@ -104,8 +104,8 @@ abstract class AbstractClientTransaction implements ClientTransaction {
 
   @Override
   public final void fieldChanged(TCObject source, String classname, String fieldname, Object newValue, int index) {
-    if (source.getTCClass().isEnum()) { throw new AssertionError("fieldChanged() on an enum type "
-                                                                 + source.getTCClass().getPeerClass().getName()); }
+    if (source.isEnum()) { throw new AssertionError("fieldChanged() on an enum type "
+                                                                 + source.getPeerClass().getName()); }
 
     alreadyCommittedCheck();
     basicFieldChanged(source, classname, fieldname, newValue, index);

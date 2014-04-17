@@ -3,7 +3,6 @@
  */
 package com.tc.lang;
 
-import com.tc.bytes.TCByteBufferFactory;
 import com.tc.logging.CallbackOnExitHandler;
 
 public class TCThreadGroup extends ThreadGroup {
@@ -23,8 +22,6 @@ public class TCThreadGroup extends ThreadGroup {
   public TCThreadGroup(ThrowableHandler throwableHandler, String name) {
     super(name);
     this.throwableHandler = throwableHandler;
-    //XXX only doing this temporarily - should be moved to caller.
-    TCByteBufferFactory.registerThreadGroup(this);
   }
 
   @Override

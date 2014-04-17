@@ -55,11 +55,6 @@ public class ExplicitLockingTCObjectServerMapImpl implements TCObjectServerMap {
   }
 
   @Override
-  public TCClass getTCClass() {
-    return delegate.getTCClass();
-  }
-
-  @Override
   public Object getResolveLock() {
     return delegate.getResolveLock();
   }
@@ -512,4 +507,33 @@ public class ExplicitLockingTCObjectServerMapImpl implements TCObjectServerMap {
     delegate.doUnregisterListener(eventTypes);
   }
 
+  @Override
+  public String getExtendingClassName() {
+    return delegate.getExtendingClassName();
+  }
+
+  @Override
+  public String getClassName() {
+    return delegate.getClassName();
+  }
+
+  @Override
+  public Class<?> getPeerClass() {
+    return delegate.getPeerClass();
+  }
+
+  @Override
+  public boolean isIndexed() {
+    return delegate.isIndexed();
+  }
+
+  @Override
+  public boolean isLogical() {
+    return delegate.isLogical();
+  }
+
+  @Override
+  public boolean isEnum() {
+    return delegate.isEnum();
+  }
 }

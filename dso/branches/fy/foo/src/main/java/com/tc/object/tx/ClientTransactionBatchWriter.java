@@ -12,7 +12,6 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLoggingService;
 import com.tc.net.GroupID;
 import com.tc.object.ObjectID;
-import com.tc.object.TCClass;
 import com.tc.object.TCObject;
 import com.tc.object.change.TCChangeBuffer;
 import com.tc.object.dna.api.DNAEncodingInternal;
@@ -615,8 +614,7 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
 
         DNAWriter writer = (DNAWriter) this.writers.get(oid);
         if (writer == null) {
-          final TCClass tcc = tco.getTCClass();
-          writer = new DNAWriterImpl(this.output, oid, tcc.getExtendingClassName(), this.serializer, this.encoding,
+          writer = new DNAWriterImpl(this.output, oid, tco.getExtendingClassName(), this.serializer, this.encoding,
                                      !isNew);
 
           this.writers.put(oid, writer);
@@ -633,7 +631,7 @@ public class ClientTransactionBatchWriter implements ClientTransactionBatch {
 
           if (buffer.hasMetaData()) {
             // DEV-5320
-            logger.error("not sending meta data attached to \"new\" object of type " + tco.getTCClass().getName());
+            logger.error("not sending meta data attached to \"new\" object of type " + tco.getClassName());
           }
         }
 

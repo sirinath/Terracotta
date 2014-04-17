@@ -23,17 +23,15 @@ public class TCObjectSelfImpl implements TCObjectSelf {
   private volatile transient TCClass  tcClazz;
   private volatile transient boolean  isNew;
   private volatile transient long     version;
-  private volatile ClientObjectManager objectManager;
-  
+
   // DO NOT ADD ANY CONSTRUCTORS AS THEY WILL BE SKIPPED WHILE MERGE
 
   @Override
-  public void initializeTCObject(final ObjectID id, final TCClass clazz, final boolean isNewObject, ClientObjectManager objectManager) {
+  public void initializeTCObject(final ObjectID id, final TCClass clazz, final boolean isNewObject) {
     if (oid != null) { throw new AssertionError("Old oid=" + oid + " id=" + id); }
     oid = id;
     tcClazz = clazz;
     isNew = isNewObject;
-    this.objectManager = objectManager;
   }
 
   @Override
@@ -74,8 +72,7 @@ public class TCObjectSelfImpl implements TCObjectSelf {
     return oid;
   }
 
-  @Override
-  public TCClass getTCClass() {
+  protected TCClass getTCClass() {
     if (tcClazz == null) throw new AssertionError("getTCClass() called before initialization for "
                                                   + this.getClass().getName());
     return tcClazz;
@@ -124,7 +121,7 @@ public class TCObjectSelfImpl implements TCObjectSelf {
 
   @Override
   public void logicalInvoke(int method, String methodName, Object[] parameters) {
-    objectManager.getTransactionManager().logicalInvoke(this, method, methodName, parameters);
+    tcClazz.getObjectManager().getTransactionManager().logicalInvoke(this, method, methodName, parameters);
   }
 
   @Override
@@ -334,4 +331,33 @@ public class TCObjectSelfImpl implements TCObjectSelf {
     return true;
   }
 
+  @Override
+  public String getExtendingClassName() {
+    return getTCClass().getExtendingClassName();
+  }
+
+  @Override
+  public String getClassName() {
+    return getTCClass().getName();
+  }
+
+  @Override
+  public Class<?> getPeerClass() {
+    return getTCClass().getPeerClass();
+  }
+
+  @Override
+  public boolean isIndexed() {
+    return getTCClass().isIndexed();
+  }
+
+  @Override
+  public boolean isLogical() {
+    return getTCClass().isLogical();
+  }
+
+  @Override
+  public boolean isEnum() {
+    return getTCClass().isEnum();
+  }
 }

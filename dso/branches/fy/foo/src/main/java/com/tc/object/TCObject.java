@@ -39,11 +39,6 @@ public interface TCObject extends Cacheable {
   public Object getPeerObject();
 
   /**
-   * @return The TCClass for this TCObject. The TCClass is a peer of the Class of the peer Object.
-   */
-  public TCClass getTCClass();
-
-  /**
    * Get an object to lock on to modify this object.
    * 
    * @return The lock object
@@ -299,4 +294,15 @@ public interface TCObject extends Cacheable {
   @Override
   boolean recentlyAccessed();
 
+  public String getExtendingClassName();
+
+  public String getClassName();
+
+  public Class<?> getPeerClass();
+  
+  public boolean isIndexed();
+
+  public boolean isLogical();
+
+  public boolean isEnum();
 }

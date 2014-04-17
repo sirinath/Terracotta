@@ -47,14 +47,6 @@ public class MockTCObjectServerMap implements TCObjectServerMap<Object> {
   }
 
   @Override
-  public TCClass getTCClass() {
-    if(true) {
-      throw new ImplementMe();
-      }
-    return null;
-  }
-
-  @Override
   public Object getResolveLock() {
     if(true) {
       throw new ImplementMe();
@@ -541,4 +533,33 @@ public class MockTCObjectServerMap implements TCObjectServerMap<Object> {
 
   }
 
+  @Override
+  public String getExtendingClassName() {
+    throw new ImplementMe();
+  }
+
+  @Override
+  public String getClassName() {
+    throw new ImplementMe();
+  }
+
+  @Override
+  public Class<?> getPeerClass() {
+    throw new ImplementMe();
+  }
+
+  @Override
+  public boolean isIndexed() {
+    throw new ImplementMe();
+  }
+
+  @Override
+  public boolean isLogical() {
+    throw new ImplementMe();
+  }
+
+  @Override
+  public boolean isEnum() {
+    throw new ImplementMe();
+  }
 }
