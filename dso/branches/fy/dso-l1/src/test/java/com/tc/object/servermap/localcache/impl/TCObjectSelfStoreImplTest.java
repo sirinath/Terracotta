@@ -3,7 +3,6 @@
  */
 package com.tc.object.servermap.localcache.impl;
 
-import com.tc.object.ClientObjectManager;
 import org.mockito.Mockito;
 
 import com.tc.object.ObjectID;
@@ -27,7 +26,7 @@ public class TCObjectSelfStoreImplTest extends TCTestCase {
 
     final TCObjectSelfStore store = new TCObjectSelfStoreImpl(dummyCacheMap);
     TCObjectSelfImpl tcObjectSelfImpl = new TCObjectSelfImpl();
-    tcObjectSelfImpl.initializeTCObject(new ObjectID(1), Mockito.mock(TCClass.class), true, Mockito.mock(ClientObjectManager.class));
+    tcObjectSelfImpl.initializeTCObject(new ObjectID(1), Mockito.mock(TCClass.class), true);
     final TCObjectSelfCallback selfCallback = Mockito.mock(TCObjectSelfCallback.class);
     store.initializeTCObjectSelfStore(selfCallback);
     store.addTCObjectSelf(Mockito.mock(L1ServerMapLocalCacheStore.class),

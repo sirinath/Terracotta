@@ -19,8 +19,8 @@ import java.util.Map.Entry;
 public class TCObjectPhysical extends TCObjectImpl {
   private Map references = null;
 
-  public TCObjectPhysical(ObjectID id, Object peer, TCClass tcc, boolean isNew, ClientObjectManager objectManager) {
-    super(id, peer, tcc, isNew, objectManager);
+  public TCObjectPhysical(ObjectID id, Object peer, TCClass tcc, boolean isNew) {
+    super(id, peer, tcc, isNew);
   }
 
   private Map getReferences() {
@@ -183,7 +183,7 @@ public class TCObjectPhysical extends TCObjectImpl {
 
   @Override
   public void unresolveReference(String fieldName) {
-    TCField field = tcClazz.getField(fieldName);
+    TCField field = getTCClass().getField(fieldName);
     if (field == null) { throw new IllegalArgumentException("No such field: " + fieldName); }
     if (!field.canBeReference()) return;
 

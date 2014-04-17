@@ -9,7 +9,7 @@ import java.io.ObjectOutput;
 
 public interface TCObjectSelf extends TCObject {
 
-  public void initializeTCObject(final ObjectID id, final TCClass clazz, final boolean isNew, ClientObjectManager objectManager);
+  public void initializeTCObject(final ObjectID id, final TCClass clazz, final boolean isNew);
 
   public void serialize(ObjectOutput out) throws IOException;
 
