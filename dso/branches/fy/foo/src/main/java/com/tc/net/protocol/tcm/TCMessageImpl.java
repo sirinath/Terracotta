@@ -14,11 +14,13 @@ import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockIDSerializer;
 import com.tc.object.metadata.NVPairSerializer;
+import com.tc.util.AbstractIdentifier;
 import com.tc.util.Assert;
 import com.tc.util.concurrent.SetOnceFlag;
 import com.terracottatech.search.NVPair;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * @author teck
@@ -351,6 +353,12 @@ public abstract class TCMessageImpl extends AbstractTCNetworkMessage implements 
     out.write(name);
     out.writeInt(bytes.length);
     out.write(bytes);
+  }
+
+  protected void putNVPair(final byte name, final AbstractIdentifier identifier) {
+    nvCount++;
+    out.write(name);
+    out.writeLong(identifier.toLong());
   }
 
   public ChannelID getChannelID() {

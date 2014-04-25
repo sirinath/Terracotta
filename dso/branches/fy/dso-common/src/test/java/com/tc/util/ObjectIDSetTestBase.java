@@ -3,13 +3,16 @@
  */
 package com.tc.util;
 
+import org.junit.Test;
+
 import com.tc.bytes.TCByteBuffer;
 import com.tc.exception.TCRuntimeException;
+import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferInputStream;
+import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.object.ObjectID;
 import com.tc.test.TCTestCase;
-import com.tc.util.ObjectIDSet.ObjectIDSetType;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -26,44 +29,20 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-public class ObjectIDSetTest extends TCTestCase {
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-//  ObjectIDSet set;
-//
-//  public void testLargeLoad() throws Exception {
-//    set = new ObjectIDSet(ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
-//    Random r = new Random();
-//    long start = System.currentTimeMillis();
-//    long oid = 0;
-//    while (System.currentTimeMillis() - start < 600000) {
-//      long loadStart = System.currentTimeMillis();
-//      long iterationStart = oid;
-//      for (long l = 0; l < 1000000000L; l++) {
-//        set.add(new ObjectID(oid++));
-//      }
-//      System.out.println("Load took " + (System.currentTimeMillis() - loadStart) + "ms");
-//      for (long l = 0; l < 1000000L; l++) {
-//        long old = Math.abs(r.nextLong() % (oid - iterationStart)) + iterationStart;
-//        set.remove(new ObjectID(old));
-//        set.add(new ObjectID(oid++));
-//      }
-//      while (iterationStart < oid) {
-//        set.remove(new ObjectID(iterationStart++));
-//      }
-//    }
-//
-//    for (int i = 0; i < 12; i++) {
-//      java.awt.Toolkit.getDefaultToolkit().beep();
-//      Thread.sleep(250);
-//    }
-//    System.out.println("Take a dump");
-//    Thread.sleep(180000);
-//  }
+public abstract class ObjectIDSetTestBase {
 
+  protected abstract ObjectIDSet create();
+
+  protected abstract ObjectIDSet create(Collection<ObjectID> copy);
+
+  @Test
   public void testContain() {
-    final ObjectIDSet bitSetBasedObjectIDSet = new ObjectIDSet(ObjectIDSetType.BITSET_BASED_SET);
-    final ObjectIDSet expandingBitSetBasedObjectIDSet = new ObjectIDSet(ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
-    final ObjectIDSet rangeBasedObjectIDSet = new ObjectIDSet(ObjectIDSetType.RANGE_BASED_SET);
+    final ObjectIDSet set = create();
     final HashSet<ObjectID> hashSet = new HashSet<ObjectID>();
 
     final SecureRandom sr = new SecureRandom();
@@ -73,21 +52,18 @@ public class ObjectIDSetTest extends TCTestCase {
 
     for (int i = 0; i < 100000; i++) {
       final ObjectID oid = new ObjectID(r.nextLong());
-      bitSetBasedObjectIDSet.add(oid);
-      rangeBasedObjectIDSet.add(oid);
-      expandingBitSetBasedObjectIDSet.add(oid);
+      set.add(oid);
       hashSet.add(oid);
     }
 
     for (final ObjectID oid : hashSet) {
-      Assert.assertTrue(bitSetBasedObjectIDSet.contains(oid));
-      Assert.assertTrue(rangeBasedObjectIDSet.contains(oid));
-      Assert.assertTrue(expandingBitSetBasedObjectIDSet.contains(oid));
+      Assert.assertTrue(set.contains(oid));
     }
   }
 
+  @Test
   public void testFailingAddAll() {
-    ObjectIDSet oidSet1 = new ObjectIDSet();
+    ObjectIDSet oidSet1 = create();
     HashSet hashSet = new HashSet();
     long failedIDs[] = new long[] { 1884, 1371, 595, 440, 730, 1382, 1781, 217, 1449, 1043, 1556, 1679, 347, 860, 1020,
         1619, 1801, 1146, 769, 19, 532, 655, 692, 1268, 1793, 1533, 1616, 1702, 1241, 1754, 633, 1192, 166, 1312, 179,
@@ -122,7 +98,7 @@ public class ObjectIDSetTest extends TCTestCase {
     Assert.assertEquals(hashSet.size(), oidSet1.size());
     Assert.assertEquals(failedIDs.length, oidSet1.size());
 
-    ObjectIDSet oidSet2 = new ObjectIDSet();
+    ObjectIDSet oidSet2 = create();
     oidSet2.add(new ObjectID(410, 1));
 
     boolean added = oidSet1.addAll(oidSet2);
@@ -134,57 +110,64 @@ public class ObjectIDSetTest extends TCTestCase {
     Assert.assertEquals(hashSet, oidSet1);
   }
 
-  public void testFailingAddAll2() {
-    long thisIDs[] = new long[] { 72057594037928192l,
-        parseLong("10000000000000000000000000000000000000000000000000000000", 2), 72057594037928768l,
-        parseLong("10", 2), 72057594037929216l, Long.parseLong("10000", 2), 72057594037929600l,
-        parseLong("1000000000000000000000000000000", 2) };
-    long otherIDs[] = new long[] { 72057594037927936l,
-        parseLong("1111000011110000101101001111001011110000111100101101001011011", 2), 72057594037928000l,
-        parseLong("1111000010110100101001011011010010101101100001111000111100001111", 2), 72057594037928064l,
-        parseLong("101101101111001010010110110101101001000111010011111000011110000", 2), 72057594037928128l,
-        parseLong("1010010110100100000111100001111001011010000111100111101001011010", 2), 72057594037928192l,
-        parseLong("1111000001110001011000000110000111100001111010011110000111100101", 2), 72057594037928256l,
-        parseLong("111100011110010110100000111101011011010110101111000101011000", 2), 72057594037928320l,
-        parseLong("1010011110000110100001011010011010110110101101010001111010110101", 2), 72057594037928384l,
-        parseLong("1111001011110010110100101101111100001111000011110010110100001", 2), 72057594037928448l,
-        parseLong("10010110100100000011010010110010111100001111010011010010110100", 2), 72057594037928512l,
-        parseLong("100101001011011111000010100101110001111000011110111101000011111", 2), 72057594037928576l,
-        parseLong("1111000011110010101101001101010011000000111000101101001111110000", 2), 72057594037928640l,
-        parseLong("111100001111010010110100101100101111001001001011110010111100", 2), 72057594037928704l,
-        parseLong("101101111111010111000001110000110000010110000101101001111010011", 2), 72057594037928768l,
-        parseLong("1010010000001110001111100011110001111001101101011010011010010100", 2), 72057594037928832l,
-        parseLong("111100001011000010110100111100101101000011110000110101101001", 2), 72057594037928896l,
-        parseLong("11110010111100101101001011010011010000111100001111010010010011", 2), 72057594037928960l,
-        parseLong("1111000011110000111110000111100000111011010110110100101101001010", 2), 72057594037929024l,
-        parseLong("1000111100001111000111100001111111000010101101001011011010110100", 2), 72057594037929088l,
-        parseLong("111100100100101101001011000011111100001111010011010010111100001", 2), 72057594037929152l,
-        parseLong("1101001001010110010110100001101110000110100101101001111000011110", 2), 72057594037929216l,
-        parseLong("10110110101101100011111000111111100011110000011010010111100100", 2), 72057594037929280l,
-        parseLong("111100101111001111110010111000001111000001111010100100000111001", 2), 72057594037929344l,
-        parseLong("1000011110100111100001101101101010010110100101100001011010010110", 2), 72057594037929408l,
-        parseLong("110100100101001111011010010100101101001011010011111100001101001", 2), 72057594037929472l,
-        parseLong("1111100001111001111100001111000010010110101101100111011010010101", 2), 72057594037929536l,
-        parseLong("11110100101101000111100011110100101001011010011000111101101000", 2), 72057594037929600l,
-        parseLong("1101000011010010111100001111000010110111110000111101001111000011", 2), 72057594037929664l,
-        parseLong("111100000111101101001000010010110101101001111010010111100101100", 2), 72057594037929728l,
-        parseLong("1000011100000111010110110101101101011011110010011100001110000010", 2), 72057594037929792l,
-        parseLong("1101001011010000111100001101001011010010101101001011100001111001", 2), 72057594037929856l,
-        parseLong("10110101001111010010110100101101001011010010110100100100101100", 2), 72057594037929920l,
-        parseLong("1111000011010011", 2) };
-
-    ObjectIDSet oidSet = createBitSetObjectFrom(thisIDs);
-    ObjectIDSet other = createBitSetObjectFrom(otherIDs);
-
-    HashSet oidHashSet = new HashSet(oidSet);
-    HashSet otherHashSet = new HashSet(other);
-
-    oidSet.addAll(other);
-    oidHashSet.addAll(otherHashSet);
-
-    Assert.assertEquals(oidSet.size(), oidHashSet.size());
-    Assert.assertEquals(oidSet, oidHashSet);
-  }
+//  public void testFailingAddAll2() {
+//    TCByteBufferOutput thisIDs = new TCByteBufferOutputStream();
+//    thisIDs.writeInt(4);
+//    thisIDs.writeLong(72057594037928192l);
+//    thisIDs.writeInt(1);
+//    thisIDs.writeLong(parseLong("10000000000000000000000000000000000000000000000000000000", 2));
+//    thisIDs.writeLong(72057594037928768l);
+//
+//    long thisIDs[] = new long[] { 72057594037928192l,
+//        parseLong("10000000000000000000000000000000000000000000000000000000", 2), 72057594037928768l,
+//        parseLong("10", 2), 72057594037929216l, Long.parseLong("10000", 2), 72057594037929600l,
+//        parseLong("1000000000000000000000000000000", 2) };
+//    long otherIDs[] = new long[] { 72057594037927936l,
+//        parseLong("1111000011110000101101001111001011110000111100101101001011011", 2), 72057594037928000l,
+//        parseLong("1111000010110100101001011011010010101101100001111000111100001111", 2), 72057594037928064l,
+//        parseLong("101101101111001010010110110101101001000111010011111000011110000", 2), 72057594037928128l,
+//        parseLong("1010010110100100000111100001111001011010000111100111101001011010", 2), 72057594037928192l,
+//        parseLong("1111000001110001011000000110000111100001111010011110000111100101", 2), 72057594037928256l,
+//        parseLong("111100011110010110100000111101011011010110101111000101011000", 2), 72057594037928320l,
+//        parseLong("1010011110000110100001011010011010110110101101010001111010110101", 2), 72057594037928384l,
+//        parseLong("1111001011110010110100101101111100001111000011110010110100001", 2), 72057594037928448l,
+//        parseLong("10010110100100000011010010110010111100001111010011010010110100", 2), 72057594037928512l,
+//        parseLong("100101001011011111000010100101110001111000011110111101000011111", 2), 72057594037928576l,
+//        parseLong("1111000011110010101101001101010011000000111000101101001111110000", 2), 72057594037928640l,
+//        parseLong("111100001111010010110100101100101111001001001011110010111100", 2), 72057594037928704l,
+//        parseLong("101101111111010111000001110000110000010110000101101001111010011", 2), 72057594037928768l,
+//        parseLong("1010010000001110001111100011110001111001101101011010011010010100", 2), 72057594037928832l,
+//        parseLong("111100001011000010110100111100101101000011110000110101101001", 2), 72057594037928896l,
+//        parseLong("11110010111100101101001011010011010000111100001111010010010011", 2), 72057594037928960l,
+//        parseLong("1111000011110000111110000111100000111011010110110100101101001010", 2), 72057594037929024l,
+//        parseLong("1000111100001111000111100001111111000010101101001011011010110100", 2), 72057594037929088l,
+//        parseLong("111100100100101101001011000011111100001111010011010010111100001", 2), 72057594037929152l,
+//        parseLong("1101001001010110010110100001101110000110100101101001111000011110", 2), 72057594037929216l,
+//        parseLong("10110110101101100011111000111111100011110000011010010111100100", 2), 72057594037929280l,
+//        parseLong("111100101111001111110010111000001111000001111010100100000111001", 2), 72057594037929344l,
+//        parseLong("1000011110100111100001101101101010010110100101100001011010010110", 2), 72057594037929408l,
+//        parseLong("110100100101001111011010010100101101001011010011111100001101001", 2), 72057594037929472l,
+//        parseLong("1111100001111001111100001111000010010110101101100111011010010101", 2), 72057594037929536l,
+//        parseLong("11110100101101000111100011110100101001011010011000111101101000", 2), 72057594037929600l,
+//        parseLong("1101000011010010111100001111000010110111110000111101001111000011", 2), 72057594037929664l,
+//        parseLong("111100000111101101001000010010110101101001111010010111100101100", 2), 72057594037929728l,
+//        parseLong("1000011100000111010110110101101101011011110010011100001110000010", 2), 72057594037929792l,
+//        parseLong("1101001011010000111100001101001011010010101101001011100001111001", 2), 72057594037929856l,
+//        parseLong("10110101001111010010110100101101001011010010110100100100101100", 2), 72057594037929920l,
+//        parseLong("1111000011010011", 2) };
+//
+//    ObjectIDSet oidSet = createBitSetObjectFrom(thisIDs);
+//    ObjectIDSet other = createBitSetObjectFrom(otherIDs);
+//
+//    HashSet oidHashSet = new HashSet(oidSet);
+//    HashSet otherHashSet = new HashSet(other);
+//
+//    oidSet.addAll(other);
+//    oidHashSet.addAll(otherHashSet);
+//
+//    Assert.assertEquals(oidSet.size(), oidHashSet.size());
+//    Assert.assertEquals(oidSet, oidHashSet);
+//  }
 
   private long parseLong(String longStr, int base) {
     if (longStr.length() < 64) {
@@ -199,11 +182,10 @@ public class ObjectIDSetTest extends TCTestCase {
   }
 
   private ObjectIDSet createBitSetObjectFrom(long[] ids) {
-    ObjectIDSet oidSet = new ObjectIDSet(ObjectIDSetType.BITSET_BASED_SET);
+    ObjectIDSet oidSet = new BitSetObjectIDSet();
     assertEquals(0, ids.length % 2);
     int size = getSizeFromBitSetIDs(ids);
     TCByteBufferOutputStream stream = new TCByteBufferOutputStream();
-    stream.writeInt(ObjectIDSetType.BITSET_BASED_SET.ordinal());
     stream.writeInt(size);
     for (long id : ids) {
       stream.writeLong(id);
@@ -227,10 +209,9 @@ public class ObjectIDSetTest extends TCTestCase {
     return size;
   }
 
+  @Test
   public void testIterator() {
-    final ObjectIDSet bitSetBasedObjectIDSet = new ObjectIDSet(ObjectIDSetType.BITSET_BASED_SET);
-    final ObjectIDSet expandingBitSetBasedObjectIDSet = new ObjectIDSet(ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
-    final ObjectIDSet rangeBasedObjectIDSet = new ObjectIDSet(ObjectIDSetType.RANGE_BASED_SET);
+    final ObjectIDSet set = create();
     final TreeSet<ObjectID> treeSet = new TreeSet<ObjectID>();
 
     final SecureRandom sr = new SecureRandom();
@@ -240,37 +221,25 @@ public class ObjectIDSetTest extends TCTestCase {
 
     for (int i = 0; i < 100000; i++) {
       final ObjectID oid = new ObjectID(r.nextLong());
-      bitSetBasedObjectIDSet.add(oid);
-      rangeBasedObjectIDSet.add(oid);
-      expandingBitSetBasedObjectIDSet.add(oid);
+      set.add(oid);
       treeSet.add(oid);
     }
 
-    Assert.assertEquals(treeSet.size(), bitSetBasedObjectIDSet.size());
-    Assert.assertEquals(treeSet.size(), expandingBitSetBasedObjectIDSet.size());
-    Assert.assertEquals(treeSet.size(), rangeBasedObjectIDSet.size());
+    Assert.assertEquals(treeSet.size(), set.size());
 
     final Iterator<ObjectID> tsIterator = treeSet.iterator();
-    final Iterator<ObjectID> bitSetIterator = bitSetBasedObjectIDSet.iterator();
-    final Iterator<ObjectID> expandingBitSetIterator = expandingBitSetBasedObjectIDSet.iterator();
-    final Iterator<ObjectID> rangeIterator = rangeBasedObjectIDSet.iterator();
+    final Iterator<ObjectID> expandingBitSetIterator = set.iterator();
 
     while (tsIterator.hasNext()) {
       final ObjectID oid = tsIterator.next();
-      Assert.assertEquals(oid.toLong(), bitSetIterator.next().toLong());
-      Assert.assertEquals(oid.toLong(), rangeIterator.next().toLong());
       Assert.assertEquals(oid.toLong(), expandingBitSetIterator.next().toLong());
     }
 
-    Assert.assertFalse(bitSetIterator.hasNext());
     Assert.assertFalse(expandingBitSetIterator.hasNext());
-    Assert.assertFalse(rangeIterator.hasNext());
   }
 
   public void testNegativeIds() {
-    final ObjectIDSet bitSetBasedObjectIDSet = new ObjectIDSet(ObjectIDSetType.BITSET_BASED_SET);
-    final ObjectIDSet expandingBitSetObjectIDSet = new ObjectIDSet(ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
-    final ObjectIDSet rangeBasedObjectIDSet = new ObjectIDSet(ObjectIDSetType.RANGE_BASED_SET);
+    final ObjectIDSet set = create();
     final TreeSet<ObjectID> treeSet = new TreeSet<ObjectID>();
 
     final SecureRandom sr = new SecureRandom();
@@ -280,39 +249,29 @@ public class ObjectIDSetTest extends TCTestCase {
 
     for (int i = 0; i < 100000; i++) {
       final ObjectID oid = new ObjectID(r.nextLong());
-      bitSetBasedObjectIDSet.add(oid);
-      rangeBasedObjectIDSet.add(oid);
-      expandingBitSetObjectIDSet.add(oid);
+      set.add(oid);
       treeSet.add(oid);
     }
 
-    Assert.assertEquals(treeSet, rangeBasedObjectIDSet);
-    Assert.assertEquals(treeSet, expandingBitSetObjectIDSet);
-    Assert.assertEquals(treeSet, bitSetBasedObjectIDSet);
+    Assert.assertEquals(treeSet, set);
 
     for (int i = 0; i < 100000; i++) {
       final ObjectID oid = new ObjectID(r.nextLong());
-      bitSetBasedObjectIDSet.remove(oid);
-      rangeBasedObjectIDSet.remove(oid);
-      expandingBitSetObjectIDSet.remove(oid);
+      set.remove(oid);
       treeSet.remove(oid);
     }
 
-    Assert.assertEquals(treeSet, bitSetBasedObjectIDSet);
-    Assert.assertEquals(treeSet, expandingBitSetObjectIDSet);
-    Assert.assertEquals(treeSet, rangeBasedObjectIDSet);
+    Assert.assertEquals(treeSet, set);
 
     for (int i = 0; i < 1000000; i++) {
       final ObjectID oid = new ObjectID(r.nextLong());
-      Assert.assertEquals(treeSet.contains(oid), bitSetBasedObjectIDSet.contains(oid));
-      Assert.assertEquals(treeSet.contains(oid), expandingBitSetObjectIDSet.contains(oid));
+      Assert.assertEquals(treeSet.contains(oid), set.contains(oid));
     }
   }
 
+  @Test
   public void testFirstAndLast() {
-    final ObjectIDSet bitSetBasedObjectIDSet = new ObjectIDSet(ObjectIDSetType.BITSET_BASED_SET);
-    final ObjectIDSet expandingBitSetBasedObjectIDSet = new ObjectIDSet(ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
-    final ObjectIDSet rangeBasedObjectIDSet = new ObjectIDSet(ObjectIDSetType.RANGE_BASED_SET);
+    final ObjectIDSet set = create();
     final TreeSet<ObjectID> treeSet = new TreeSet<ObjectID>();
 
     final SecureRandom sr = new SecureRandom();
@@ -322,44 +281,32 @@ public class ObjectIDSetTest extends TCTestCase {
 
     for (int i = 0; i < 10000; i++) {
       final ObjectID oid = new ObjectID(r.nextLong());
-      bitSetBasedObjectIDSet.add(oid);
-      rangeBasedObjectIDSet.add(oid);
-      expandingBitSetBasedObjectIDSet.add(oid);
+      set.add(oid);
       treeSet.add(oid);
     }
 
-    Assert.assertEquals(treeSet.first(), bitSetBasedObjectIDSet.first());
-    Assert.assertEquals(treeSet.first(), rangeBasedObjectIDSet.first());
-    Assert.assertEquals(treeSet.first(), expandingBitSetBasedObjectIDSet.first());
+    Assert.assertEquals(treeSet.first(), set.first());
 
-    Assert.assertEquals(treeSet.last(), bitSetBasedObjectIDSet.last());
-    Assert.assertEquals(treeSet.last(), rangeBasedObjectIDSet.last());
-    Assert.assertEquals(treeSet.last(), expandingBitSetBasedObjectIDSet.last());
+    Assert.assertEquals(treeSet.last(), set.last());
   }
 
-  public void testBitSetRemove() {
-    removeTest(new ObjectIDSet(ObjectIDSetType.BITSET_BASED_SET));
-  }
-
-  public void testExpandingBitSetRemove() {
-    removeTest(new ObjectIDSet(ObjectIDSetType.EXPANDING_BITSET_BASED_SET));
-  }
-
-  private void removeTest(ObjectIDSet bitSetBasedObjectIDSet) {
-    bitSetBasedObjectIDSet.add(new ObjectID(10));
-    bitSetBasedObjectIDSet.add(new ObjectID(14));
-    bitSetBasedObjectIDSet.add(new ObjectID(1));
-    bitSetBasedObjectIDSet.add(new ObjectID(18));
-    bitSetBasedObjectIDSet.add(new ObjectID(75));
-    bitSetBasedObjectIDSet.add(new ObjectID(68));
-    bitSetBasedObjectIDSet.add(new ObjectID(175));
-    bitSetBasedObjectIDSet.add(new ObjectID(205));
+  @Test
+  public void testRemove() {
+    ObjectIDSet set = create();
+    set.add(new ObjectID(10));
+    set.add(new ObjectID(14));
+    set.add(new ObjectID(1));
+    set.add(new ObjectID(18));
+    set.add(new ObjectID(75));
+    set.add(new ObjectID(68));
+    set.add(new ObjectID(175));
+    set.add(new ObjectID(205));
 
     // data : [ Range(0,1000100010000000010) Range(64,100000010000)
     // Range(128,100000000000000000000000000000000000000000000000) Range(192,10000000000000)]
     // ids: 1, 10, 14, 18, 68, 75, 175. 205
 
-    final Iterator<ObjectID> iterator = bitSetBasedObjectIDSet.iterator();
+    final Iterator<ObjectID> iterator = set.iterator();
     iterateElements(iterator, 4);
     iterator.remove();
     Assert.assertEquals(68, iterator.next().toLong());
@@ -373,8 +320,7 @@ public class ObjectIDSetTest extends TCTestCase {
 
     // testing random removes
 
-    bitSetBasedObjectIDSet = new ObjectIDSet(ObjectIDSetType.BITSET_BASED_SET);
-    final ObjectIDSet rangBasedOidSet = new ObjectIDSet(ObjectIDSetType.RANGE_BASED_SET);
+    set = new BitSetObjectIDSet();
     final HashSet<ObjectID> hashSet = new HashSet<ObjectID>();
 
     final SecureRandom sr = new SecureRandom();
@@ -384,122 +330,36 @@ public class ObjectIDSetTest extends TCTestCase {
 
     for (int i = 0; i < 10000; i++) {
       final ObjectID oid = new ObjectID(r.nextLong());
-      bitSetBasedObjectIDSet.add(oid);
-      rangBasedOidSet.add(oid);
+      set.add(oid);
       hashSet.add(oid);
     }
 
-    Assert.assertEquals(hashSet, bitSetBasedObjectIDSet);
-    Assert.assertEquals(hashSet, rangBasedOidSet);
+    Assert.assertEquals(hashSet, set);
 
     for (int i = 0; i < 10000; i++) {
       final ObjectID oid = new ObjectID(r.nextLong());
-      bitSetBasedObjectIDSet.remove(oid);
-      rangBasedOidSet.remove(oid);
+      set.remove(oid);
       hashSet.remove(oid);
     }
 
-    Assert.assertEquals(hashSet, bitSetBasedObjectIDSet);
-    Assert.assertEquals(hashSet, rangBasedOidSet);
+    Assert.assertEquals(hashSet, set);
   }
 
-  public void testPerformance() {
-    long seed = new SecureRandom().nextLong();
-    perfTest(ObjectIDSetType.BITSET_BASED_SET, seed);
-    // The randomness doesn't work so well for the expanding bitset. It's also kind of unrealistic since objectids are generally allocated in order.
-//    perfTest(ObjectIDSetType.EXPANDING_BITSET_BASED_SET, seed);
-    perfTest(ObjectIDSetType.RANGE_BASED_SET, seed);
-  }
-
-  private void perfTest(ObjectIDSetType type, long seed) {
-    final Random r = new Random(seed);
-    ObjectIDSet set = new ObjectIDSet(type);
-    Set<ObjectID> hashSet = new HashSet<ObjectID>();
-
-    for (int i = 0; i < 800000; i++) {
-      final long l = r.nextLong();
-      final ObjectID id = new ObjectID(l);
-      hashSet.add(id);
-    }
-
-    final long t1 = System.currentTimeMillis();
-    for (final ObjectID objectID : hashSet) {
-      set.add(objectID);
-    }
-    final long t2 = System.currentTimeMillis();
-
-    for (final ObjectID objectID : hashSet) {
-      set.contains(objectID);
-    }
-    final long t3 = System.currentTimeMillis();
-
-    for (final ObjectID objectID : hashSet) {
-      set.remove(objectID);
-    }
-    final long t4 = System.currentTimeMillis();
-
-    final Set<ObjectID> hashSet2 = new HashSet<ObjectID>();
-    for (int i = 0; i < 800000; i++) {
-      hashSet2.add(new ObjectID(r.nextLong()));
-    }
-
-    final long t5 = System.currentTimeMillis();
-    set.addAll(hashSet);
-    final long t6 = System.currentTimeMillis();
-    set.removeAll(hashSet);
-    final long t7 = System.currentTimeMillis();
-
-    for (int i = 0; i < 800000; i++) {
-      set.add(new ObjectID(r.nextLong()));
-    }
-
-    final long t8 = System.currentTimeMillis();
-    for (Iterator<ObjectID> i = set.iterator(); i.hasNext(); ) {
-      i.next();
-    }
-    final long t9 = System.currentTimeMillis();
-    int j = 0;
-    for (Iterator<ObjectID> i = set.iterator(); i.hasNext(); ) {
-      i.next();
-      if (j++ % 2 == 0) {
-        i.remove();
-      }
-    }
-    final long t10 = System.currentTimeMillis();
-
-    System.out.println("Times for ObjectIDSet type " + type);
-    System.out.println("add-> " + (t2 - t1) + " contains->"
-                       + (t3 - t2) + " remove->" + (t4 - t3));
-    System.out.println("addAll-> " + (t6 - t5) + " removeAll->"
-                       + (t7 - t6));
-    System.out.println("iteration->" + (t9 - t8) + " iterator remove->" + (t10 - t9));
-  }
-
-  public Set createContinuousRangeBasedSet() {
-    return new ObjectIDSet();
-  }
-
-  public Set create(final Collection c, final ObjectIDSetType objectIDSetType) {
-    return new ObjectIDSet(c, objectIDSetType);
-  }
-
+  @Test
   public void testRemoveAll() {
     for (int i = 0; i < 10; i++) {
       long seed = new SecureRandom().nextLong();
       System.out.println("Testing with seed " + seed);
-      timeAndTestRemoveAll(ObjectIDSetType.BITSET_BASED_SET, seed);
-      timeAndTestRemoveAll(ObjectIDSetType.EXPANDING_BITSET_BASED_SET, seed);
-      timeAndTestRemoveAll(ObjectIDSetType.RANGE_BASED_SET, seed);
+      timeAndTestRemoveAll(seed);
     }
-
   }
 
-  private void timeAndTestRemoveAll(ObjectIDSetType type, long seed) {
+  private void timeAndTestRemoveAll(long seed) {
     final TreeSet expected = new TreeSet();
     final TreeSet big = new TreeSet();
     final TreeSet small = new TreeSet();
 
-    ObjectIDSet set = new ObjectIDSet(type);
+    ObjectIDSet set = create();
     final Random r = new Random(seed);
 
     for (int i = 0; i < 1000000; i++) {
@@ -533,20 +393,19 @@ public class ObjectIDSetTest extends TCTestCase {
     final long t6 = System.currentTimeMillis();
     assertEquals(expected, set);
 
-    System.out.println("Time taken for removeAll "+ type + ":HashSet -> " + (t2 - t1) + ":"
+    System.out.println("Time taken for removeAll "+ set.getClass().getSimpleName() + ":HashSet -> " + (t2 - t1) + ":"
                        + (t3 - t2) + " millis  for small collection, " + (t5 - t4) + ":"
                        + (t6 - t5) + " millis for large collection");
   }
 
+  @Test
   public void testSortedSetObjectIDSet() throws Exception {
     final SecureRandom sr = new SecureRandom();
     final long seed = sr.nextLong();
     System.err.println("SORTED TEST : Seed for Random is " + seed);
     final Random r = new Random(seed);
     final TreeSet ts = new TreeSet();
-    final SortedSet oidsRangeBased = new ObjectIDSet(ObjectIDSetType.RANGE_BASED_SET);
-    final SortedSet expandingBitSetBased = new ObjectIDSet(ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
-    final SortedSet oidsBitSetBased = new ObjectIDSet(ObjectIDSetType.BITSET_BASED_SET);
+    final SortedSet expandingBitSetBased = create();
     for (int i = 0; i < 10000; i++) {
       final long l = r.nextLong();
       // if (l < 0) {
@@ -554,44 +413,33 @@ public class ObjectIDSetTest extends TCTestCase {
       // }
       final ObjectID id = new ObjectID(l);
       final boolean b1 = ts.add(id);
-      final boolean b2 = oidsRangeBased.add(id);
-      final boolean b3 = oidsBitSetBased.add(id);
       final boolean b4 = expandingBitSetBased.add(id);
-      assertEquals(b1, b2);
-      assertEquals(b1, b3);
       assertEquals(b1, b4);
-      assertEquals(ts.size(), oidsRangeBased.size());
-      assertEquals(ts.size(), oidsBitSetBased.size());
       assertEquals(ts.size(), expandingBitSetBased.size());
     }
 
     // verify sorted
     Iterator<ObjectID> i = ts.iterator();
-    Iterator<ObjectID> rangeIterator = oidsRangeBased.iterator();
-    Iterator<ObjectID> bitSetIterator = oidsBitSetBased.iterator();
     Iterator<ObjectID> expandingBitSetIterator = expandingBitSetBased.iterator();
     while (i.hasNext()) {
       ObjectID reference = i.next();
-      ObjectID oid1 = rangeIterator.next();
-      ObjectID oid2 = bitSetIterator.next();
       ObjectID oid3 = expandingBitSetIterator.next();
-      assertEquals(reference, oid1);
-      assertEquals(reference, oid2);
       assertEquals(reference, oid3);
     }
   }
 
-  public void basicTest(final int distRange, final int iterationCount, final ObjectIDSetType objectIDSetType) {
+  public void basicTest(final int distRange, final int iterationCount) {
     final long test_start = System.currentTimeMillis();
-    final Set s = new HashSet();
-    final Set small = new ObjectIDSet(objectIDSetType);
+    final Set<ObjectID> s = new HashSet<ObjectID>();
+    final Set<ObjectID> small = create();
     final String cname = small.getClass().getName();
     System.err.println("Running tests for " + cname + " distRange = " + distRange + " iterationCount = "
                        + iterationCount);
     assertTrue(small.isEmpty());
     assertTrue(small.size() == 0);
     final SecureRandom sr = new SecureRandom();
-    final long seed = sr.nextLong();
+//    final long seed = sr.nextLong();
+    long seed = 8320691879158973228L;
     System.err.println("Seed for Random is " + seed);
     final Random r = new Random(seed);
     for (int i = 0; i < iterationCount; i++) {
@@ -602,7 +450,7 @@ public class ObjectIDSetTest extends TCTestCase {
       assertEquals(s.size(), small.size());
     }
     final Iterator sit = small.iterator();
-    final List all = new ArrayList();
+    final List<ObjectID> all = new ArrayList<ObjectID>();
     all.addAll(s);
     while (sit.hasNext()) {
       final ObjectID i = (ObjectID) sit.next();
@@ -611,8 +459,8 @@ public class ObjectIDSetTest extends TCTestCase {
     Assert.eval(s.size() == 0);
 
     // test retain all
-    final Set odds = new HashSet();
-    final Set evens = new HashSet();
+    final Set<ObjectID> odds = new HashSet<ObjectID>();
+    final Set<ObjectID> evens = new HashSet<ObjectID>();
     for (int i = 0; i < all.size(); i++) {
       if (i % 2 == 0) {
         evens.add(all.get(i));
@@ -632,29 +480,29 @@ public class ObjectIDSetTest extends TCTestCase {
 
     // test new set creation (which uses cloning
     long start = System.currentTimeMillis();
-    final Set copy = create(all, objectIDSetType);
+    final Set<ObjectID> copy = create(all);
     System.err.println("Time to add all IDs from a collection to a new " + cname + " = "
                        + (System.currentTimeMillis() - start) + " ms");
     start = System.currentTimeMillis();
-    final Set clone = create(small, objectIDSetType);
+    final Set clone = create(small);
     System.err.println("Time to add all IDs from an ObjectIDSet to a new " + cname + " = "
                        + (System.currentTimeMillis() - start) + " ms");
 
     Collections.shuffle(all);
-    for (final Iterator i = all.iterator(); i.hasNext();) {
-      final ObjectID rid = (ObjectID) i.next();
+    for (final ObjectID rid : all) {
       Assert.eval(small.contains(rid));
       Assert.eval(clone.contains(rid));
       Assert.eval(copy.contains(rid));
       if (!small.remove(rid)) { throw new AssertionError("couldn't remove:" + rid); }
       if (small.contains(rid)) { throw new AssertionError(rid); }
-      if (!clone.remove(rid)) { throw new AssertionError("couldn't remove:" + rid); }
+      if (!clone.remove(rid)) {
+        throw new AssertionError("couldn't remove:" + rid);
+      }
       if (clone.contains(rid)) { throw new AssertionError(rid); }
       if (!copy.remove(rid)) { throw new AssertionError("couldn't remove:" + rid); }
       if (copy.contains(rid)) { throw new AssertionError(rid); }
     }
-    for (final Iterator i = all.iterator(); i.hasNext();) {
-      final ObjectID rid = (ObjectID) i.next();
+    for (final ObjectID rid : all) {
       Assert.eval(!small.contains(rid));
       if (small.remove(rid)) { throw new AssertionError("shouldn't have removed:" + rid); }
       if (small.contains(rid)) { throw new AssertionError(rid); }
@@ -671,17 +519,16 @@ public class ObjectIDSetTest extends TCTestCase {
                        + (System.currentTimeMillis() - test_start) + " ms");
   }
 
+  @Test
   public void testSerializationObjectIDSet2() throws Exception {
     for (int i = 0; i < 20; i++) {
-      final Set s = createRandomSetOfObjectIDs();
-      serializeAndVerify(s, ObjectIDSetType.RANGE_BASED_SET);
-      serializeAndVerify(s, ObjectIDSetType.BITSET_BASED_SET);
-      serializeAndVerify(s, ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
+      final Set<ObjectID> s = createRandomSetOfObjectIDs();
+      serializeAndVerify(s);
     }
   }
 
-  private void serializeAndVerify(final Set s, final ObjectIDSetType objectIDSetType) throws Exception {
-    final ObjectIDSet org = new ObjectIDSet(s, objectIDSetType);
+  private void serializeAndVerify(final Set<ObjectID> s) throws Exception {
+    final ObjectIDSet org = create(s);
     assertEquals(s, org);
 
     final ObjectIDSet ser = serializeAndRead(org);
@@ -694,7 +541,7 @@ public class ObjectIDSetTest extends TCTestCase {
     org.serializeTo(out);
     System.err.println("Written ObjectIDSet2 size : " + org.size());
     final TCByteBufferInputStream in = new TCByteBufferInputStream(out.toArray());
-    final ObjectIDSet oids = new ObjectIDSet();
+    final ObjectIDSet oids = create();
     oids.deserializeFrom(in);
     System.err.println("Read  ObjectIDSet2 size : " + oids.size());
     return oids;
@@ -713,6 +560,7 @@ public class ObjectIDSetTest extends TCTestCase {
     return s;
   }
 
+  @Test
   public void testObjectIDSet() {
 //    basicTest(100000, 100000, ObjectIDSetType.RANGE_BASED_SET);
 //    basicTest(500000, 100000, ObjectIDSetType.RANGE_BASED_SET);
@@ -722,58 +570,31 @@ public class ObjectIDSetTest extends TCTestCase {
 //    basicTest(500000, 100000, ObjectIDSetType.BITSET_BASED_SET);
 //    basicTest(100000, 1000000, ObjectIDSetType.BITSET_BASED_SET);
 
-    basicTest(100000, 100000, ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
-    basicTest(500000, 100000, ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
-    basicTest(100000, 1000000, ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
+    basicTest(100000, 100000);
+    basicTest(500000, 100000);
+    basicTest(100000, 1000000);
   }
 
+  @Test
   public void testObjectIDSetDump() {
-    final ObjectIDSet s1 = new ObjectIDSet(ObjectIDSetType.RANGE_BASED_SET);
-    final ObjectIDSet s2 = new ObjectIDSet(ObjectIDSetType.BITSET_BASED_SET);
-    final ObjectIDSet s3 = new ObjectIDSet(ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
-    System.err.println(" toString() : " + s1);
+    final ObjectIDSet set = create();
+
+    System.err.println(" toString() : " + set);
 
     for (int i = 0; i < 100; i++) {
-      s1.add(new ObjectID(i));
+      set.add(new ObjectID(i));
     }
-    System.err.println(" toString() : " + s1);
+    System.err.println(" toString() : " + set);
 
     for (int i = 0; i < 100; i += 2) {
-      s1.remove(new ObjectID(i));
+      set.remove(new ObjectID(i));
     }
-    System.err.println(" toString() : " + s1);
-
-    System.err.println(" toString() : " + s2);
-
-    for (int i = 0; i < 100; i++) {
-      s2.add(new ObjectID(i));
-    }
-    System.err.println(" toString() : " + s2);
-
-    for (int i = 0; i < 100; i += 2) {
-      s2.remove(new ObjectID(i));
-    }
-    System.err.println(" toString() : " + s2);
-
-    for (int i = 0; i < 100; i++) {
-      s3.add(new ObjectID(i));
-    }
-    System.err.println(" toString() : " + s3);
-
-    for (int i = 0; i < 100; i += 2) {
-      s3.remove(new ObjectID(i));
-    }
-    System.err.println(" toString() : " + s3);
-
+    System.err.println(" toString() : " + set);
   }
 
+  @Test
   public void testObjectIdSetConcurrentModification() {
-    concurrentModificationTest(new ObjectIDSet(ObjectIDSetType.RANGE_BASED_SET));
-    concurrentModificationTest(new ObjectIDSet(ObjectIDSetType.BITSET_BASED_SET));
-    concurrentModificationTest(new ObjectIDSet(ObjectIDSetType.EXPANDING_BITSET_BASED_SET));
-  }
-
-  private void concurrentModificationTest(final ObjectIDSet objIdSet) throws AssertionError {
+    ObjectIDSet objIdSet = create();
     int num = 0;
     for (num = 0; num < 50; num++) {
       objIdSet.add(new ObjectID(num));
@@ -821,14 +642,10 @@ public class ObjectIDSetTest extends TCTestCase {
     return itrCount;
   }
 
+  @Test
   public void testObjectIDSetIteratorFullRemove() {
-    oidSetIteratorFullRemoveTest(new ObjectIDSet(ObjectIDSetType.RANGE_BASED_SET));
-    oidSetIteratorFullRemoveTest(new ObjectIDSet(ObjectIDSetType.BITSET_BASED_SET));
-    oidSetIteratorFullRemoveTest(new ObjectIDSet(ObjectIDSetType.EXPANDING_BITSET_BASED_SET));
-  }
-
-  private void oidSetIteratorFullRemoveTest(final Set oidSet) {
-    final Set all = new TreeSet();
+    ObjectIDSet oidSet = create();
+    final Set<ObjectID> all = new TreeSet<ObjectID>();
     final SecureRandom sr = new SecureRandom();
     final long seed = sr.nextLong();
     System.err.println("Running iteratorRemoveTest for " + oidSet.getClass().getName() + " and seed is " + seed);
@@ -841,11 +658,10 @@ public class ObjectIDSetTest extends TCTestCase {
     }
 
     Assert.assertEquals(all.size(), oidSet.size());
-    for (final Iterator i = all.iterator(); i.hasNext();) {
-      final ObjectID rid = (ObjectID) i.next();
+    for (final ObjectID rid : all) {
       Assert.eval(oidSet.contains(rid));
-      for (final Iterator j = oidSet.iterator(); j.hasNext();) {
-        final ObjectID crid = (ObjectID) j.next();
+      for (final Iterator j = oidSet.iterator(); j.hasNext(); ) {
+        final ObjectID crid = (ObjectID)j.next();
         if (crid.equals(rid)) {
           j.remove();
           break;
@@ -855,13 +671,9 @@ public class ObjectIDSetTest extends TCTestCase {
     Assert.assertEquals(oidSet.size(), 0);
   }
 
+  @Test
   public void testObjectIDSetIteratorSparseRemove() {
-    oidSetIteratorSparseRemoveTest(new ObjectIDSet(ObjectIDSetType.RANGE_BASED_SET));
-    oidSetIteratorSparseRemoveTest(new ObjectIDSet(ObjectIDSetType.BITSET_BASED_SET));
-    oidSetIteratorSparseRemoveTest(new ObjectIDSet(ObjectIDSetType.EXPANDING_BITSET_BASED_SET));
-  }
-
-  private void oidSetIteratorSparseRemoveTest(final Set oidSet) {
+    ObjectIDSet oidSet = create();
     // TreeSet<ObjectID> ts = new TreeSet<ObjectID>();
     final SecureRandom sr = new SecureRandom();
     final long seed = sr.nextLong();
@@ -916,8 +728,9 @@ public class ObjectIDSetTest extends TCTestCase {
     assertEquals((visitedCount - removedCount), totalElements);
   }
 
+  @Test
   public void testObjectIDSetIteratorRemoveSpecailCases() {
-    final List longList = new ArrayList();
+    final List<ObjectID> longList = new ArrayList<ObjectID>();
     longList.add(new ObjectID(25));
     longList.add(new ObjectID(26));
     longList.add(new ObjectID(27));
@@ -952,17 +765,15 @@ public class ObjectIDSetTest extends TCTestCase {
 
     final int totalElements = longList.size() - 1;
 
-    oidSetIteratorRemoveSpecialCasesTest(totalElements, new ObjectIDSet(longList, ObjectIDSetType.RANGE_BASED_SET));
-    oidSetIteratorRemoveSpecialCasesTest(totalElements, new ObjectIDSet(longList, ObjectIDSetType.BITSET_BASED_SET));
-    oidSetIteratorRemoveSpecialCasesTest(totalElements, new ObjectIDSet(longList, ObjectIDSetType.EXPANDING_BITSET_BASED_SET));
+    oidSetIteratorRemoveSpecialCasesTest(totalElements, create(longList));
   }
 
-  private void oidSetIteratorRemoveSpecialCasesTest(final int totalElements, final Set objectIDSet)
+  private void oidSetIteratorRemoveSpecialCasesTest(final int totalElements, final Set<ObjectID> objectIDSet)
       throws AssertionError {
-    Iterator i = objectIDSet.iterator();
+    Iterator<ObjectID> i = objectIDSet.iterator();
     assertEquals(totalElements, iterateElements(i));
 
-    final List longSortList = new ArrayList();
+    final List<ObjectID> longSortList = new ArrayList<ObjectID>();
     i = objectIDSet.iterator();
     while (i.hasNext()) {
       longSortList.add(i.next());
@@ -1015,27 +826,22 @@ public class ObjectIDSetTest extends TCTestCase {
     }
   }
 
+  @Test
   public void testAddAll() {
-    internalTestAddAll(ObjectIDSetType.BITSET_BASED_SET);
-    internalTestAddAll(ObjectIDSetType.RANGE_BASED_SET);
-    internalTestAddAll(ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
-  }
-
-  private void internalTestAddAll(ObjectIDSetType type) {
     final int SIZE_MILLION = 1000000;
-    final ObjectIDSet set = new ObjectIDSet(type);
+    final ObjectIDSet set = create();
 
     // validate addAll
     addToReferencesRandom(set, SIZE_MILLION);
     int randomSize = set.size();
 
-    final ObjectIDSet set2 = new ObjectIDSet(type);
+    final ObjectIDSet set2 = create();
 
     long startTime = System.currentTimeMillis();
     set2.addAll(set);
     long addAllTime = System.currentTimeMillis() - startTime;
 
-    System.out.println(type + "Set.addAll random total time took: " + addAllTime + " ms. ");
+    System.out.println("Set.addAll random total time took: " + addAllTime + " ms. ");
 
     // validate addAll
     assertEquals(randomSize, set2.size());
@@ -1045,7 +851,7 @@ public class ObjectIDSetTest extends TCTestCase {
     }
 
     // /do serial
-    final ObjectIDSet setSerial = new ObjectIDSet(type);
+    final ObjectIDSet setSerial = create();
     addToReferencesSerial(setSerial, SIZE_MILLION);
 
     assertEquals(SIZE_MILLION, setSerial.size());
@@ -1054,7 +860,7 @@ public class ObjectIDSetTest extends TCTestCase {
     set2.addAll(setSerial);
     addAllTime = System.currentTimeMillis() - startTime;
 
-    System.out.println(type + "Set.addAll serial total time took: " + addAllTime + " ms. ");
+    System.out.println("Set.addAll serial total time took: " + addAllTime + " ms. ");
 
     // validate addAll
     assertEquals(randomSize + SIZE_MILLION, set2.size());
@@ -1072,16 +878,11 @@ public class ObjectIDSetTest extends TCTestCase {
 
   }
 
+  @Test
   public void testAddAllPerformance() {
-    internalAddAllPerformance(ObjectIDSetType.BITSET_BASED_SET);
-    internalAddAllPerformance(ObjectIDSetType.RANGE_BASED_SET);
-    internalAddAllPerformance(ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
-  }
-
-  private void internalAddAllPerformance(ObjectIDSetType type) {
     final int SIZE_10_MILLION = 10000000;
-    final ObjectIDSet set = new ObjectIDSet(type);
-    final ObjectIDSet set2 = new ObjectIDSet(type);
+    final ObjectIDSet set = create();
+    final ObjectIDSet set2 = create();
     addToReferencesRandom(set, SIZE_10_MILLION);
     addToReferencesSerial(set2, SIZE_10_MILLION);
     int bitSize = set.size();
@@ -1091,7 +892,7 @@ public class ObjectIDSetTest extends TCTestCase {
     set.addAll(set2);
     long addAllTime = System.currentTimeMillis() - startTime;
 
-    System.out.println(type + "Set.addAll performance random total time took: " + addAllTime + " ms. ");
+    System.out.println("Set.addAll performance random total time took: " + addAllTime + " ms. ");
     assertEquals(bitSize + bitSize2, set.size());
   }
 
@@ -1120,5 +921,33 @@ public class ObjectIDSetTest extends TCTestCase {
     assertEquals(nextExpectedElement, ((ObjectID) i.next()).toLong());
     visitedElements += iterateElements(i);
     assertEquals(visitedElements, totalElements - 1);
+  }
+
+  @Test
+  public void testSerializeToBasicObjectIDSet() throws Exception {
+    ObjectIDSet objectIDSet = create();
+    Random r = new Random();
+    for (int i = 0; i < 10000; i++) {
+      objectIDSet.add(new ObjectID(Math.abs(r.nextLong() % 10000)));
+    }
+    TCByteBufferOutput output = new TCByteBufferOutputStream();
+    objectIDSet.serializeTo(output);
+    TCByteBufferInput input = new TCByteBufferInputStream(output.toArray());
+    ObjectIDSet basicObjectIDSet = (ObjectIDSet) new BasicObjectIDSet().deserializeFrom(input);
+    assertThat(objectIDSet, is(basicObjectIDSet));
+  }
+
+  @Test
+  public void testCloneBasicObjectIDSet() throws Exception {
+    ObjectIDSet objectIDSet = create();
+    Random r = new Random();
+    for (int i = 0; i < 10000; i++) {
+      objectIDSet.add(new ObjectID(Math.abs(r.nextLong() % 10000)));
+    }
+    TCByteBufferOutput output = new TCByteBufferOutputStream();
+    objectIDSet.serializeTo(output);
+    TCByteBufferInput input = new TCByteBufferInputStream(output.toArray());
+    ObjectIDSet other = create((ObjectIDSet)new BasicObjectIDSet().deserializeFrom(input));
+    assertThat(objectIDSet, is(other));
   }
 }

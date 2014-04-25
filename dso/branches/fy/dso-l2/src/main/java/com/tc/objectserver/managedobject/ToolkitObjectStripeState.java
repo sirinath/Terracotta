@@ -10,6 +10,7 @@ import com.tc.object.dna.api.DNA.DNAType;
 import com.tc.object.dna.impl.UTF8ByteDataHolder;
 import com.tc.objectserver.mgmt.ManagedObjectFacade;
 import com.tc.objectserver.mgmt.PhysicalManagedObjectFacade;
+import com.tc.util.BitSetObjectIDSet;
 import com.tc.util.ObjectIDSet;
 
 import java.io.IOException;
@@ -129,8 +130,8 @@ public class ToolkitObjectStripeState extends AbstractManagedObjectState {
   }
 
   @Override
-  public Set getObjectReferences() {
-    ObjectIDSet set = new ObjectIDSet();
+  public Set<ObjectID> getObjectReferences() {
+    ObjectIDSet set = new BitSetObjectIDSet();
     if (componentObjects != null) {
       for (Object obj : componentObjects) {
         if (obj instanceof ObjectID) {

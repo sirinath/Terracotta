@@ -32,7 +32,9 @@ import com.tc.text.PrettyPrinter;
 import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.AbortedOperationUtil;
 import com.tc.util.Assert;
+import com.tc.util.BitSetObjectIDSet;
 import com.tc.util.Counter;
+import com.tc.util.ObjectIDSet;
 import com.tc.util.State;
 import com.tc.util.Util;
 import com.tc.util.VicariousThreadLocal;
@@ -223,7 +225,9 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     if (isShutdown()) return;
     assertPausedOrRejoinInProgress("Attempt to initiateHandshake " + thisNode + " <--> " + remoteNode);
     changeStateToStarting();
-    addAllObjectIDs(handshakeMessage.getObjectIDs(), remoteNode);
+    ObjectIDSet oids = new BitSetObjectIDSet();
+    addAllObjectIDs(oids, remoteNode);
+    handshakeMessage.setObjectIDs(oids);
 
     // Ignore objects reaped before handshaking otherwise those won't be in the list sent to L2 at handshaking.
     // Leave an inconsistent state between L1 and L2. Reaped object is in L1 removeObjects but L2 doesn't aware

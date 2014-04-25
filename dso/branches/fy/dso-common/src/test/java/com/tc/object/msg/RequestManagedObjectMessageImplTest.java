@@ -15,6 +15,7 @@ import com.tc.object.ObjectRequestContext;
 import com.tc.object.ObjectRequestID;
 import com.tc.object.session.SessionID;
 import com.tc.test.TCTestCase;
+import com.tc.util.BitSetObjectIDSet;
 import com.tc.util.ObjectIDSet;
 
 import java.util.HashSet;
@@ -28,7 +29,7 @@ public class RequestManagedObjectMessageImplTest extends TCTestCase {
 
     TestObjectRequestContext ctxt = new TestObjectRequestContext();
     ObjectID id = new ObjectID(1);
-    ObjectIDSet removedIDs = new ObjectIDSet();
+    ObjectIDSet removedIDs = new BitSetObjectIDSet();
     for (int i = 3; i < 100; i++) {
       removedIDs.add(new ObjectID(i));
     }
@@ -38,7 +39,7 @@ public class RequestManagedObjectMessageImplTest extends TCTestCase {
                                                                               new TCByteBufferOutputStream(4, 4096,
                                                                                                            false),
                                                                               channel, type);
-    ObjectIDSet oids = new ObjectIDSet();
+    ObjectIDSet oids = new BitSetObjectIDSet();
     oids.add(id);
     msg.initialize(ctxt.getRequestID(), oids, ctxt.getRequestDepth(), removedIDs);
 

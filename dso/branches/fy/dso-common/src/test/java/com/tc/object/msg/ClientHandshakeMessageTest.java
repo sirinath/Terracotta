@@ -3,19 +3,21 @@
  */
 package com.tc.object.msg;
 
-import com.tc.invalidation.Invalidations;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.net.protocol.tcm.NullMessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.ObjectID;
 import com.tc.object.session.SessionID;
-import com.tc.util.Assert;
+import com.tc.util.BitSetObjectIDSet;
 import com.tc.util.ObjectIDSet;
 
-import java.util.Set;
-
 import junit.framework.TestCase;
+
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsCollectionContaining.hasItem;
 
 public class ClientHandshakeMessageTest extends TestCase {
 
@@ -25,12 +27,17 @@ public class ClientHandshakeMessageTest extends TestCase {
                                                                     new TCByteBufferOutputStream(4, 4096, false), null,
                                                                     TCMessageType.CLIENT_HANDSHAKE_MESSAGE);
 
-    msg.getObjectIDs().add(new ObjectID(12345));
-    Invalidations invalidations = msg.getObjectIDsToValidate();
-    invalidations.add(new ObjectID(22), new ObjectID(1));
-    invalidations.add(new ObjectID(22), new ObjectID(2));
-    invalidations.add(new ObjectID(22), new ObjectID(100));
-    invalidations.add(new ObjectID(22), new ObjectID(200));
+    ObjectIDSet oids = new BitSetObjectIDSet();
+    oids.add(new ObjectID(12345));
+    msg.setObjectIDs(oids);
+
+    ObjectIDSet validations = new BitSetObjectIDSet();
+    validations.add(new ObjectID(1));
+    validations.add(new ObjectID(2));
+    validations.add(new ObjectID(100));
+    validations.add(new ObjectID(200));
+    msg.setObjectIDsToValidate(validations);
+
     msg.dehydrate();
 
     ClientHandshakeMessageImpl msg2 = new ClientHandshakeMessageImpl(SessionID.NULL_ID, new NullMessageMonitor(), null,
@@ -40,18 +47,10 @@ public class ClientHandshakeMessageTest extends TestCase {
     System.out.println(msg2.getObjectIDs());
     System.out.println(msg2.getObjectIDsToValidate());
 
-    Set objectIDs = msg.getObjectIDs();
-    Assert.assertEquals(1, objectIDs.size());
-    Assert.assertEquals(new ObjectID(12345), objectIDs.iterator().next());
-    Assert.assertEquals(new ObjectID(22), msg.getObjectIDsToValidate().getMapIds().iterator().next());
-    Invalidations toValidate = msg.getObjectIDsToValidate();
-    Assert.assertEquals(4, toValidate.size());
-    ObjectIDSet toValidateObjects = toValidate.getObjectIDSetForMapId(new ObjectID(22));
-    Assert.assertEquals(4, toValidateObjects.size());
-    Assert.assertTrue(toValidateObjects.contains(new ObjectID(1)));
-    Assert.assertTrue(toValidateObjects.contains(new ObjectID(2)));
-    Assert.assertTrue(toValidateObjects.contains(new ObjectID(100)));
-    Assert.assertTrue(toValidateObjects.contains(new ObjectID(200)));
+    assertThat(msg.getObjectIDs().size(), is(1));
+    assertThat(msg.getObjectIDs(), hasItem(new ObjectID(12345)));
 
+    assertThat(msg.getObjectIDsToValidate(), hasItems(new ObjectID(1), new ObjectID(2), new ObjectID(100), new ObjectID(200)));
+    assertThat(msg.getObjectIDsToValidate().size(), is(4));
   }
 }

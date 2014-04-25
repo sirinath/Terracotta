@@ -3,48 +3,55 @@
  */
 package com.tc.object.msg;
 
-import com.tc.invalidation.Invalidations;
 import com.tc.net.protocol.tcm.TCMessage;
+import com.tc.object.ObjectID;
 import com.tc.object.locks.ClientServerExchangeLockContext;
+import com.tc.object.tx.TransactionID;
+import com.tc.util.ObjectIDSet;
+import com.tc.util.SequenceID;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 public interface ClientHandshakeMessage extends TCMessage {
 
-  public List getTransactionSequenceIDs();
+  List<SequenceID> getTransactionSequenceIDs();
 
-  public Set getObjectIDs();
+  ObjectIDSet getObjectIDs();
 
-  public Invalidations getObjectIDsToValidate();
+  void setObjectIDs(ObjectIDSet objectIDs);
 
-  public void addLockContext(ClientServerExchangeLockContext ctxt);
+  ObjectIDSet getObjectIDsToValidate();
 
-  public Collection<ClientServerExchangeLockContext> getLockContexts();
+  void setObjectIDsToValidate(ObjectIDSet objectIDsToValidate);
 
-  public void setClientVersion(String v);
+  void addLockContext(ClientServerExchangeLockContext ctxt);
 
-  public String getClientVersion();
+  Collection<ClientServerExchangeLockContext> getLockContexts();
 
-  public void addTransactionSequenceIDs(List transactionSequenceIDs);
+  void setClientVersion(String v);
 
-  public void addResentTransactionIDs(List resentTransactionIDs);
+  String getClientVersion();
 
-  public List getResentTransactionIDs();
+  void addTransactionSequenceIDs(List<SequenceID> transactionSequenceIDs);
 
-  public void setIsObjectIDsRequested(boolean request);
+  void addResentTransactionIDs(List<TransactionID> resentTransactionIDs);
 
-  public boolean isObjectIDsRequested();
+  List<TransactionID> getResentTransactionIDs();
 
-  public void setServerHighWaterMark(long serverHighWaterMark);
+  void setIsObjectIDsRequested(boolean request);
 
-  public long getServerHighWaterMark();
+  boolean isObjectIDsRequested();
 
-  public void setEnterpriseClient(boolean isEnterpirseClient);
+  void setServerHighWaterMark(long serverHighWaterMark);
 
-  public boolean enterpriseClient();
+  long getServerHighWaterMark();
 
-  public long getLocalTimeMills();
+  void setEnterpriseClient(boolean isEnterpirseClient);
+
+  boolean enterpriseClient();
+
+  long getLocalTimeMills();
 
 }
