@@ -28,7 +28,6 @@ public class ListManagedObjectStateTest extends AbstractTestManagedObjectState {
 
     cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2002) });
     cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2003) });
-    cursor.addLogicalAction(SerializationUtil.ADD_FIRST, new Object[] { new ObjectID(2004) });
 
     basicTestUnit(className, ManagedObjectState.LIST_TYPE, cursor, 3);
   }
@@ -39,7 +38,6 @@ public class ListManagedObjectStateTest extends AbstractTestManagedObjectState {
 
     cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2002) });
     cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2003) });
-    cursor.addLogicalAction(SerializationUtil.ADD_FIRST, new Object[] { new ObjectID(2004) });
     cursor.addLogicalAction(SerializationUtil.ADD_AT, new Object[] { Integer.valueOf(1), new ObjectID(1000) });
 
     basicTestUnit(className, ManagedObjectState.LIST_TYPE, cursor, 4);
@@ -64,7 +62,6 @@ public class ListManagedObjectStateTest extends AbstractTestManagedObjectState {
     cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2002) });
     cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2003) });
     cursor.addLogicalAction(SerializationUtil.ADD, new Object[] { new ObjectID(2004) });
-    cursor.addLogicalAction(SerializationUtil.REMOVE_FIRST, null);
     cursor.addLogicalAction(SerializationUtil.REMOVE, new Object[] { new ObjectID(2004) });
 
     basicTestUnit(className, ManagedObjectState.LIST_TYPE, cursor, 1);

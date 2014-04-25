@@ -30,8 +30,6 @@ public class ManagedObjectStateSerializationTest extends ManagedObjectStateSeria
           case ManagedObjectState.LIST_TYPE:
             testList();
             break;
-          case ManagedObjectState.SET_TYPE:
-            break;
           case ManagedObjectState.TDC_SERIALIZED_ENTRY:
             testTcHibernateSerializedEntry();
             break;

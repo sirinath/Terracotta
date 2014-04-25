@@ -3,29 +3,69 @@
  */
 package com.terracotta.toolkit.collections;
 
+import com.tc.abortable.AbortedOperationException;
+import com.tc.exception.TCRuntimeException;
 import com.tc.logging.TCLogger;
+import com.tc.logging.TCLogging;
+import com.tc.object.ClientObjectManager;
+import com.tc.object.ObjectID;
 import com.tc.object.SerializationUtil;
+import com.tc.object.TCObject;
 import com.tc.object.TraversedReferences;
-import com.tc.object.applicator.ListApplicator;
+import com.tc.object.applicator.BaseApplicator;
+import com.tc.object.dna.api.DNA;
+import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
+import com.tc.object.dna.api.DNAWriter;
+import com.tc.object.dna.api.LogicalAction;
+import java.io.IOException;
 
 import java.util.List;
 
-public class ToolkitListImplApplicator extends ListApplicator {
+public class ToolkitListImplApplicator extends BaseApplicator {
+  private static final TCLogger LOGGER = TCLogging.getLogger(ToolkitListImplApplicator.class);
+  
   public ToolkitListImplApplicator(DNAEncoding encoding, TCLogger logger) {
     super(encoding, logger);
   }
-
+  
   @Override
-  protected void apply(List list, int method, Object[] params) {
+  public void hydrate(ClientObjectManager objectManager, TCObject tcObject, DNA dna, Object po) throws IOException,
+      ClassNotFoundException {
+    List list = (List) po;
+    DNACursor cursor = dna.getCursor();
+
+    while (cursor.next(encoding)) {
+      LogicalAction action = cursor.getLogicalAction();
+      int method = action.getMethod();
+      Object[] params = action.getParameters();
+
+      for (int i = 0, n = params.length; i < n; i++) {
+        Object param = params[i];
+        if (param instanceof ObjectID) {
+          try {
+            params[i] = objectManager.lookupObject((ObjectID) param);
+          } catch (AbortedOperationException e) {
+             throw new TCRuntimeException(e);
+          }
+        }
+      }
+
+      try {
+        apply(list, method, params);
+      } catch (IndexOutOfBoundsException ioobe) {
+        LOGGER.error("Error applying update to " + po, ioobe);
+      }
+    }
+  }
+
+  private void apply(List list, int method, Object[] params) {
     ToolkitListImpl internalList = (ToolkitListImpl) list;
     final int size = internalList.size();
     switch (method) {
       case SerializationUtil.ADD:
-      case SerializationUtil.ADD_LAST:
         internalList.internalAdd(params[0]);
         break;
-      case SerializationUtil.INSERT_AT:
       case SerializationUtil.ADD_AT:
         int aaindex = ((Integer) params[0]).intValue();
         if (aaindex > size) {
@@ -35,10 +75,6 @@ public class ToolkitListImplApplicator extends ListApplicator {
         }
         internalList.internalAdd(aaindex, params[1]);
         break;
-      case SerializationUtil.ADD_FIRST:
-        internalList.internalAdd(0, params[0]);
-        break;
-      case SerializationUtil.SET_ELEMENT:
       case SerializationUtil.SET:
         int sindex = ((Integer) params[0]).intValue();
         if (sindex >= size) {
@@ -75,25 +111,6 @@ public class ToolkitListImplApplicator extends ListApplicator {
           internalList.internalRemove(removeIndex);
         }
         break;
-      case SerializationUtil.REMOVE_FIRST:
-        if (size > 0) {
-          internalList.internalRemove(0);
-        } else {
-          getLogger().error("Cannot removeFirst() because list is empty");
-        }
-        break;
-      case SerializationUtil.REMOVE_LAST:
-        if (size > 0) {
-          internalList.internalRemove(internalList.size() - 1);
-        } else {
-          getLogger().error("Cannot removeLast() because list is empty");
-        }
-        break;
-      case SerializationUtil.REMOVE_ALL:
-        for (Object o : params) {
-          internalList.internalRemove(o);
-        }
-        break;
       case SerializationUtil.CLEAR:
         internalList.internalClear();
         break;
@@ -106,8 +123,12 @@ public class ToolkitListImplApplicator extends ListApplicator {
   }
 
   @Override
+  public void dehydrate(ClientObjectManager objectManager, TCObject tcObject, DNAWriter writer, Object pojo) {
+    // Nothing to dehydrate
+  }
+
+  @Override
   public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {
     return addTo;
   }
-
 }
