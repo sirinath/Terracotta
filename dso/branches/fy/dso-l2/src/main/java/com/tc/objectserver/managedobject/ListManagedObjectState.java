@@ -43,15 +43,9 @@ public class ListManagedObjectState extends LogicalManagedObjectState {
                                       final Object[] params) throws AssertionError {
     switch (method) {
       case SerializationUtil.ADD:
-      case SerializationUtil.ADD_LAST:
         addChangeToCollector(objectID, params[0], applyInfo);
         references.add(params[0]);
         return LogicalChangeResult.SUCCESS;
-      case SerializationUtil.ADD_FIRST:
-        addChangeToCollector(objectID, params[0], applyInfo);
-        references.add(0, params[0]);
-        return LogicalChangeResult.SUCCESS;
-      case SerializationUtil.INSERT_AT:
       case SerializationUtil.ADD_AT:
         addChangeToCollector(objectID, params[1], applyInfo);
         int ai = Math.min(((Integer) params[0]).intValue(), references.size());
@@ -63,9 +57,6 @@ public class ListManagedObjectState extends LogicalManagedObjectState {
         return LogicalChangeResult.SUCCESS;
       case SerializationUtil.REMOVE:
         references.remove(params[0]);
-        return LogicalChangeResult.SUCCESS;
-      case SerializationUtil.REMOVE_ALL:
-        references.removeAll(Arrays.asList(params));
         return LogicalChangeResult.SUCCESS;
       case SerializationUtil.REMOVE_AT:
         int index = (Integer) params[0];
@@ -89,7 +80,6 @@ public class ListManagedObjectState extends LogicalManagedObjectState {
       case SerializationUtil.DESTROY:
         references.clear();
         return LogicalChangeResult.SUCCESS;
-      case SerializationUtil.SET_ELEMENT:
       case SerializationUtil.SET:
         addChangeToCollector(objectID, params[1], applyInfo);
         int si = Math.min(((Integer) params[0]).intValue(), references.size());
@@ -98,34 +88,6 @@ public class ListManagedObjectState extends LogicalManagedObjectState {
         } else {
           references.set(si, params[1]);
         }
-        return LogicalChangeResult.SUCCESS;
-      case SerializationUtil.REMOVE_FIRST:
-        if (references.size() > 0) {
-          references.remove(0);
-        }
-        return LogicalChangeResult.SUCCESS;
-      case SerializationUtil.REMOVE_LAST:
-        int size = references.size();
-        if (size > 0) {
-          references.remove(size - 1);
-        }
-        return LogicalChangeResult.SUCCESS;
-      case SerializationUtil.SET_SIZE:
-        int setSize = (Integer) params[0];
-        int listSize = references.size();
-
-        if (listSize < setSize) {
-          for (int i = listSize; i < setSize; i++) {
-            references.add(ObjectID.NULL_ID);
-          }
-        } else if (listSize > setSize) {
-          for (int i = listSize; i != setSize; i--) {
-            references.remove(i - 1);
-          }
-        }
-        return LogicalChangeResult.SUCCESS;
-      case SerializationUtil.TRIM_TO_SIZE:
-        // do nothing for now
         return LogicalChangeResult.SUCCESS;
       default:
         throw new AssertionError("Invalid method:" + method + " state:" + this);

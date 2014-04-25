@@ -276,8 +276,6 @@ public class ConcurrentDistributedServerMapManagedObjectState extends PartialMap
       case SerializationUtil.REPLACE_IF_VALUE_EQUAL:
         return applyReplaceIfEqualWithExpiry(applyInfo, params);
 
-      case SerializationUtil.REPLACE:
-        return applyReplace(applyInfo, params);
       case SerializationUtil.EVICTION_COMPLETED:
         evictionCompleted();
         // make sure we don't need more capacity eviction to get to target

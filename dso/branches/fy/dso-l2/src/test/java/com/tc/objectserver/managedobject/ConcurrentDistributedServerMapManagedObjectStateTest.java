@@ -174,28 +174,6 @@ public class ConcurrentDistributedServerMapManagedObjectStateTest extends TCTest
     verify(applyTransactionInfo).invalidate(oid, valueOid);
   }
 
-  public void testReplace() throws Exception {
-    Object key = "key";
-    CDSMValue value = new CDSMValue(new ObjectID(2), 0, 0, 0, 0);
-
-    // doesn't exist yet
-    state.applyLogicalAction(oid, applyTransactionInfo, SerializationUtil.REPLACE, new Object[] { key, value.getObjectID() });
-    verify(keyValueStorage, never()).put(key, value);
-    verify(applyTransactionInfo).deleteObject(value.getObjectID());
-    verify(applyTransactionInfo).invalidate(oid, value.getObjectID());
-
-    // now it does
-    CDSMValue oldValue = new CDSMValue(new ObjectID(3), 0, 0, 0, 0);
-    when(keyValueStorage.get(key)).thenReturn(oldValue);
-    when(keyValueStorage.containsKey(key)).thenReturn(true);
-
-    state.applyLogicalAction(oid, applyTransactionInfo, SerializationUtil.REPLACE, new Object[] { key, value.getObjectID() });
-    value.setVersion(1L);
-    verify(keyValueStorage).put(key, value);
-    verify(applyTransactionInfo).deleteObject(oldValue.getObjectID());
-    verify(applyTransactionInfo).invalidate(oid, oldValue.getObjectID());
-  }
-
   public void testReplaceIfEqual() throws Exception {
     Object key = "key";
     CDSMValue value = new CDSMValue(new ObjectID(2), 0, 0, 0, 0);
@@ -330,17 +308,6 @@ public class ConcurrentDistributedServerMapManagedObjectStateTest extends TCTest
     verify(keyValueStorage).put(key, new CDSMValue(valueOid, 1L, 2L, 3L, 4L));
   }
 
-  public void testReplaceWithExpiry() throws Exception {
-    Object key = "key";
-    CDSMValue value = new CDSMValue(new ObjectID(2), 2, 2, 3, 4);
-    when(keyValueStorage.get(key)).thenReturn(new CDSMValue(new ObjectID(1), 3, 3, 2, 1));
-    when(keyValueStorage.containsKey(key)).thenReturn(true);
-    state.applyLogicalAction(oid, applyTransactionInfo, SerializationUtil.REPLACE, new Object[] { key,
-        value.getObjectID(), value.getCreationTime(), value.getLastAccessedTime(), value.getTimeToIdle(), value.getTimeToLive() });
-    value.setVersion(1L);
-    verify(keyValueStorage).put(key, value);
-  }
-
   public void testReplaceIfEqualWithExpiry() throws Exception {
     Object key = "key";
     CDSMValue value = new CDSMValue(new ObjectID(2), 2, 2, 3, 4);
@@ -410,9 +377,6 @@ public class ConcurrentDistributedServerMapManagedObjectStateTest extends TCTest
     }
     for (int i = 0; i < 50; i++) {
       cursor.addLogicalAction(SerializationUtil.REMOVE, new Object[] { "key-" + (1000 + i) });
-    }
-    for (int i = 0; i < 50; i++) {
-      cursor.addLogicalAction(SerializationUtil.REPLACE, new Object[] { "key-" + (2000 + i), new ObjectID(5000 + i) });
     }
 
     return cursor;

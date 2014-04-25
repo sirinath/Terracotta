@@ -13,7 +13,7 @@ import com.tc.object.SerializationUtil;
 import com.tc.object.TCObject;
 import com.tc.object.TCObjectServerMap;
 import com.tc.object.TraversedReferences;
-import com.tc.object.applicator.PartialHashMapApplicator;
+import com.tc.object.applicator.BaseApplicator;
 import com.tc.object.bytecode.TCServerMap;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
@@ -28,7 +28,7 @@ import com.terracotta.toolkit.object.DestroyApplicator;
 
 import java.io.IOException;
 
-public class ServerMapApplicator extends PartialHashMapApplicator {
+public class ServerMapApplicator extends BaseApplicator {
 
   public static final String CACHE_NAME_FIELDNAME           = "cacheName";
   public static final String INVALIDATE_ON_CHANGE_FIELDNAME = "invalidateOnChange";
@@ -69,7 +69,6 @@ public class ServerMapApplicator extends PartialHashMapApplicator {
       UnclusteredConfiguration config = new UnclusteredConfiguration();
       String name = null;
       ToolkitLockTypeInternal lockType = null;
-      boolean broadcastEvictions = false;
       while (cursor.next(encoding)) {
         PhysicalAction physicalAction = cursor.getPhysicalAction();
         if (CACHE_NAME_FIELDNAME.equals(physicalAction.getFieldName())) {

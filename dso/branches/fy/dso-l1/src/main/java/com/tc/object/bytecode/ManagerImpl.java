@@ -360,7 +360,6 @@ public class ManagerImpl implements Manager {
             logicalAddAllAtInvoke(this.serializer.methodToID(methodSignature), methodSignature,
                                   ((Integer) params[0]).intValue(), (Collection) params[1], tco);
           } else {
-            adjustForJava1ParametersIfNecessary(methodSignature, params);
             tco.logicalInvoke(this.serializer.methodToID(methodSignature), methodSignature, params);
           }
         }
@@ -379,18 +378,6 @@ public class ManagerImpl implements Manager {
       logicalInvoke(object, methodName, params);
     } finally {
       unlock(lock, LockLevel.WRITE);
-    }
-  }
-
-  private void adjustForJava1ParametersIfNecessary(final String methodName, final Object[] params) {
-    if ((params.length == 2) && (params[1] != null) && (params[1].getClass().equals(Integer.class))) {
-      if (SerializationUtil.SET_ELEMENT_SIGNATURE.equals(methodName)
-          || SerializationUtil.INSERT_ELEMENT_AT_SIGNATURE.equals(methodName)) {
-        // special case for reversing parameters
-        final Object tmp = params[0];
-        params[0] = params[1];
-        params[1] = tmp;
-      }
     }
   }
 
