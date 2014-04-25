@@ -23,7 +23,7 @@ public class ApplicationTsa extends DefaultApplication {
 
   @Override
   public Set<Class<?>> getClasses() {
-    Set<Class<?>> s = new HashSet<Class<?>>();
+    Set<Class<?>> s = new HashSet<Class<?>>(super.getClasses());
     s.add(ElementsResourceServiceImpl.class);
     s.add(BackupResourceServiceImpl.class);
     s.add(ConfigurationResourceServiceImpl.class);
