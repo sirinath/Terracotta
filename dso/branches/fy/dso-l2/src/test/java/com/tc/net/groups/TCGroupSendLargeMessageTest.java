@@ -21,6 +21,7 @@ import com.tc.object.ObjectID;
 import com.tc.objectserver.core.impl.GarbageCollectionID;
 import com.tc.objectserver.dgc.api.GarbageCollectionInfo;
 import com.tc.test.TCTestCase;
+import com.tc.util.BitSetObjectIDSet;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.PortChooser;
 import com.tc.util.UUID;
@@ -102,7 +103,7 @@ public class TCGroupSendLargeMessageTest extends TCTestCase {
                                              MyListener l2, long oidsCount) {
     ThreadUtil.reallySleep(5 * 1000);
 
-    ObjectIDSet oidSet = new ObjectIDSet();
+    ObjectIDSet oidSet = new BitSetObjectIDSet();
     for (long i = 1; i <= oidsCount; ++i) {
       oidSet.add(new ObjectID(i));
     }
@@ -114,7 +115,7 @@ public class TCGroupSendLargeMessageTest extends TCTestCase {
     assertEquals(msg1.getGCedObjectIDs(), msg2.getGCedObjectIDs());
     assertEquals(msg1.getGCIterationCount(), msg2.getGCIterationCount());
 
-    oidSet = new ObjectIDSet();
+    oidSet = new BitSetObjectIDSet();
     for (long i = (oidsCount + 1); i <= (oidsCount * 2); ++i) {
       oidSet.add(new ObjectID(i));
     }

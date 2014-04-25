@@ -7,9 +7,12 @@ import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.object.ObjectID;
+import com.tc.util.BasicObjectIDSet;
+import com.tc.util.BitSetObjectIDSet;
 import com.tc.util.ObjectIDSet;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,15 +39,19 @@ public class Invalidations implements TCSerializable {
   public void add(ObjectID mapID, ObjectID oid) {
     ObjectIDSet set = invalidationsPerCdsm.get(mapID);
     if (set == null) {
-      set = new ObjectIDSet();
+      set = new BitSetObjectIDSet();
       invalidationsPerCdsm.put(mapID, set);
     }
 
     set.add(oid);
   }
 
+  public Map<ObjectID, ObjectIDSet> asMap() {
+    return Collections.unmodifiableMap(invalidationsPerCdsm);
+  }
+
   public Set<ObjectID> getMapIds() {
-    return new HashSet(invalidationsPerCdsm.keySet());
+    return new HashSet<ObjectID>(invalidationsPerCdsm.keySet());
   }
 
   public ObjectIDSet getObjectIDSetForMapId(ObjectID mapID) {
@@ -61,7 +68,7 @@ public class Invalidations implements TCSerializable {
       ObjectIDSet newInvalidationsOidsForMapID = entry.getValue();
       ObjectIDSet thisInvalidationsOidsForMapID = this.getObjectIDSetForMapId(mapID);
       if (thisInvalidationsOidsForMapID == null) {
-        thisInvalidationsOidsForMapID = new ObjectIDSet();
+        thisInvalidationsOidsForMapID = new BitSetObjectIDSet();
         invalidationsPerCdsm.put(mapID, thisInvalidationsOidsForMapID);
       }
       thisInvalidationsOidsForMapID.addAll(newInvalidationsOidsForMapID);
@@ -73,7 +80,7 @@ public class Invalidations implements TCSerializable {
     int size = in.readInt();
     for (int i = 0; i < size; i++) {
       ObjectID mapID = new ObjectID(in.readLong());
-      ObjectIDSet oidSet = new ObjectIDSet();
+      ObjectIDSet oidSet = new BasicObjectIDSet();
       oidSet.deserializeFrom(in);
       this.invalidationsPerCdsm.put(mapID, oidSet);
     }

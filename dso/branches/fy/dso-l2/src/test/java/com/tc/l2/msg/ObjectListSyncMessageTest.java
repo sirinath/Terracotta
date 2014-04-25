@@ -8,7 +8,7 @@ import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.l2.state.StateManager;
 import com.tc.object.ObjectID;
-import com.tc.util.ObjectIDSet;
+import com.tc.util.BitSetObjectIDSet;
 
 import java.util.Set;
 
@@ -16,12 +16,12 @@ import junit.framework.TestCase;
 
 public class ObjectListSyncMessageTest extends TestCase {
   private ObjectListSyncMessage objectListSyncMessage;
-  private Set                   oids;
+  private Set<ObjectID>         oids;
 
   @Override
   public void setUp() {
     objectListSyncMessage = new ObjectListSyncMessage();
-    oids = new ObjectIDSet();
+    oids = new BitSetObjectIDSet();
     oids.add(new ObjectID(1234));
     oids.add(new ObjectID(456));
     oids.add(new ObjectID(9068));

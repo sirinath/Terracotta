@@ -10,6 +10,7 @@ import com.tc.net.NodeID;
 import com.tc.object.ObjectID;
 import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.util.Assert;
+import com.tc.util.BitSetObjectIDSet;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.TCCollections;
 
@@ -111,7 +112,7 @@ public class ManagedObjectSyncContext implements EventContext {
   }
 
   public ObjectIDSet getNewObjectIDs() {
-    return new ObjectIDSet();
+    return new BitSetObjectIDSet();
   }
 
   public void setSequenceID(long nextSequence) {

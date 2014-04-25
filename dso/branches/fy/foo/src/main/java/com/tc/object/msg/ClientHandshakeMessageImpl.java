@@ -4,9 +4,7 @@
 package com.tc.object.msg;
 
 import com.tc.bytes.TCByteBuffer;
-import com.tc.invalidation.Invalidations;
 import com.tc.io.TCByteBufferOutputStream;
-import com.tc.io.TCSerializable;
 import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
@@ -14,6 +12,7 @@ import com.tc.net.protocol.tcm.TCMessageType;
 import com.tc.object.locks.ClientServerExchangeLockContext;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.TransactionID;
+import com.tc.util.BasicObjectIDSet;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.SequenceID;
 
@@ -21,7 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -38,11 +36,11 @@ public class ClientHandshakeMessageImpl extends DSOMessageBase implements Client
   private static final byte   OBJECTS_TO_VALIDATE      = 9;
   private static final byte   LOCAL_TIME_MILLS         = 10;
 
-  private final ObjectIDSet   objectIDs                = new ObjectIDSet();
-  private final Invalidations objectsToValidate        = new Invalidations();
-  private final Set           lockContexts             = new HashSet();
-  private final List          sequenceIDs              = new ArrayList();
-  private final List          txnIDs                   = new ArrayList();
+  private final Set<ClientServerExchangeLockContext> lockContexts             = new HashSet<ClientServerExchangeLockContext>();
+  private final List<SequenceID>    sequenceIDs        = new ArrayList<SequenceID>();
+  private final List<TransactionID> txnIDs             = new ArrayList<TransactionID>();
+  private ObjectIDSet         objectsToValidate        = new BasicObjectIDSet();
+  private ObjectIDSet         objectIDs                = new BasicObjectIDSet();
   private long                currentLocalTimeMills    = System.currentTimeMillis();
   private boolean             requestObjectIDs;
   private boolean             enterpriseClient         = false;
@@ -60,27 +58,37 @@ public class ClientHandshakeMessageImpl extends DSOMessageBase implements Client
   }
 
   @Override
-  public Collection getLockContexts() {
+  public Collection<ClientServerExchangeLockContext> getLockContexts() {
     return this.lockContexts;
   }
 
   @Override
-  public Set getObjectIDs() {
-    return this.objectIDs;
+  public ObjectIDSet getObjectIDs() {
+    return objectIDs;
   }
 
   @Override
-  public Invalidations getObjectIDsToValidate() {
+  public void setObjectIDs(final ObjectIDSet objectIDs) {
+    this.objectIDs = objectIDs;
+  }
+
+  @Override
+  public ObjectIDSet getObjectIDsToValidate() {
     return this.objectsToValidate;
   }
 
   @Override
-  public List getTransactionSequenceIDs() {
+  public void setObjectIDsToValidate(final ObjectIDSet objectIDsToValidate) {
+    this.objectsToValidate = objectIDsToValidate;
+  }
+
+  @Override
+  public List<SequenceID> getTransactionSequenceIDs() {
     return this.sequenceIDs;
   }
 
   @Override
-  public List getResentTransactionIDs() {
+  public List<TransactionID> getResentTransactionIDs() {
     return this.txnIDs;
   }
 
@@ -95,12 +103,12 @@ public class ClientHandshakeMessageImpl extends DSOMessageBase implements Client
   }
 
   @Override
-  public void addTransactionSequenceIDs(List seqIDs) {
+  public void addTransactionSequenceIDs(List<SequenceID> seqIDs) {
     this.sequenceIDs.addAll(seqIDs);
   }
 
   @Override
-  public void addResentTransactionIDs(List resentTransactionIDs) {
+  public void addResentTransactionIDs(List<TransactionID> resentTransactionIDs) {
     this.txnIDs.addAll(resentTransactionIDs);
   }
 
@@ -148,14 +156,14 @@ public class ClientHandshakeMessageImpl extends DSOMessageBase implements Client
   protected void dehydrateValues() {
     putNVPair(MANAGED_OBJECT_IDS, objectIDs);
     putNVPair(OBJECTS_TO_VALIDATE, objectsToValidate);
-    for (Iterator i = this.lockContexts.iterator(); i.hasNext();) {
-      putNVPair(LOCK_CONTEXT, (TCSerializable) i.next());
+    for (final ClientServerExchangeLockContext lockContext : this.lockContexts) {
+      putNVPair(LOCK_CONTEXT, lockContext);
     }
-    for (Iterator i = this.sequenceIDs.iterator(); i.hasNext();) {
-      putNVPair(TRANSACTION_SEQUENCE_IDS, ((SequenceID) i.next()).toLong());
+    for (final SequenceID sequenceID : this.sequenceIDs) {
+      putNVPair(TRANSACTION_SEQUENCE_IDS, sequenceID);
     }
-    for (Iterator i = this.txnIDs.iterator(); i.hasNext();) {
-      putNVPair(RESENT_TRANSACTION_IDS, ((TransactionID) i.next()).toLong());
+    for (final TransactionID txnID : this.txnIDs) {
+      putNVPair(RESENT_TRANSACTION_IDS, txnID);
     }
     putNVPair(REQUEST_OBJECT_IDS, this.requestObjectIDs);
     putNVPair(ENTERPRISE_CLIENT, this.enterpriseClient);
@@ -168,13 +176,13 @@ public class ClientHandshakeMessageImpl extends DSOMessageBase implements Client
   protected boolean hydrateValue(byte name) throws IOException {
     switch (name) {
       case MANAGED_OBJECT_IDS:
-        this.objectIDs.deserializeFrom(getInputStream());
+        objectIDs = (ObjectIDSet) getObject(new BasicObjectIDSet());
         return true;
       case OBJECTS_TO_VALIDATE:
-        objectsToValidate.deserializeFrom(getInputStream());
+        objectsToValidate = (ObjectIDSet) getObject(new BasicObjectIDSet());
         return true;
       case LOCK_CONTEXT:
-        this.lockContexts.add(getObject(new ClientServerExchangeLockContext()));
+        this.lockContexts.add((ClientServerExchangeLockContext) getObject(new ClientServerExchangeLockContext()));
         return true;
       case TRANSACTION_SEQUENCE_IDS:
         this.sequenceIDs.add(new SequenceID(getLongValue()));

@@ -11,14 +11,12 @@ import com.tc.net.protocol.tcm.MessageChannel;
 import com.tc.net.protocol.tcm.MessageMonitor;
 import com.tc.net.protocol.tcm.TCMessageHeader;
 import com.tc.net.protocol.tcm.TCMessageType;
-import com.tc.object.ObjectID;
 import com.tc.object.ObjectRequestID;
 import com.tc.object.session.SessionID;
+import com.tc.util.BasicObjectIDSet;
 import com.tc.util.ObjectIDSet;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Set;
 
 public class RequestManagedObjectMessageImpl extends DSOMessageBase implements EventContext,
     RequestManagedObjectMessage {
@@ -28,8 +26,8 @@ public class RequestManagedObjectMessageImpl extends DSOMessageBase implements E
   private final static byte REQUEST_DEPTH_ID           = 5;
   private final static byte REQUESTING_THREAD_NAME     = 6;
 
-  private final ObjectIDSet objectIDs                  = new ObjectIDSet();
-  private ObjectIDSet       removed                    = new ObjectIDSet();
+  private ObjectIDSet       objectIDs;
+  private ObjectIDSet       removed;
   private ObjectRequestID   requestID;
   private int               requestDepth;
   private String            threadName;
@@ -46,15 +44,8 @@ public class RequestManagedObjectMessageImpl extends DSOMessageBase implements E
 
   @Override
   protected void dehydrateValues() {
-    for (Iterator i = this.objectIDs.iterator(); i.hasNext();) {
-      ObjectID id = (ObjectID) i.next();
-      putNVPair(MANAGED_OBJECT_ID, id.toLong());
-    }
-
-    for (Iterator i = this.removed.iterator(); i.hasNext();) {
-      ObjectID id = (ObjectID) i.next();
-      putNVPair(MANAGED_OBJECTS_REMOVED_ID, id.toLong());
-    }
+    putNVPair(MANAGED_OBJECT_ID, objectIDs);
+    putNVPair(MANAGED_OBJECTS_REMOVED_ID, removed);
     putNVPair(REQUEST_ID, this.requestID.toLong());
     putNVPair(REQUEST_DEPTH_ID, this.requestDepth);
     putNVPair(REQUESTING_THREAD_NAME, this.threadName);
@@ -64,10 +55,10 @@ public class RequestManagedObjectMessageImpl extends DSOMessageBase implements E
   protected boolean hydrateValue(byte name) throws IOException {
     switch (name) {
       case MANAGED_OBJECT_ID:
-        this.objectIDs.add(new ObjectID(getLongValue()));
+        this.objectIDs = (ObjectIDSet) getObject(new BasicObjectIDSet());
         return true;
       case MANAGED_OBJECTS_REMOVED_ID:
-        this.removed.add(new ObjectID(getLongValue()));
+        this.removed = (ObjectIDSet) getObject(new BasicObjectIDSet());
         return true;
       case REQUEST_ID:
         this.requestID = new ObjectRequestID(getLongValue());
@@ -99,9 +90,9 @@ public class RequestManagedObjectMessageImpl extends DSOMessageBase implements E
   }
 
   @Override
-  public void initialize(ObjectRequestID rid, Set<ObjectID> requestedObjectIDs, int depth, ObjectIDSet removeObjects) {
+  public void initialize(ObjectRequestID rid, ObjectIDSet requestedObjectIDs, int depth, ObjectIDSet removeObjects) {
     this.requestID = rid;
-    this.objectIDs.addAll(requestedObjectIDs);
+    this.objectIDs = requestedObjectIDs;
     this.removed = removeObjects;
     this.requestDepth = depth;
     this.threadName = Thread.currentThread().getName();

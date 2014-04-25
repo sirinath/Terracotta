@@ -49,6 +49,7 @@ import com.tc.object.session.NullSessionManager;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.objectserver.dgc.api.GarbageCollectionInfo;
+import com.tc.util.BitSetObjectIDSet;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.TCCollections;
 import com.tc.util.UUID;
@@ -191,7 +192,7 @@ public class TCGroupMessageWrapperTest extends TestCase {
   }
 
   public void testGCResultMessage() throws Exception {
-    ObjectIDSet oidSet = new ObjectIDSet();
+    ObjectIDSet oidSet = new BitSetObjectIDSet();
     for (long i = 1; i <= 100; ++i) {
       oidSet.add(new ObjectID(i));
     }
@@ -224,7 +225,7 @@ public class TCGroupMessageWrapperTest extends TestCase {
   }
 
   public void testObjectSyncMessage() throws Exception {
-    ObjectIDSet dnaOids = new ObjectIDSet();
+    ObjectIDSet dnaOids = new BitSetObjectIDSet();
     for (long i = 1; i <= 100; ++i) {
       dnaOids.add(new ObjectID(i));
     }

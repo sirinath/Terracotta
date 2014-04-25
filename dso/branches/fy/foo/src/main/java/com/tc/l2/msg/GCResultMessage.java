@@ -10,6 +10,7 @@ import com.tc.io.TCByteBufferOutput;
 import com.tc.net.groups.AbstractGroupMessage;
 import com.tc.objectserver.dgc.api.GarbageCollectionInfo;
 import com.tc.util.Assert;
+import com.tc.util.BasicObjectIDSet;
 import com.tc.util.ObjectIDSet;
 
 import java.io.IOException;
@@ -40,7 +41,7 @@ public class GCResultMessage extends AbstractGroupMessage implements EventContex
     Assert.assertEquals(GC_RESULT, getType());
     this.gcInfo = new GarbageCollectionInfo();
     this.gcInfo.deserializeFrom(in);
-    this.gcedOids = new ObjectIDSet();
+    this.gcedOids = new BasicObjectIDSet();
     this.gcedOids.deserializeFrom(in);
   }
 

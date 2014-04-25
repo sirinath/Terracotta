@@ -9,6 +9,7 @@ import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.LogicalAction;
 import com.tc.object.dna.api.LogicalChangeResult;
 import com.tc.object.dna.api.PhysicalAction;
+import com.tc.util.BitSetObjectIDSet;
 import com.tc.util.Events;
 import com.tc.util.ObjectIDSet;
 
@@ -80,7 +81,7 @@ public abstract class LogicalManagedObjectState extends AbstractManagedObjectSta
 
   @Override
   public final Set getObjectReferences() {
-    final ObjectIDSet refs = new ObjectIDSet();
+    final ObjectIDSet refs = new BitSetObjectIDSet();
     addAllObjectReferencesTo(refs);
     return refs;
   }

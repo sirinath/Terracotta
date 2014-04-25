@@ -8,6 +8,7 @@ import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.object.ObjectID;
 import com.tc.objectserver.dgc.api.GarbageCollectionInfo;
+import com.tc.util.BitSetObjectIDSet;
 import com.tc.util.ObjectIDSet;
 
 import java.util.ArrayList;
@@ -76,7 +77,7 @@ public class GCResultMessageTest extends TestCase {
     longList.add(new ObjectID(29));
     longList.add(new ObjectID(19));
 
-    return new ObjectIDSet(longList);
+    return new BitSetObjectIDSet(longList);
   }
 
   public void testBasicSerialization() throws Exception {

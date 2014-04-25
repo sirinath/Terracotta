@@ -18,6 +18,7 @@ import com.tc.object.dna.impl.ObjectStringSerializerImpl;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.util.Assert;
+import com.tc.util.BasicObjectIDSet;
 import com.tc.util.ObjectIDSet;
 
 import java.io.IOException;
@@ -57,7 +58,7 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements OrderedEv
     NodeIDSerializer nodeIDSerializer = new NodeIDSerializer();
     nodeIDSerializer = (NodeIDSerializer) nodeIDSerializer.deserializeFrom(in);
     this.servertxnID = new ServerTransactionID(nodeIDSerializer.getNodeID(), new TransactionID(in.readLong()));
-    this.oids = new ObjectIDSet();
+    this.oids = new BasicObjectIDSet();
     this.oids.deserializeFrom(in);
     this.dnaCount = in.readInt();
     readRootsMap(in);
@@ -65,7 +66,7 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements OrderedEv
     this.serializer.deserializeFrom(in);
     this.dnas = readByteBuffers(in);
     this.sequenceID = in.readLong();
-    deletedOids = new ObjectIDSet();
+    deletedOids = new BasicObjectIDSet();
     deletedOids.deserializeFrom(in);
   }
 

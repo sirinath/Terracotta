@@ -50,6 +50,7 @@ import com.tc.objectserver.persistence.ObjectIDSetMaintainer;
 import com.tc.objectserver.persistence.PersistentObjectFactory;
 import com.tc.objectserver.persistence.SequenceManager;
 import com.tc.test.TCTestCase;
+import com.tc.util.BitSetObjectIDSet;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.PortChooser;
 import com.tc.util.TCCollections;
@@ -139,11 +140,11 @@ public class TCGroupSendLargeObjectSyncMessageTest extends TCTestCase {
     }
     final ObjectStringSerializer objectStringSerializer = new ObjectStringSerializerImpl();
     final ManagedObjectSyncContext managedObjectSyncContext = new ManagedObjectSyncContext(nodeID, rootsMap,
-                                                                                           new ObjectIDSet(rootsMap
+                                                                                           new BitSetObjectIDSet(rootsMap
                                                                                                .values()), true, 100,
                                                                                            10, 0);
     final TCByteBufferOutputStream out = new TCByteBufferOutputStream();
-    ObjectIDSet oidSet = new ObjectIDSet();
+    ObjectIDSet oidSet = new BitSetObjectIDSet();
     for (long i = 0; i < oidsCount; ++i) {
       ObjectID oid = new ObjectID(i);
       oidSet.add(oid);

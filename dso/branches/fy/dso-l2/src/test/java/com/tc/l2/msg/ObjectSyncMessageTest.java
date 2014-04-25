@@ -17,6 +17,7 @@ import com.tc.object.dna.impl.ObjectStringSerializer;
 import com.tc.object.dna.impl.ObjectStringSerializerImpl;
 import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
+import com.tc.util.BitSetObjectIDSet;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.TCCollections;
 
@@ -42,7 +43,7 @@ public class ObjectSyncMessageTest extends TestCase {
     this.objectStringSerializer = new ObjectStringSerializerImpl();
     TCByteBuffer tcbb = TCByteBufferFactory.getInstance(false, 3452);
     this.tcByteBufferArray = new TCByteBuffer[] { tcbb };
-    ObjectIDSet oids = new ObjectIDSet(rootsMap.values());
+    ObjectIDSet oids = new BitSetObjectIDSet(rootsMap.values());
     this.managedObjectSyncContext = new ManagedObjectSyncContext(nodeID, rootsMap, oids, true, 100, 10, 0);
     this.managedObjectSyncContext
         .setDehydratedBytes(oids, TCCollections.EMPTY_OBJECT_ID_SET, new TCByteBuffer[] { tcbb }, dnaCount,
