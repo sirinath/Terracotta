@@ -22,7 +22,7 @@
   
   <build>
     <plugins>
-      <plugin>
+      <!--plugin>
         <groupId>org.terracotta</groupId>
         <artifactId>maven-forge-plugin</artifactId>
         <configuration>
@@ -38,7 +38,7 @@
             <phase>generate-resources</phase>
           </execution>
         </executions>
-      </plugin>       
+      </plugin-->       
     </plugins>
   </build>
 </project>
