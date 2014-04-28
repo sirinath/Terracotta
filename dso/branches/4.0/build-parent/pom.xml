@@ -33,7 +33,7 @@
     <slf4j.version>1.6.6</slf4j.version>
     <offheap-store.version>1.1.5</offheap-store.version>
     <search.version>1.3.0</search.version>
-    <security-version>1.3.16</security-version>
+    <security-version>1.3.17</security-version>
     <shiro.version>1.2.3</shiro.version>
     <management-core-version>1.2.3</management-core-version>
     <management.version>2.7.7-SNAPSHOT</management.version>
