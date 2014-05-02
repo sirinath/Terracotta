@@ -233,7 +233,7 @@ public class BitSetObjectIDSet extends ObjectIDSet {
     }
 
     private boolean isPointingToLast() {
-      if (this.current.last() >= this.current.start + this.idx) { return false; }
+      if (!this.current.isEmpty() && this.current.last() >= this.current.start + this.idx) { return false; }
       return true;
     }
 

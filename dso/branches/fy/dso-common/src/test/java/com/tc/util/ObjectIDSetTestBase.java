@@ -41,6 +41,24 @@ public abstract class ObjectIDSetTestBase {
   protected abstract ObjectIDSet create(Collection<ObjectID> copy);
 
   @Test
+  public void testObjectIDSetConcurrentIteratorRemove() throws Exception {
+    ObjectIDSet set = create();
+    set.add(new ObjectID(0));
+
+    Iterator<ObjectID> iterator = set.iterator();
+
+    for (Iterator<?> it = set.iterator(); it.hasNext(); it.next(), it.remove());
+
+    try {
+      while (iterator.hasNext()) {
+        iterator.next();
+      }
+    } catch (ConcurrentModificationException e) {
+      //acceptable
+    }
+  }
+
+  @Test
   public void testContain() {
     final ObjectIDSet set = create();
     final HashSet<ObjectID> hashSet = new HashSet<ObjectID>();
