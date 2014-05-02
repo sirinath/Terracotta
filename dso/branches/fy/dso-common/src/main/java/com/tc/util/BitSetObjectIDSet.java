@@ -439,7 +439,9 @@ public class BitSetObjectIDSet extends ObjectIDSet {
     }
 
     public long last() {
-      if (this.nextLongs == 0) { throw new NoSuchElementException(); }
+      if (this.nextLongs == 0) {
+        throw new NoSuchElementException();
+      }
       return this.start + BitSet.RANGE_SIZE - 1 - Long.numberOfLeadingZeros(this.nextLongs);
     }
 
