@@ -29,11 +29,14 @@ public class Invalidations implements TCSerializable {
   private final Map<ObjectID, ObjectIDSet> invalidationsPerCdsm;
 
   public Invalidations() {
-    this(new HashMap<ObjectID, ObjectIDSet>());
+    this.invalidationsPerCdsm = new HashMap<ObjectID, ObjectIDSet>();
   }
 
   public Invalidations(Map<ObjectID, ObjectIDSet> invalidationsPerCdsm) {
-    this.invalidationsPerCdsm = invalidationsPerCdsm;
+    this();
+    for (Entry<ObjectID, ObjectIDSet> e : invalidationsPerCdsm.entrySet()) {
+      this.invalidationsPerCdsm.put(e.getKey(), new BitSetObjectIDSet(e.getValue()));
+    }
   }
 
   public void add(ObjectID mapID, ObjectID oid) {
@@ -82,7 +85,7 @@ public class Invalidations implements TCSerializable {
       ObjectID mapID = new ObjectID(in.readLong());
       ObjectIDSet oidSet = new BasicObjectIDSet();
       oidSet.deserializeFrom(in);
-      this.invalidationsPerCdsm.put(mapID, oidSet);
+      this.invalidationsPerCdsm.put(mapID, new BitSetObjectIDSet(oidSet));
     }
     return this;
   }

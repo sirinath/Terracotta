@@ -200,6 +200,13 @@ public class BitSetObjectIDSet extends ObjectIDSet {
     return new ObjectID(max.last());
   }
 
+  @Override
+  public void clear() {
+    this.size = 0;
+    this.modCount++;
+    this.ranges.clear();
+  }
+
   public static long calculateStart(final long lid) {
     if (lid < 0) {
       return (-BitSet.RANGE_SIZE + ((lid + 1) / BitSet.RANGE_SIZE) * BitSet.RANGE_SIZE);
