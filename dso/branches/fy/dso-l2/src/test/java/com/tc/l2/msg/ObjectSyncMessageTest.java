@@ -20,12 +20,14 @@ import com.tc.object.tx.TransactionID;
 import com.tc.util.BitSetObjectIDSet;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.TCCollections;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 
 import junit.framework.TestCase;
+import org.hamcrest.core.IsEqual;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertThat;
 
 public class ObjectSyncMessageTest extends TestCase {
   private ManagedObjectSyncContext managedObjectSyncContext;
@@ -66,15 +68,7 @@ public class ObjectSyncMessageTest extends TestCase {
     assertEquals(osm.getDnaCount(), osm1.getDnaCount());
     assertEquals(osm.getServerTransactionID(), osm1.getServerTransactionID());
 
-    Set oids = osm.getOids();
-    Set oids1 = osm1.getOids();
-    assertEquals(oids.size(), oids1.size());
-    for (Iterator iter = osm.getOids().iterator(); iter.hasNext();) {
-      ObjectID oid = (ObjectID) iter.next();
-      assertTrue(oids1.contains(oid));
-      oids1.remove(oid);
-    }
-    assertTrue(oids1.isEmpty());
+    assertThat(osm.getOids(), equalTo(osm1.getOids()));
 
     TCByteBuffer[] dnas1 = osm1.getUnprocessedDNAs();
 

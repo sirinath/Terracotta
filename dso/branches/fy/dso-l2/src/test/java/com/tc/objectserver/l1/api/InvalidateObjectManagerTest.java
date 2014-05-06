@@ -169,7 +169,7 @@ public class InvalidateObjectManagerTest extends TCTestCase {
 
       Invalidations invalidationsGot = invalidateObjectManager.getObjectsIDsToInvalidate(cid);
       Invalidations expected = new Invalidations();
-      ObjectID mapID = new ObjectID(1000 + k);
+      ObjectID mapID = ObjectID.NULL_ID;
       for (int j = 50; j < 100; j++) {
         long longOid = 100 * k + j;
         expected.add(mapID, new ObjectID(longOid));

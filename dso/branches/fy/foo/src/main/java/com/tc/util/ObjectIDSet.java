@@ -153,12 +153,12 @@ public abstract class ObjectIDSet extends AbstractSet<ObjectID> implements Sorte
 
     @Override
     protected Collection<? extends Range> ranges() {
-      throw new UnsupportedOperationException("Implement me!");
+      return delegate.ranges();
     }
 
     @Override
     public int size() {
-      throw new UnsupportedOperationException("Implement me!");
+      return delegate.size();
     }
 
     @Override
