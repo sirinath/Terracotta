@@ -3,6 +3,8 @@
  */
 package com.terracotta.toolkit.mockl2.test;
 
+import com.google.common.collect.SetMultimap;
+import com.tc.abortable.AbortedOperationException;
 import com.tc.exception.ImplementMe;
 import com.tc.object.ObjectID;
 import com.tc.object.LogicalOperation;
@@ -353,7 +355,7 @@ public class MockTCObjectServerMap implements TCObjectServerMap<Object> {
   }
 
   @Override
-  public Map getAllValuesUnlocked(Map mapIdToKeysMap) {
+  public Map getAllValuesUnlocked(SetMultimap mapIdToKeysMap) {
     throw new ImplementMe();
   }
 
@@ -562,5 +564,10 @@ public class MockTCObjectServerMap implements TCObjectServerMap<Object> {
   @Override
   public boolean isEnum() {
     throw new ImplementMe();
+  }
+
+  @Override
+  public Map<Object, VersionedObject> getAllVersioned(final SetMultimap<ObjectID, Object> mapIdToKeysMap) throws AbortedOperationException {
+    throw new UnsupportedOperationException("Implement me!");
   }
 }
