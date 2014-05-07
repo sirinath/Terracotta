@@ -7,6 +7,7 @@ import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.io.TCByteBufferOutputStream.Mark;
 import com.tc.object.ObjectID;
+import com.tc.object.LogicalOperation;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAEncodingInternal;
 import com.tc.object.dna.api.DNAWriter;
@@ -106,14 +107,14 @@ public class DNAWriterImpl implements DNAWriterInternal {
   }
 
   @Override
-  public void addLogicalAction(int method, Object[] parameters, LogicalChangeID logicalChangeID) {
+  public void addLogicalAction(LogicalOperation method, Object[] parameters, LogicalChangeID logicalChangeID) {
     actionCount++;
     output.writeByte(BaseDNAEncodingImpl.LOGICAL_ACTION_TYPE);
     output.writeBoolean(logicalChangeID.isNull());
     if (!logicalChangeID.isNull()) {
       output.writeLong(logicalChangeID.toLong());
     }
-    output.writeInt(method); // use a short instead?
+    output.writeInt(method.ordinal()); // use a short instead?
     output.writeByte(parameters.length);
 
     for (Object parameter : parameters) {
@@ -356,12 +357,12 @@ public class DNAWriterImpl implements DNAWriterInternal {
     }
 
     @Override
-    public void addLogicalAction(int method, Object[] parameters, LogicalChangeID logicalChangeID) {
+    public void addLogicalAction(LogicalOperation method, Object[] parameters, LogicalChangeID logicalChangeID) {
       parent.addLogicalAction(method, parameters, logicalChangeID);
     }
 
     @Override
-    public void addLogicalAction(int method, Object[] parameters) {
+    public void addLogicalAction(LogicalOperation method, Object[] parameters) {
       parent.addLogicalAction(method, parameters);
     }
 
@@ -431,7 +432,7 @@ public class DNAWriterImpl implements DNAWriterInternal {
   }
 
   @Override
-  public void addLogicalAction(int method, Object[] parameters) {
+  public void addLogicalAction(LogicalOperation method, Object[] parameters) {
     addLogicalAction(method, parameters, LogicalChangeID.NULL_ID);
   }
 

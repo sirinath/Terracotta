@@ -10,6 +10,7 @@ import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.io.TCSerializable;
 import com.tc.object.ObjectID;
+import com.tc.object.LogicalOperation;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncoding;
@@ -202,7 +203,7 @@ public class DNAImpl implements DNAInternal, DNACursor, TCSerializable {
     if (!input.readBoolean()) {
       logicalChangeID = new LogicalChangeID(input.readLong());
     }
-    final int method = this.input.readInt();
+    final LogicalOperation method = LogicalOperation.values()[this.input.readInt()];
     final int paramCount = this.input.read();
     if (paramCount < 0) { throw new AssertionError("Invalid param count:" + paramCount); }
     final Object[] params = new Object[paramCount];

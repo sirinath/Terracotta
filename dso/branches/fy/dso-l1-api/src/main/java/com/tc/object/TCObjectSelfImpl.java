@@ -3,6 +3,7 @@
  */
 package com.tc.object;
 
+import com.tc.object.LogicalOperation;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.TransparentAccess;
 import com.tc.object.dna.api.DNA;
@@ -120,8 +121,8 @@ public class TCObjectSelfImpl implements TCObjectSelf {
   }
 
   @Override
-  public void logicalInvoke(int method, String methodName, Object[] parameters) {
-    tcClazz.getObjectManager().getTransactionManager().logicalInvoke(this, method, methodName, parameters);
+  public void logicalInvoke(LogicalOperation method, Object[] parameters) {
+    tcClazz.getObjectManager().getTransactionManager().logicalInvoke(this, method, parameters);
   }
 
   @Override

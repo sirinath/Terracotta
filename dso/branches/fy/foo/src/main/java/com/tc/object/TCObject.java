@@ -258,10 +258,9 @@ public interface TCObject extends Cacheable {
    * Invoke logical method
    * 
    * @param method Method indicator, as defined in {@link com.tc.object.SerializationUtil}
-   * @param methodSignature The signature description
    * @param params The parameter values
    */
-  public void logicalInvoke(int method, String methodSignature, Object[] params);
+  public void logicalInvoke(LogicalOperation method, Object[] params);
 
   /**
    * Turns off auto locking.

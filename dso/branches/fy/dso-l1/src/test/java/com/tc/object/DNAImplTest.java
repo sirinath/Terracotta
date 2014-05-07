@@ -6,6 +6,7 @@ package com.tc.object;
 
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
+import com.tc.object.LogicalOperation;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
@@ -80,11 +81,11 @@ public class DNAImplTest extends TestCase {
     final DNAEncodingInternal encoding = new ApplicatorDNAEncodingImpl(classProvider);
     final DNAWriterInternal dnaWriter = createDNAWriter(out, id, type, serializer, encoding, isDelta);
     final PhysicalAction action1 = new PhysicalAction("class.field1", new Integer(1), false);
-    final LogicalAction action2 = new LogicalAction(12, new Object[] { "key", "value" });
+    final LogicalAction action2 = new LogicalAction(LogicalOperation.PUT, new Object[] { "key", "value" });
     final PhysicalAction action3 = new PhysicalAction("class.field2", new ObjectID(3), true);
     final PhysicalAction action4 = new PhysicalAction("class.field3", new ObjectID(4), true);
     final PhysicalAction action5 = new PhysicalAction("class.field4", new ObjectID(5), true);
-    final LogicalAction action6 = new LogicalAction(13, new Object[] { "key", "value" }, new LogicalChangeID(6));
+    final LogicalAction action6 = new LogicalAction(LogicalOperation.PUT_IF_ABSENT, new Object[] { "key", "value" }, new LogicalChangeID(6));
 
     MetaDataDescriptorInternal md = new MetaDataDescriptorImpl("cat1");
     md.setObjectID(id);
@@ -117,7 +118,7 @@ public class DNAImplTest extends TestCase {
       dnaWriter.setArrayLength(arrayLen);
     }
     dnaWriter.addPhysicalAction(action1.getFieldName(), action1.getObject());
-    dnaWriter.addLogicalAction(action2.getMethod(), action2.getParameters());
+    dnaWriter.addLogicalAction(action2.getLogicalOperation(), action2.getParameters());
     dnaWriter.addPhysicalAction(action3.getFieldName(), action3.getObject());
     assertTrue(dnaWriter.isContiguous());
     dnaWriter.addMetaData(md);
@@ -137,7 +138,7 @@ public class DNAImplTest extends TestCase {
     appender.markSectionEnd();
 
     appender = (DNAWriterInternal) dnaWriter.createAppender();
-    appender.addLogicalAction(action6.getMethod(), action6.getParameters(), action6.getLogicalChangeID());
+    appender.addLogicalAction(action6.getLogicalOperation(), action6.getParameters(), action6.getLogicalChangeID());
     appender.markSectionEnd();
     // collapse this folded DNA into contiguous buffer
     dnaWriter.finalizeHeader();
@@ -318,7 +319,7 @@ public class DNAImplTest extends TestCase {
   }
 
   private void compareAction(final LogicalAction expect, final LogicalAction actual) {
-    assertEquals(expect.getMethod(), actual.getMethod());
+    assertEquals(expect.getLogicalOperation(), actual.getLogicalOperation());
     assertTrue(Arrays.equals(expect.getParameters(), actual.getParameters()));
     assertEquals(expect.getLogicalChangeID(), actual.getLogicalChangeID());
   }

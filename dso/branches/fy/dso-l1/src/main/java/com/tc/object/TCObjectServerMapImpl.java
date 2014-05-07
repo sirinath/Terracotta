@@ -180,12 +180,12 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
 
   @Override
   public void doClear(TCServerMap map) {
-    logicalInvoke(SerializationUtil.CLEAR, SerializationUtil.CLEAR_SIGNATURE, NO_ARGS);
+    logicalInvoke(LogicalOperation.CLEAR, NO_ARGS);
   }
 
   @Override
   public void doClearVersioned() {
-    logicalInvoke(SerializationUtil.CLEAR_VERSIONED, SerializationUtil.CLEAR_VERSIONED_SIGNATURE, NO_ARGS);
+    logicalInvoke(LogicalOperation.CLEAR_VERSIONED, NO_ARGS);
   }
 
   /**
@@ -267,8 +267,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
       if (mdd != null) {
         addMetaData(mdd);
       }
-      boolean rv = logicalInvokeWithResult(SerializationUtil.PUT_IF_ABSENT, SerializationUtil.PUT_IF_ABSENT_SIGNATURE,
-                                           parameters);
+      boolean rv = logicalInvokeWithResult(LogicalOperation.PUT_IF_ABSENT, parameters);
       if (rv) {
         updateLocalCacheOnPut(key, value, valueObjectID);
       } else {
@@ -293,8 +292,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
       if (mdd != null) {
         addMetaData(mdd);
       }
-      boolean rv = logicalInvokeWithResult(SerializationUtil.REPLACE_IF_VALUE_EQUAL,
-                                           SerializationUtil.REPLACE_IF_VALUE_EQUAL_SIGNATURE, parameters);
+      boolean rv = logicalInvokeWithResult(LogicalOperation.REPLACE_IF_VALUE_EQUAL, parameters);
       if (rv) {
         updateLocalCacheOnPut(key, newValue, valueObjectID);
       } else {
@@ -937,7 +935,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
     final ObjectID valueObjectID = shareObject(value);
     final Object[] parameters = constructParamsVersioned(key, value, version);
 
-    logicalInvoke(SerializationUtil.PUT_VERSIONED, SerializationUtil.PUT_VERSIONED_SIGNATURE, parameters);
+    logicalInvoke(LogicalOperation.PUT_VERSIONED, parameters);
     return valueObjectID;
   }
 
@@ -946,8 +944,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
     final ObjectID valueObjectID = shareObject(value);
     final Object[] parameters = constructParamsVersioned(key, value, version);
 
-    logicalInvoke(SerializationUtil.PUT_IF_ABSENT_VERSIONED, SerializationUtil.PUT_IF_ABSENT_VERSIONED_SIGNATURE,
-                  parameters);
+    logicalInvoke(LogicalOperation.PUT_IF_ABSENT_VERSIONED, parameters);
     return valueObjectID;
   }
 
@@ -957,9 +954,9 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
     final Object[] parameters = constructParams(key, value);
 
     if (putIfAbsent) {
-      logicalInvoke(SerializationUtil.PUT_IF_ABSENT, SerializationUtil.PUT_IF_ABSENT_SIGNATURE, parameters);
+      logicalInvoke(LogicalOperation.PUT_IF_ABSENT, parameters);
     } else {
-      logicalInvoke(SerializationUtil.PUT, SerializationUtil.PUT_SIGNATURE, parameters);
+      logicalInvoke(LogicalOperation.PUT, parameters);
     }
 
     return valueObjectID;
@@ -1008,22 +1005,19 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
   }
 
   private void invokeLogicalRemove(final Object key) {
-    logicalInvoke(SerializationUtil.REMOVE, SerializationUtil.REMOVE_KEY_SIGNATURE, new Object[] { key });
+    logicalInvoke(LogicalOperation.REMOVE, new Object[] { key });
   }
 
   private void invokeLogicalRemoveVersioned(final Object key, final long version) {
-    logicalInvoke(SerializationUtil.REMOVE_VERSIONED, SerializationUtil.REMOVE_VERSIONED_SIGNATURE, new Object[] { key,
-        version });
+    logicalInvoke(LogicalOperation.REMOVE_VERSIONED, new Object[] { key, version });
   }
 
   private boolean invokeLogicalRemove(final Object key, final Object value) throws AbortedOperationException {
-    return logicalInvokeWithResult(SerializationUtil.REMOVE_IF_VALUE_EQUAL,
-                                   SerializationUtil.REMOVE_IF_VALUE_EQUAL_SIGNATURE, new Object[] { key, value });
+    return logicalInvokeWithResult(LogicalOperation.REMOVE_IF_VALUE_EQUAL, new Object[] { key, value });
   }
 
   private void invokeLogicalExpire(final Object key, final Object value) {
-    logicalInvoke(SerializationUtil.EXPIRE_IF_VALUE_EQUAL, SerializationUtil.EXPIRE_IF_VALUE_EQUAL_SIGNATURE,
-                  new Object[] { key, value });
+    logicalInvoke(LogicalOperation.EXPIRE_IF_VALUE_EQUAL, new Object[] { key, value });
   }
 
   @Override
@@ -1096,8 +1090,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
 
   @Override
   public void doLogicalSetLastAccessedTime(final Object key, final Object value, final long lastAccessedTime) {
-    logicalInvoke(SerializationUtil.SET_LAST_ACCESSED_TIME, SerializationUtil.SET_LAST_ACCESSED_TIME_SIGNATURE,
-                  new Object[] { key, value, lastAccessedTime });
+    logicalInvoke(LogicalOperation.SET_LAST_ACCESSED_TIME, new Object[] { key, value, lastAccessedTime });
   }
 
   private void lockAll() {
@@ -1139,8 +1132,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
     }
 
     // TODO: How to get the clientID here???
-    logicalInvoke(SerializationUtil.REGISTER_SERVER_EVENT_LISTENER,
-                  SerializationUtil.REGISTER_SERVER_EVENT_LISTENER_SIGNATURE, params.toArray());
+    logicalInvoke(LogicalOperation.REGISTER_SERVER_EVENT_LISTENER, params.toArray());
   }
 
   @Override
@@ -1151,8 +1143,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
     }
 
     // TODO: How to get the clientID here???
-    logicalInvoke(SerializationUtil.UNREGISTER_SERVER_EVENT_LISTENER,
-                  SerializationUtil.UNREGISTER_SERVER_EVENT_LISTENER_SIGNATURE, params.toArray());
+    logicalInvoke(LogicalOperation.UNREGISTER_SERVER_EVENT_LISTENER, params.toArray());
   }
 
 }

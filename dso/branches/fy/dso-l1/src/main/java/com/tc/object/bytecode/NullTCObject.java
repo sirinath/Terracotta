@@ -6,6 +6,7 @@ package com.tc.object.bytecode;
 
 import com.tc.exception.ImplementMe;
 import com.tc.object.ObjectID;
+import com.tc.object.LogicalOperation;
 import com.tc.object.TCObject;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
@@ -91,7 +92,7 @@ public class NullTCObject implements TCObject {
   }
 
   @Override
-  public void logicalInvoke(final int method, final String methodName, final Object[] parameters) {
+  public void logicalInvoke(final LogicalOperation method, final Object[] parameters) {
     // do nothing
   }
 

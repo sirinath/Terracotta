@@ -5,6 +5,7 @@ package com.terracotta.toolkit.mockl2.test;
 
 import com.tc.exception.ImplementMe;
 import com.tc.object.ObjectID;
+import com.tc.object.LogicalOperation;
 import com.tc.object.TCClass;
 import com.tc.object.TCObjectServerMap;
 import com.tc.object.VersionedObject;
@@ -202,7 +203,7 @@ public class MockTCObjectServerMap implements TCObjectServerMap<Object> {
   }
 
   @Override
-  public void logicalInvoke(int method, String methodSignature, Object[] params) {
+  public void logicalInvoke(LogicalOperation method, Object[] params) {
     throw new ImplementMe();
     
   }

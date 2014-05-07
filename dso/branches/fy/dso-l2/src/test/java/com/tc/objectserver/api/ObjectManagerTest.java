@@ -10,7 +10,7 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.ClientID;
 import com.tc.object.ObjectID;
-import com.tc.object.SerializationUtil;
+import com.tc.object.LogicalOperation;
 import com.tc.object.TestDNACursor;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
@@ -47,7 +47,6 @@ import com.tc.stats.counter.sampled.SampledCounterImpl;
 import com.tc.test.TCTestCase;
 import com.tc.util.Assert;
 import com.tc.util.BitSetObjectIDSet;
-import com.tc.util.ObjectIDSet;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.concurrent.ThreadUtil;
 
@@ -937,7 +936,7 @@ public class ObjectManagerTest extends TCTestCase {
             case 2:
             case 3:
               final Object item = new UTF8ByteDataHolder("item" + this.count);
-              return new LogicalAction(SerializationUtil.ADD, new Object[] { item });
+              return new LogicalAction(LogicalOperation.ADD, new Object[] { item });
             default:
               throw new RuntimeException("bad count: " + this.count);
           }
@@ -1043,7 +1042,7 @@ public class ObjectManagerTest extends TCTestCase {
             case 3:
               final Object key = new UTF8ByteDataHolder("key" + this.count);
               final Object val = new UTF8ByteDataHolder("val" + this.count);
-              return new LogicalAction(SerializationUtil.PUT, new Object[] { key, val });
+              return new LogicalAction(LogicalOperation.PUT, new Object[] { key, val });
             default:
               throw new RuntimeException("bad count: " + this.count);
           }

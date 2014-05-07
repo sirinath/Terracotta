@@ -7,6 +7,7 @@ package com.terracotta.toolkit.mockl2.test;
 
 import com.tc.exception.ImplementMe;
 import com.tc.object.ObjectID;
+import com.tc.object.LogicalOperation;
 import com.tc.object.TCClass;
 import com.tc.object.TCObject;
 import com.tc.object.dna.api.DNA;
@@ -131,10 +132,10 @@ public class MockTCObject implements TCObject {
   }
 
   public static class MethodCall {
-    public int      method;
+    public LogicalOperation method;
     public Object[] parameters;
 
-    public MethodCall(final int method, final Object[] parameters) {
+    public MethodCall(final LogicalOperation method, final Object[] parameters) {
       this.method = method;
       this.parameters = parameters;
     }
@@ -236,7 +237,7 @@ public class MockTCObject implements TCObject {
   }
 
   @Override
-  public void logicalInvoke(final int method, final String methodSignature, final Object[] params) {
+  public void logicalInvoke(final LogicalOperation method, final Object[] params) {
     this.history.add(new MethodCall(method, params));
   }
 
