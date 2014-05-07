@@ -157,10 +157,10 @@ public class MockTCObject implements TCObject {
   }
 
   public static class MethodCall {
-    public int      method;
+    public LogicalOperation method;
     public Object[] parameters;
 
-    public MethodCall(final int method, final Object[] parameters) {
+    public MethodCall(final LogicalOperation method, final Object[] parameters) {
       this.method = method;
       this.parameters = parameters;
     }
@@ -262,7 +262,7 @@ public class MockTCObject implements TCObject {
   }
 
   @Override
-  public void logicalInvoke(final int method, final String methodSignature, final Object[] params) {
+  public void logicalInvoke(final LogicalOperation method, final Object[] params) {
     this.history.add(new MethodCall(method, params));
   }
 

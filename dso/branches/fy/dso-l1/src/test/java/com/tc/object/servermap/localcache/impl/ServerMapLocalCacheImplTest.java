@@ -17,6 +17,7 @@ import com.tc.invalidation.Invalidations;
 import com.tc.net.GroupID;
 import com.tc.object.ClientObjectManager;
 import com.tc.object.ObjectID;
+import com.tc.object.LogicalOperation;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerImpl;
@@ -829,7 +830,7 @@ public class ServerMapLocalCacheImplTest extends TestCase {
     }
 
     @Override
-    public void logicalInvoke(TCObject source, int method, Object[] parameters, String methodName, LogicalChangeID id) {
+    public void logicalInvoke(TCObject source, LogicalOperation method, Object[] parameters, LogicalChangeID id) {
       throw new ImplementMe();
 
     }

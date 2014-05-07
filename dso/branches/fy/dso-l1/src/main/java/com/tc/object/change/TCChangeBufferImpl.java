@@ -4,6 +4,7 @@
  */
 package com.tc.object.change;
 
+import com.tc.object.LogicalOperation;
 import com.tc.object.TCObject;
 import com.tc.object.change.event.ArrayElementChangeEvent;
 import com.tc.object.change.event.LiteralChangeEvent;
@@ -159,7 +160,7 @@ public class TCChangeBufferImpl implements TCChangeBuffer {
   }
 
   @Override
-  public void logicalInvoke(int method, Object[] parameters, LogicalChangeID id) {
+  public void logicalInvoke(LogicalOperation method, Object[] parameters, LogicalChangeID id) {
     // TODO: It might be useful (if it doesn't take too much CPU) to collapse logical operations. For instance,
     // if a put() is followed by a remove() on the same key we don't need to send anything. Or if multiple put()s are
     // done, only the last one matters

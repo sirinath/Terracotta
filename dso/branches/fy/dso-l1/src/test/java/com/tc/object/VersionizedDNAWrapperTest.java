@@ -6,6 +6,7 @@ package com.tc.object;
 
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
+import com.tc.object.LogicalOperation;
 import com.tc.object.bytecode.MockClassProvider;
 import com.tc.object.dna.api.DNACursor;
 import com.tc.object.dna.api.DNAEncodingInternal;
@@ -38,11 +39,11 @@ public class VersionizedDNAWrapperTest extends TestCase {
     final DNAEncodingInternal encoding = new ApplicatorDNAEncodingImpl(classProvider);
     final DNAWriter dnaWriter = createDNAWriter(out, id, type, serializer, encoding, "loader description");
     final PhysicalAction action1 = new PhysicalAction("class.field1", new Integer(1), false);
-    final LogicalAction action2 = new LogicalAction(12, new Object[] { "key", "value" });
+    final LogicalAction action2 = new LogicalAction(LogicalOperation.PUT, new Object[] { "key", "value" });
     final PhysicalAction action3 = new PhysicalAction("class.field2", new ObjectID(3), true);
     dnaWriter.setParentObjectID(pid);
     dnaWriter.addPhysicalAction(action1.getFieldName(), action1.getObject());
-    dnaWriter.addLogicalAction(action2.getMethod(), action2.getParameters(), LogicalChangeID.NULL_ID);
+    dnaWriter.addLogicalAction(action2.getLogicalOperation(), action2.getParameters(), LogicalChangeID.NULL_ID);
     dnaWriter.addPhysicalAction(action3.getFieldName(), action3.getObject());
     dnaWriter.markSectionEnd();
     dnaWriter.finalizeHeader();
@@ -100,7 +101,7 @@ public class VersionizedDNAWrapperTest extends TestCase {
   }
 
   private void compareAction(final LogicalAction expect, final LogicalAction actual) {
-    assertEquals(expect.getMethod(), actual.getMethod());
+    assertEquals(expect.getLogicalOperation(), actual.getLogicalOperation());
     assertTrue(Arrays.equals(expect.getParameters(), actual.getParameters()));
   }
 

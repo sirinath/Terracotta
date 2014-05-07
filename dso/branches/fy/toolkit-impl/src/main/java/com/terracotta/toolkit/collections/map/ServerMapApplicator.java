@@ -9,7 +9,7 @@ import org.terracotta.toolkit.store.ToolkitConfigFields.Consistency;
 
 import com.tc.logging.TCLogger;
 import com.tc.object.ClientObjectManager;
-import com.tc.object.SerializationUtil;
+import com.tc.object.LogicalOperation;
 import com.tc.object.TCObject;
 import com.tc.object.TCObjectServerMap;
 import com.tc.object.TraversedReferences;
@@ -144,12 +144,12 @@ public class ServerMapApplicator extends BaseApplicator {
     // Transactions could be folded, hence ignoring other changes.
     while (cursor.next(this.encoding)) {
       final LogicalAction action = cursor.getLogicalAction();
-      final int method = action.getMethod();
-      if (method == SerializationUtil.CLEAR || method == SerializationUtil.CLEAR_LOCAL_CACHE) {
+      final LogicalOperation method = action.getLogicalOperation();
+      if (LogicalOperation.CLEAR.equals(method) || LogicalOperation.CLEAR_LOCAL_CACHE.equals(method)) {
         ((TCObjectServerMap) tcObjectExternal).clearLocalCache((TCServerMap) pojo);
-      } else if (method == SerializationUtil.DESTROY) {
+      } else if (LogicalOperation.DESTROY.equals(method)) {
         ((DestroyApplicator) pojo).applyDestroy();
-      } else if (method == SerializationUtil.SET_LAST_ACCESSED_TIME) {
+      } else if (LogicalOperation.SET_LAST_ACCESSED_TIME.equals(method)) {
         ((TCObjectServerMap) tcObjectExternal).removeValueFromLocalCache(action.getParameters()[0]);
       } else {
         getLogger().warn("ServerMap received delta changes for methods other than CLEAR : " + method);

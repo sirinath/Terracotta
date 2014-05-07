@@ -4,6 +4,7 @@
  */
 package com.tc.object.dna.api;
 
+import com.tc.object.LogicalOperation;
 import java.util.Arrays;
 
 /**
@@ -11,7 +12,7 @@ import java.util.Arrays;
  * a limited set, which are defined in {@link com.tc.object.SerializationUtil}.
  */
 public class LogicalAction {
-  private final int      method;
+  private final LogicalOperation method;
   private final Object[] parameters;
   private final LogicalChangeID id;
 
@@ -21,7 +22,7 @@ public class LogicalAction {
    * @param method Method identifier, as defined in {@link com.tc.object.SerializationUtil}
    * @param parameters Parameters to the method call, may be empty but not null
    */
-  public LogicalAction(int method, Object[] parameters) {
+  public LogicalAction(LogicalOperation method, Object[] parameters) {
     this(method, parameters, LogicalChangeID.NULL_ID);
   }
 
@@ -31,7 +32,7 @@ public class LogicalAction {
    * @param method Method identifier, as defined in {@link com.tc.object.SerializationUtil}
    * @param parameters Parameters to the method call, may be empty but not null
    */
-  public LogicalAction(int method, Object[] parameters, LogicalChangeID id) {
+  public LogicalAction(LogicalOperation method, Object[] parameters, LogicalChangeID id) {
     this.method = method;
     this.parameters = parameters;
     this.id = id;
@@ -42,7 +43,7 @@ public class LogicalAction {
    * 
    * @return Method identifier, as defined in {@link com.tc.object.SerializationUtil}
    */
-  public int getMethod() {
+  public LogicalOperation getLogicalOperation() {
     return method;
   }
 

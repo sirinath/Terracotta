@@ -774,14 +774,14 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   @Override
-  public void checkPortabilityOfLogicalAction(final Object[] params, final int index, final String methodName,
+  public void checkPortabilityOfLogicalAction(final LogicalOperation method, final Object[] params, final int index,
                                               final Object pojo) throws TCNonPortableObjectError {
     final Object param = params[index];
     if (!portability.isPortableInstance(param)) {
       //
       throw new TCNonPortableObjectError("Attempt to share an instance of a non-portable class ("
                                          + param.getClass().getName() + ") by"
-                                         + " passing it as an argument to a method (" + methodName
+                                         + " passing it as an argument to a method (" + method
                                          + ") of a logically-managed class (" + pojo.getClass().getName() + ".");
     }
   }

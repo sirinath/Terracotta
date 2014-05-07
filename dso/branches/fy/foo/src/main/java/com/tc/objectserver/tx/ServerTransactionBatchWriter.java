@@ -130,7 +130,7 @@ public class ServerTransactionBatchWriter {
   }
 
   private void writeLogicalAction(final DNAWriter dnaWriter, final LogicalAction action) {
-    dnaWriter.addLogicalAction(action.getMethod(), action.getParameters());
+    dnaWriter.addLogicalAction(action.getLogicalOperation(), action.getParameters());
   }
 
   private void writePhysicalAction(final DNAWriter dnaWriter, final PhysicalAction action) {

@@ -6,6 +6,7 @@ package com.tc.object.dna.api;
 
 import com.tc.io.TCByteBufferOutput;
 import com.tc.object.ObjectID;
+import com.tc.object.LogicalOperation;
 
 /**
  * Interface for writing DNA. The Writer effectively defines the protocol for how DNA data is written to a stream.
@@ -21,7 +22,7 @@ public interface DNAWriter {
    * @param Method identifier, defined in {@link com.tc.object.SerializationUtil}
    * @param parameters Parameter values
    */
-  void addLogicalAction(int method, Object[] parameters);
+  void addLogicalAction(LogicalOperation method, Object[] parameters);
 
   /**
    * Add logical action to the writer
@@ -29,7 +30,7 @@ public interface DNAWriter {
    * @param Method identifier, defined in {@link com.tc.object.SerializationUtil}
    * @param parameters Parameter values
    */
-  void addLogicalAction(int method, Object[] parameters, LogicalChangeID logicalChangeID);
+  void addLogicalAction(LogicalOperation method, Object[] parameters, LogicalChangeID logicalChangeID);
 
   /**
    * Add physical action to the writer representing field value, automatically determine whether value is a reference by

@@ -4,6 +4,7 @@
 package com.tc.object.tx;
 
 import com.tc.object.ObjectID;
+import com.tc.object.LogicalOperation;
 import com.tc.object.TCObject;
 import com.tc.object.dna.api.LogicalChangeID;
 import com.tc.object.locks.LockID;
@@ -123,7 +124,7 @@ public interface ClientTransaction {
    * @param parameters Parameter values
    * @param methodName Method name
    */
-  public void logicalInvoke(TCObject source, int method, Object[] parameters, String methodName, LogicalChangeID id);
+  public void logicalInvoke(TCObject source, LogicalOperation method, Object[] parameters, LogicalChangeID id);
 
   /**
    * Check whether transaction has changes or notifications

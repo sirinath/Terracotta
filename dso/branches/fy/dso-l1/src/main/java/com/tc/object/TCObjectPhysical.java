@@ -160,7 +160,7 @@ public class TCObjectPhysical extends TCObjectImpl {
   }
 
   @Override
-  public void logicalInvoke(int method, String methodSignature, Object[] params) {
+  public void logicalInvoke(LogicalOperation method, Object[] params) {
     throw new UnsupportedOperationException();
   }
 

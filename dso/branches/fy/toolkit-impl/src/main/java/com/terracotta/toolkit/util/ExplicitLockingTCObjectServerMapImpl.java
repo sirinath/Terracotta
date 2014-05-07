@@ -7,6 +7,7 @@ import org.terracotta.toolkit.rejoin.RejoinException;
 
 import com.tc.abortable.AbortedOperationException;
 import com.tc.object.ObjectID;
+import com.tc.object.LogicalOperation;
 import com.tc.object.TCClass;
 import com.tc.object.TCObjectServerMap;
 import com.tc.object.VersionedObject;
@@ -185,9 +186,9 @@ public class ExplicitLockingTCObjectServerMapImpl implements TCObjectServerMap {
   }
 
   @Override
-  public void logicalInvoke(int method, String methodSignature, Object[] params) {
+  public void logicalInvoke(LogicalOperation method, Object[] params) {
     assertLockAndRejoinState();
-    delegate.logicalInvoke(method, methodSignature, params);
+    delegate.logicalInvoke(method, params);
   }
 
   @Override
