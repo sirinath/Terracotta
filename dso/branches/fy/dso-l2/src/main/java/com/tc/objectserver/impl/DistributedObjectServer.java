@@ -914,9 +914,6 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                                                  this.lockManager,
                                                                                                  this.serverMapEvictor,
                                                                                                  stageManager
-                                                                                                     .getStage(ServerConfigurationContext.RESPOND_TO_LOCK_REQUEST_STAGE)
-                                                                                                     .getSink(),
-                                                                                                 stageManager
                                                                                                      .getStage(ServerConfigurationContext.OBJECT_ID_BATCH_REQUEST_STAGE)
                                                                                                      .getSink(),
                                                                                                  new Timer(
@@ -984,7 +981,8 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
                                                                   dgcSequenceProvider, indexSequenceGenerator,
                                                                   objectIDSequence, l2DSOConfig.getDataStorage(),
                                                                   configSetupManager.getActiveServerGroupForThisL2()
-                                                                      .getElectionTimeInSecs());
+                                                                      .getElectionTimeInSecs(), haConfig
+                                                                      .getNodesStore());
     this.l2Coordinator.getStateManager().registerForStateChangeEvents(this.l2State);
     this.l2Coordinator.getStateManager().registerForStateChangeEvents(this.indexHACoordinator);
     this.l2Coordinator.getStateManager().registerForStateChangeEvents(this.l2Coordinator);

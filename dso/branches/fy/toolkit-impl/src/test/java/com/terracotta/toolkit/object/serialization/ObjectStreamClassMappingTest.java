@@ -6,6 +6,7 @@ package com.terracotta.toolkit.object.serialization;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.Sets;
 import com.tc.abortable.AbortableOperationManager;
 import com.tc.cluster.DsoCluster;
 import com.tc.exception.ImplementMe;
@@ -20,7 +21,7 @@ import com.tc.object.locks.LockLevel;
 import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.TransactionCompleteListener;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventSubsystem;
-import com.tc.operatorevent.TerracottaOperatorEvent.EventType;
+import com.tc.operatorevent.TerracottaOperatorEvent.EventLevel;
 import com.tc.platform.PlatformService;
 import com.tc.platform.rejoin.RejoinLifecycleListener;
 import com.tc.properties.TCProperties;
@@ -34,14 +35,14 @@ import com.terracottatech.search.NVPair;
 import java.io.IOException;
 import java.io.ObjectStreamClass;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import junit.framework.Assert;
+
+import static org.junit.Assert.assertEquals;
 
 public class ObjectStreamClassMappingTest {
 
@@ -52,17 +53,13 @@ public class ObjectStreamClassMappingTest {
   public void init() {
     localSerializerMap = new LocalSerializerMap();
     serializer = new ObjectStreamClassMapping(new ThreadCheckerPlatformService(), localSerializerMap);
-
   }
 
   @Test
   public void testSerializer() throws IOException, ClassNotFoundException {
-    Set<Class> classSet = new HashSet<Class>();
-    populateSet(classSet);
-
     HashMap<Integer, ObjectStreamClass> mappings = new HashMap<Integer, ObjectStreamClass>();
 
-    for (Class cl : classSet) {
+    for (Class cl : classSet()) {
       ObjectStreamClass osc = ObjectStreamClass.lookup(cl);
       mappings.put(serializer.getMappingFor(osc), osc);
     }
@@ -72,7 +69,16 @@ public class ObjectStreamClassMappingTest {
     }
   }
 
-  private void populateSet(Set<Class> classSet) {
+  @Test
+  public void testMultipleLookupsReturnSameID() throws Exception {
+    for (Class aClass : classSet()) {
+      ObjectStreamClass osc = ObjectStreamClass.lookup(aClass);
+      assertEquals(serializer.getMappingFor(osc), serializer.getMappingFor(osc));
+    }
+  }
+
+  private static Set<Class> classSet() {
+    Set<Class> classSet = Sets.newHashSet();
     classSet.add(Integer.class);
     classSet.add(Long.class);
     classSet.add(Character.class);
@@ -84,26 +90,7 @@ public class ObjectStreamClassMappingTest {
     classSet.add(String.class);
     classSet.add(Long.class);
     classSet.add(Enum.class);
-  }
-
-  private static class LocalSerializerMap<K, V> implements SerializerMap<K, V> {
-    private final Map<K, V> localHashMap = new HashMap<K, V>();
-
-    @Override
-    public V put(K key, V value) {
-      return localHashMap.put(key, value);
-    }
-
-    @Override
-    public V get(K key) {
-      return localHashMap.get(key);
-    }
-
-    @Override
-    public V localGet(K key) {
-      return get(key);
-    }
-
+    return classSet;
   }
 
   // Asserts that the write lock is taken from the Serializer thread
@@ -249,7 +236,7 @@ public class ObjectStreamClassMappingTest {
     }
 
     @Override
-    public void fireOperatorEvent(EventType coreOperatorEventLevel, EventSubsystem coreEventSubsytem,
+    public void fireOperatorEvent(EventLevel coreOperatorEventLevel, EventSubsystem coreEventSubsytem,
                                   String eventMessage) {
       //
     }

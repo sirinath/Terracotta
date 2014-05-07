@@ -135,7 +135,7 @@ public class StageQueueImpl implements Sink {
       return;
     }
 
-    boolean interrupted = false;
+    boolean interrupted = Thread.interrupted();
     try {
       while (true) {
         try {
@@ -147,7 +147,7 @@ public class StageQueueImpl implements Sink {
           }
           break;
         } catch (InterruptedException e) {
-          this.logger.error("StageQueue Add: " + e);
+          this.logger.debug("StageQueue Add: " + e);
           interrupted = true;
         }
       }
