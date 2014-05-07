@@ -16,7 +16,7 @@
   </parent>
   
   <groupId>org.terracotta.internal</groupId>
-  <artifactId>foo</artifactId>
+  <artifactId>tc-messaging</artifactId>
   <packaging>jar</packaging>
   <name>foo</name>
 

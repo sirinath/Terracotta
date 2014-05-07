@@ -50,7 +50,7 @@
     <module>management</module>
     <module>management-agent</module>
 
-    <module>foo</module>
+    <module>tc-messaging</module>
   </modules>
 
   <profiles>

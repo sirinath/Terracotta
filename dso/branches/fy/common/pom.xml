@@ -33,7 +33,7 @@ Apache Ivy version: 2.2.0 20100923230623
     </dependency>
     <dependency>
       <groupId>org.terracotta.internal</groupId>
-      <artifactId>foo</artifactId>
+      <artifactId>tc-messaging</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
     </dependency>
