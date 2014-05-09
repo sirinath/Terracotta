@@ -18,7 +18,7 @@
   <groupId>org.terracotta.internal</groupId>
   <artifactId>tc-messaging</artifactId>
   <packaging>jar</packaging>
-  <name>foo</name>
+  <name>Terracotta Messaging</name>
 
   <properties>  
     <skip.deploy>true</skip.deploy>

@@ -1,3 +1,4 @@
+//XXX MOVE ME
 package com.tc.l2.ha;
 
 import static org.mockito.Mockito.mock;
