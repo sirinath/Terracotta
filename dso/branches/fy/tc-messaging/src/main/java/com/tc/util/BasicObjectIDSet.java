@@ -16,6 +16,19 @@ public class BasicObjectIDSet extends ObjectIDSet {
   private final List<Range> ranges = new ArrayList<Range>();
   private int size = 0;
 
+  public BasicObjectIDSet() {
+    //
+  }
+  
+  public BasicObjectIDSet(String magic, long ... ids) {
+    if (!"ImDoingTesting".equals(magic)) {
+      throw new UnsupportedOperationException("This constructor is for testing only");
+    }
+    for (long id : ids) {
+      insertRange(new BasicRange(id, new long[] {1L}));
+    }
+  }
+  
   @Override
   public Iterator<ObjectID> iterator() {
     return new OIDIterator();
