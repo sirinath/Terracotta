@@ -63,7 +63,7 @@ public class DiagnosticTest extends AbstractTsaAgentTestBase {
 
       // restart crashed server -> make sure everything is back in working order
       getTestControlMbean().restartLastCrashedServer(0);
-      waitUntilAllServerAgentsUp();
+      waitUntilAllServerAgentsUp(3);
       testResources(0, 0);
       testResources(0, 1);
 
@@ -84,9 +84,12 @@ public class DiagnosticTest extends AbstractTsaAgentTestBase {
       testSingleServerThreadDump(group, member);
     }
 
-    private void waitUntilAllServerAgentsUp() {
-      waitUntilServerAgentUp(getGroupData(0).getTsaGroupPort(0));
-      waitUntilServerAgentUp(getGroupData(0).getTsaGroupPort(1));
+    private void waitUntilAllServerAgentsUp(int expectedAgentCount) {
+      while (true) {
+        int count = waitUntilServerAgentUp(getGroupData(0).getTsaGroupPort(0));
+        count += waitUntilServerAgentUp(getGroupData(0).getTsaGroupPort(1));
+        if (count >= expectedAgentCount) { break; }
+      }
     }
 
     private void testGroupThreadDump(int group, int member, boolean[] failures) throws IOException {
