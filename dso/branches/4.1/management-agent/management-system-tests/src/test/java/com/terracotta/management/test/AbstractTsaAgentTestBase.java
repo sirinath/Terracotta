@@ -199,11 +199,11 @@ public abstract class AbstractTsaAgentTestBase extends AbstractTestBase {
       }
     }
 
-    protected void waitUntilServerAgentUp(int port) {
+    protected int waitUntilServerAgentUp(int port) {
       while (true) {
         try {
-          httpGet("http://localhost:" + port + "/tc-management-api/agents");
-          break;
+          JSONArray array = getTsaJSONArrayContent("localhost", port, "/tc-management-api/agents");
+          return array.size();
         } catch (IOException e) {
           ThreadUtil.reallySleep(1000);
         }
