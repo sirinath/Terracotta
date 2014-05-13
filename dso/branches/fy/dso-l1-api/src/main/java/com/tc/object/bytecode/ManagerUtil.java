@@ -17,8 +17,9 @@ import com.tc.object.TCObject;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.tx.TransactionCompleteListener;
-import com.tc.operatorevent.TerracottaOperatorEvent.EventSubsystem;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventLevel;
+import com.tc.operatorevent.TerracottaOperatorEvent.EventSubsystem;
+import com.tc.operatorevent.TerracottaOperatorEvent.EventType;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -675,8 +676,8 @@ public class ManagerUtil {
   }
 
   protected static void fireOperatorEvent(EventLevel coreOperatorEventLevel, EventSubsystem coreEventSubsytem,
-                                          String eventMessage) {
-    getManager().fireOperatorEvent(coreOperatorEventLevel, coreEventSubsytem, eventMessage);
+                                          EventType eventType, String eventMessage) {
+    getManager().fireOperatorEvent(coreOperatorEventLevel, coreEventSubsytem, eventType, eventMessage);
   }
 
   protected static GroupID[] getGroupIDs() {
