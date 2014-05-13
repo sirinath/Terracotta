@@ -331,7 +331,7 @@ public class ServerManagementService {
     });
   }
 
-  public Collection<OperatorEventEntity> getOperatorEvents(Set<String> serverNames, final Long sinceWhen, final Set<String> acceptableTypes, final boolean read) throws ServiceExecutionException {
+  public Collection<OperatorEventEntity> getOperatorEvents(Set<String> serverNames, final Long sinceWhen, final Set<String> acceptableTypes, final Set<String> acceptableLevels, final boolean read) throws ServiceExecutionException {
     return forEachServer("getOperatorEvents", serverNames, new ForEachServer<OperatorEventEntity>() {
       @Override
       public Collection<OperatorEventEntity> queryLocalServer(L2Info member) {
@@ -345,7 +345,13 @@ public class ServerManagementService {
             }
             if (acceptableTypes != null) {
               // filter out event types
-              if (!acceptableTypes.contains(operatorEvent.getEventLevelAsString())) {
+              if (!acceptableTypes.contains(operatorEvent.getEventTypeAsString())) {
+                continue;
+              }
+            }
+            if (acceptableLevels != null) {
+              // filter out event levels
+              if (!acceptableLevels.contains(operatorEvent.getEventLevelAsString())) {
                 continue;
               }
             }
@@ -357,6 +363,7 @@ public class ServerManagementService {
             operatorEventEntity.setTimestamp(operatorEvent.getEventTime().getTime());
             operatorEventEntity.setCollapseString(operatorEvent.getCollapseString());
             operatorEventEntity.setEventSubsystem(operatorEvent.getEventSubsystemAsString());
+            operatorEventEntity.setEventType(operatorEvent.getEventTypeAsString());
             operatorEventEntity.setEventLevel(operatorEvent.getEventLevelAsString());
             operatorEventEntity.setRead(operatorEvent.isRead());
 
@@ -381,6 +388,7 @@ public class ServerManagementService {
             .matrixParam("names", member.name());
         if (sinceWhen != null) { uriBuilder.queryParam("sinceWhen", sinceWhen); }
         if (acceptableTypes != null) { uriBuilder.queryParam("eventTypes", toCsv(acceptableTypes)); }
+        if (acceptableLevels != null) { uriBuilder.queryParam("eventLevels", toCsv(acceptableLevels)); }
         uriBuilder.queryParam("filterOutRead", read);
 
         return remoteManagementSource.getFromRemoteL2(member.name(), uriBuilder.build(), OperatorEventEntity.class);
@@ -708,6 +716,7 @@ public class ServerManagementService {
       TerracottaOperatorEvent terracottaOperatorEvent = new TerracottaOperatorEventImpl(
           TerracottaOperatorEvent.EventLevel.valueOf(operatorEventEntity.getEventLevel()),
           TerracottaOperatorEvent.EventSubsystem.valueOf(operatorEventEntity.getEventSubsystem()),
+          TerracottaOperatorEvent.EventType.valueOf(operatorEventEntity.getEventType()),
           operatorEventEntity.getMessage(), operatorEventEntity.getTimestamp(), operatorEventEntity.getCollapseString());
 
       return localManagementSource.markOperatorEvent(terracottaOperatorEvent, read);

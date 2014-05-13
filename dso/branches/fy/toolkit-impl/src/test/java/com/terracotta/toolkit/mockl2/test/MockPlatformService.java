@@ -22,6 +22,7 @@ import com.tc.object.metadata.MetaDataDescriptor;
 import com.tc.object.tx.TransactionCompleteListener;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventLevel;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventSubsystem;
+import com.tc.operatorevent.TerracottaOperatorEvent.EventType;
 import com.tc.platform.PlatformService;
 import com.tc.platform.rejoin.RejoinLifecycleListener;
 import com.tc.properties.NullTCProperties;
@@ -285,6 +286,7 @@ public class MockPlatformService implements PlatformService {
 
   @Override
   public void fireOperatorEvent(EventLevel coreOperatorEventLevel, EventSubsystem coreEventSubsytem,
+                                EventType eventType,
                                 String eventMessage) {
     throw new ImplementMe();
 
