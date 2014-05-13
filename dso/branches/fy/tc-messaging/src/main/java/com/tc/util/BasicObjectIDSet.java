@@ -3,6 +3,7 @@ package com.tc.util;
 import com.tc.object.ObjectID;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -24,6 +25,7 @@ public class BasicObjectIDSet extends ObjectIDSet {
     if (!"ImDoingTesting".equals(magic)) {
       throw new UnsupportedOperationException("This constructor is for testing only");
     }
+    Arrays.sort(ids);
     for (long id : ids) {
       insertRange(new BasicRange(id, new long[] {1L}));
     }

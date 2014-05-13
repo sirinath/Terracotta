@@ -22,8 +22,8 @@ public class ObjectSyncCompleteMessage extends AbstractGroupMessage implements O
     super(-1);
   }
 
-  public ObjectSyncCompleteMessage(int type, long sequence) {
-    super(type);
+  public ObjectSyncCompleteMessage(long sequence) {
+    super(OBJECT_SYNC_COMPLETE);
     this.sequence = sequence;
   }
 

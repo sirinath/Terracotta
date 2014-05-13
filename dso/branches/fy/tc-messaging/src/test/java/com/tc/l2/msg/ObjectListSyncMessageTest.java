@@ -1,4 +1,3 @@
-//XXX MOVE ME
 /*
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
@@ -7,32 +6,13 @@ package com.tc.l2.msg;
 
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
-import com.tc.l2.state.StateManager;
-import com.tc.object.ObjectID;
-import com.tc.util.BitSetObjectIDSet;
+import com.tc.util.State;
 
-import java.util.Set;
+import org.junit.Test;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
 
-public class ObjectListSyncMessageTest extends TestCase {
-  private ObjectListSyncMessage objectListSyncMessage;
-  private Set<ObjectID>         oids;
-
-  @Override
-  public void setUp() {
-    objectListSyncMessage = new ObjectListSyncMessage();
-    oids = new BitSetObjectIDSet();
-    oids.add(new ObjectID(1234));
-    oids.add(new ObjectID(456));
-    oids.add(new ObjectID(9068));
-  }
-
-  @Override
-  public void tearDown() {
-    objectListSyncMessage = null;
-    oids = null;
-  }
+public class ObjectListSyncMessageTest {
 
   private void validate(ObjectListSyncMessage olsm, ObjectListSyncMessage olsm1) {
     assertEquals(olsm.getType(), olsm1.getType());
@@ -60,14 +40,13 @@ public class ObjectListSyncMessageTest extends TestCase {
     return olsm1;
   }
 
+  @Test
   public void testBasicSerialization() throws Exception {
-    ObjectListSyncMessage olsm = ObjectListSyncMessageFactory
-        .createObjectListSyncRequestMessage();
+    ObjectListSyncMessage olsm = ObjectListSyncMessage.createObjectListSyncRequestMessage();
     ObjectListSyncMessage olsm1 = writeAndRead(olsm);
     validate(olsm, olsm1);
 
-    olsm = ObjectListSyncMessageFactory
-        .createObjectListSyncResponseMessage(objectListSyncMessage, StateManager.PASSIVE_UNINITIALIZED, true, 1L, 1L);
+    olsm = ObjectListSyncMessage.createObjectListSyncResponseMessage(new ObjectListSyncMessage(), new State("PASSIVE-UNINITIALIZED"), true, 1L, 1L);
     olsm1 = writeAndRead(olsm);
     validate(olsm, olsm1);
   }

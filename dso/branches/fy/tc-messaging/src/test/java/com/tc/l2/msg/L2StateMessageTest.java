@@ -1,4 +1,3 @@
-//XXX MOVE ME
 /*
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
@@ -7,26 +6,27 @@ package com.tc.l2.msg;
 
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
-import com.tc.l2.ha.WeightGeneratorFactory;
 import com.tc.l2.state.Enrollment;
-import com.tc.l2.state.EnrollmentFactory;
 import com.tc.net.ServerID;
 
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-public class L2StateMessageTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+
+public class L2StateMessageTest {
 
   private Enrollment     enrollment;
   private L2StateMessage l2StateMessage;
 
-  @Override
+  @Before
   public void setUp() {
-    enrollment = EnrollmentFactory.createEnrollment(new ServerID("30001", new byte[] { 54, -125, 34, -4 }), true,
-                                                    WeightGeneratorFactory.createDefaultFactory());
+    enrollment = new Enrollment(new ServerID("30001", new byte[] { 54, -125, 34, -4 }), true, new long[] {0, 1});
     l2StateMessage = new L2StateMessage();
   }
 
-  @Override
+  @After
   public void tearDown() {
     enrollment = null;
     l2StateMessage = null;
@@ -53,36 +53,37 @@ public class L2StateMessageTest extends TestCase {
     return l2sm1;
   }
 
+  @Test
   public void testBasicSerialization() throws Exception {
-    L2StateMessage l2sm = (L2StateMessage) L2StateMessageFactory.createElectionStartedMessage(enrollment);
+    L2StateMessage l2sm = (L2StateMessage) L2StateMessage.createElectionStartedMessage(enrollment);
     L2StateMessage l2sm1 = writeAndRead(l2sm);
     validate(l2sm, l2sm1);
 
-    l2sm = (L2StateMessage) L2StateMessageFactory.createElectionResultMessage(enrollment);
+    l2sm = (L2StateMessage) L2StateMessage.createElectionResultMessage(enrollment);
     l2sm1 = writeAndRead(l2sm);
     validate(l2sm, l2sm1);
 
-    l2sm = (L2StateMessage) L2StateMessageFactory.createElectionWonMessage(enrollment);
+    l2sm = (L2StateMessage) L2StateMessage.createElectionWonMessage(enrollment);
     l2sm1 = writeAndRead(l2sm);
     validate(l2sm, l2sm1);
 
-    l2sm = (L2StateMessage) L2StateMessageFactory.createMoveToPassiveStandbyMessage(enrollment);
+    l2sm = (L2StateMessage) L2StateMessage.createMoveToPassiveStandbyMessage(enrollment);
     l2sm1 = writeAndRead(l2sm);
     validate(l2sm, l2sm1);
 
-    l2sm = (L2StateMessage) L2StateMessageFactory.createAbortElectionMessage(l2StateMessage, enrollment);
+    l2sm = (L2StateMessage) L2StateMessage.createAbortElectionMessage(l2StateMessage, enrollment);
     l2sm1 = writeAndRead(l2sm);
     validate(l2sm, l2sm1);
 
-    l2sm = (L2StateMessage) L2StateMessageFactory.createElectionStartedMessage(l2StateMessage, enrollment);
+    l2sm = (L2StateMessage) L2StateMessage.createElectionStartedMessage(l2StateMessage, enrollment);
     l2sm1 = writeAndRead(l2sm);
     validate(l2sm, l2sm1);
 
-    l2sm = (L2StateMessage) L2StateMessageFactory.createResultConflictMessage(l2StateMessage, enrollment);
+    l2sm = (L2StateMessage) L2StateMessage.createResultConflictMessage(l2StateMessage, enrollment);
     l2sm1 = writeAndRead(l2sm);
     validate(l2sm, l2sm1);
 
-    l2sm = (L2StateMessage) L2StateMessageFactory.createResultAgreedMessage(l2StateMessage, enrollment);
+    l2sm = (L2StateMessage) L2StateMessage.createResultAgreedMessage(l2StateMessage, enrollment);
     l2sm1 = writeAndRead(l2sm);
     validate(l2sm, l2sm1);
   }

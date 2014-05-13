@@ -21,13 +21,9 @@ public class IndexSyncCompleteMessage extends AbstractGroupMessage implements Or
     super(-1);
   }
 
-  public IndexSyncCompleteMessage(final int type) {
-    super(type);
-  }
-
-  public void initialize(long sID) {
+  public IndexSyncCompleteMessage(long sID) {
+    super(INDEX_SYNC_COMPLETE_TYPE);
     this.sequenceID = sID;
-
   }
 
   @Override

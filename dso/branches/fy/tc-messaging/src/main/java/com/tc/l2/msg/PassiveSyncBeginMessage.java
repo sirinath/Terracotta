@@ -112,4 +112,18 @@ public class PassiveSyncBeginMessage extends AbstractGroupMessage {
            "currentState=" + currentState +
            '}';
   }
+
+  public static PassiveSyncBeginMessage beginRequest() {
+    return new PassiveSyncBeginMessage(PassiveSyncBeginMessage.REQUEST);
+  }
+
+  public static PassiveSyncBeginMessage beginResponse(State currentState) {
+    PassiveSyncBeginMessage message = new PassiveSyncBeginMessage(PassiveSyncBeginMessage.RESPONSE);
+    message.setCurrentState(currentState);
+    return message;
+  }
+
+  public static PassiveSyncBeginMessage beginError() {
+    return new PassiveSyncBeginMessage(PassiveSyncBeginMessage.ERROR);
+  }
 }

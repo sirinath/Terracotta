@@ -15,7 +15,6 @@ import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.l2.msg.GCResultMessage;
 import com.tc.l2.msg.L2StateMessage;
-import com.tc.l2.msg.L2StateMessageFactory;
 import com.tc.l2.msg.ObjectSyncMessage;
 import com.tc.l2.state.Enrollment;
 import com.tc.lang.TCThreadGroup;
@@ -341,8 +340,7 @@ public class TCGroupManagerImplTest extends TCTestCase {
     ObjectStringSerializer objectSerializer = new ObjectStringSerializerImpl();
     Map roots = new HashMap();
     long sID = 10;
-    ObjectSyncMessage message = new ObjectSyncMessage(ObjectSyncMessage.MANAGED_OBJECT_SYNC_TYPE);
-    message.initialize(new ServerTransactionID(new ServerID("hello", new byte[] { 34, 33, (byte) 234 }),
+    ObjectSyncMessage message = new ObjectSyncMessage(new ServerTransactionID(new ServerID("hello", new byte[] { 34, 33, (byte) 234 }),
                                                new TransactionID(342)), dnaOids, count, serializedDNAs,
                        objectSerializer, roots, sID, TCCollections.EMPTY_OBJECT_ID_SET);
     return (message);
@@ -393,7 +391,7 @@ public class TCGroupManagerImplTest extends TCTestCase {
     for (long i = 1; i <= 100; ++i) {
       oidSet.add(new ObjectID(i));
     }
-    GCResultMessage message = new GCResultMessage(GCResultMessage.GC_RESULT, new GarbageCollectionInfo(), oidSet);
+    GCResultMessage message = new GCResultMessage(new GarbageCollectionInfo(), oidSet);
     return (message);
   }
 
@@ -772,7 +770,7 @@ public class TCGroupManagerImplTest extends TCTestCase {
     public void messageReceived(NodeID fromNode, GroupMessage msg) {
       super.messageReceived(fromNode, msg);
       L2StateMessage message = (L2StateMessage) msg;
-      GroupMessage resultAgreed = L2StateMessageFactory.createResultAgreedMessage(message, message.getEnrollment());
+      GroupMessage resultAgreed = L2StateMessage.createResultAgreedMessage(message, message.getEnrollment());
       try {
         manager.sendTo(message.messageFrom(), resultAgreed);
       } catch (GroupException e) {

@@ -48,7 +48,7 @@ public class TransportMessageFactoryImpl implements TransportHandshakeMessageFac
   }
 
   @Override
-  public TransportHandshakeMessage createSynAck(ConnectionID connectionId, TransportHandshakeErrorContext errorContext,
+  public TransportHandshakeMessage createSynAck(ConnectionID connectionId, TransportHandshakeError errorContext,
                                                 TCConnection source, boolean isMaxConnectionsExceeded,
                                                 int maxConnections) {
     return createNewMessage(TransportMessageImpl.SYN_ACK, connectionId, errorContext, source, isMaxConnectionsExceeded,
@@ -56,14 +56,14 @@ public class TransportMessageFactoryImpl implements TransportHandshakeMessageFac
   }
 
   private static TransportMessageImpl createNewMessage(byte type, ConnectionID connectionId,
-                                                       TransportHandshakeErrorContext errorContext, TCConnection source,
+                                                       TransportHandshakeError errorContext, TCConnection source,
                                                        boolean isMaxConnectionsExceeded, int maxConnections, short protocol) {
     return createNewMessage(type, connectionId, errorContext, source, isMaxConnectionsExceeded, maxConnections,
                             protocol, (short) -1, TransportHandshakeMessage.NO_CALLBACK_PORT);
   }
 
   private static TransportMessageImpl createNewMessage(byte type, ConnectionID connectionId,
-                                                       TransportHandshakeErrorContext errorContext, TCConnection source,
+                                                       TransportHandshakeError errorContext, TCConnection source,
                                                        boolean isMaxConnectionsExceeded, int maxConnections, int callbackPort) {
     return createNewMessage(type, connectionId, errorContext, source, isMaxConnectionsExceeded, maxConnections,
                             WireProtocolHeader.PROTOCOL_TRANSPORT_HANDSHAKE, (short) -1, callbackPort);
@@ -75,7 +75,7 @@ public class TransportMessageFactoryImpl implements TransportHandshakeMessageFac
    * this wouldn't be send to the server
    */
   private static TransportMessageImpl createNewMessage(byte type, ConnectionID connectionId,
-                                                       TransportHandshakeErrorContext errorContext, TCConnection source,
+                                                       TransportHandshakeError errorContext, TCConnection source,
                                                        boolean isMaxConnectionsExceeded, int maxConnections, short protocol,
                                                        short stackLayerFlags, int callbackPort) {
     TCByteBufferOutputStream bbos = new TCByteBufferOutputStream();

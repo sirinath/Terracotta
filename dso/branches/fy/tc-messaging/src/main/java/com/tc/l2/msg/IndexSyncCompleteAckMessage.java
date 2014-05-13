@@ -19,8 +19,8 @@ public class IndexSyncCompleteAckMessage extends AbstractGroupMessage implements
     super(-1);
   }
 
-  public IndexSyncCompleteAckMessage(final int type, NodeID nodeID) {
-    super(type);
+  public IndexSyncCompleteAckMessage(NodeID nodeID) {
+    super(IndexSyncCompleteAckMessage.INDEX_SYNC_COMPLETE_ACK_TYPE);
     this.nodeID = nodeID;
   }
 

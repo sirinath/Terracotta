@@ -4,6 +4,11 @@
  */
 package com.tc.l2.msg;
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
 import com.tc.async.api.EventContext;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
@@ -14,28 +19,27 @@ import com.tc.object.tx.ServerTransactionID;
 import com.tc.object.tx.TransactionID;
 import com.tc.util.Assert;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-
 /**
  * Ack message sent in reply to Server's Relayed Txn Message.
  */
 public class ServerRelayedTxnAckMessage extends ServerTxnAckMessage implements EventContext {
 
   private static final int SERVER_RELAYED_TXN_ACK_MSG_TYPE = 0;
-  private Set              serverTxnIDs;
+  private Set<ServerTransactionID> serverTxnIDs;
   private transient NodeID nodeID;
 
   // To make serialization happy
   public ServerRelayedTxnAckMessage() {
     super(-1);
   }
-
-  public ServerRelayedTxnAckMessage(NodeID nodeID, MessageID messageID, Set serverTxnIDs) {
-    super(SERVER_RELAYED_TXN_ACK_MSG_TYPE, messageID);
-    this.nodeID = nodeID;
+  
+  public ServerRelayedTxnAckMessage(RelayedCommitTransactionMessage ackFor, Set<ServerTransactionID> serverTxnIDs) {
+    this(ackFor.messageFrom(), ackFor.getMessageID(), serverTxnIDs);
+  }
+    
+  public ServerRelayedTxnAckMessage(NodeID ackTo, MessageID ackFor, Set<ServerTransactionID> serverTxnIDs) {
+    super(SERVER_RELAYED_TXN_ACK_MSG_TYPE, ackFor);
+    this.nodeID = ackTo;
     this.serverTxnIDs = serverTxnIDs;
   }
 
@@ -75,5 +79,4 @@ public class ServerRelayedTxnAckMessage extends ServerTxnAckMessage implements E
       out.writeLong(sTxID.getClientTransactionID().toLong());
     }
   }
-
 }

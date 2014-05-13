@@ -21,8 +21,8 @@ public class ObjectSyncCompleteAckMessage extends AbstractGroupMessage implement
     super(-1);
   }
 
-  public ObjectSyncCompleteAckMessage(int type, NodeID nodeID) {
-    super(type);
+  public ObjectSyncCompleteAckMessage(NodeID nodeID) {
+    super(OBJECT_SYNC_COMPLETE_ACK);
     this.nodeID = nodeID;
   }
 
@@ -39,5 +39,4 @@ public class ObjectSyncCompleteAckMessage extends AbstractGroupMessage implement
   protected void basicSerializeTo(TCByteBufferOutput out) {
     Assert.assertEquals(OBJECT_SYNC_COMPLETE_ACK, getType());
   }
-
 }

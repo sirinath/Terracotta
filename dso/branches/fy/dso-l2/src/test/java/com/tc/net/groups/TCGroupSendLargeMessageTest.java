@@ -12,7 +12,6 @@ import com.tc.async.impl.StageManagerImpl;
 import com.tc.config.NodesStore;
 import com.tc.config.NodesStoreImpl;
 import com.tc.l2.msg.GCResultMessage;
-import com.tc.l2.msg.GCResultMessageFactory;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandlerImpl;
 import com.tc.net.NodeID;
@@ -107,7 +106,7 @@ public class TCGroupSendLargeMessageTest extends TCTestCase {
     for (long i = 1; i <= oidsCount; ++i) {
       oidSet.add(new ObjectID(i));
     }
-    final GCResultMessage msg1 = GCResultMessageFactory.createGCResultMessage(createGarbageCollectionInfo(1), oidSet);
+    final GCResultMessage msg1 = new GCResultMessage(createGarbageCollectionInfo(1), oidSet);
     gm1.sendAll(msg1);
 
     GCResultMessage msg2 = (GCResultMessage) l2.take();
@@ -119,7 +118,7 @@ public class TCGroupSendLargeMessageTest extends TCTestCase {
     for (long i = (oidsCount + 1); i <= (oidsCount * 2); ++i) {
       oidSet.add(new ObjectID(i));
     }
-    final GCResultMessage msg3 = GCResultMessageFactory.createGCResultMessage(createGarbageCollectionInfo(2), oidSet);
+    final GCResultMessage msg3 = new GCResultMessage(createGarbageCollectionInfo(2), oidSet);
     gm2.sendAll(msg3);
 
     GCResultMessage msg4 = (GCResultMessage) l1.take();

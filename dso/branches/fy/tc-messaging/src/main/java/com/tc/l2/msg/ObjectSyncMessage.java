@@ -48,8 +48,18 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements OrderedEv
     super(-1);
   }
 
-  public ObjectSyncMessage(final int type) {
-    super(type);
+  public ObjectSyncMessage(final ServerTransactionID stxnID, final ObjectIDSet dnaOids, final int count,
+                         final TCByteBuffer[] serializedDNAs, final ObjectStringSerializer objectSerializer,
+                         final Map<String, ObjectID> roots, final long sqID, final ObjectIDSet deletedObjectIds) {
+    super(MANAGED_OBJECT_SYNC_TYPE);
+    this.servertxnID = stxnID;
+    this.oids = dnaOids;
+    this.dnaCount = count;
+    this.dnas = serializedDNAs;
+    this.serializer = objectSerializer;
+    this.rootsMap = roots;
+    this.sequenceID = sqID;
+    this.deletedOids = deletedObjectIds;
   }
 
   @Override
@@ -112,19 +122,6 @@ public class ObjectSyncMessage extends AbstractGroupMessage implements OrderedEv
     for (final TCByteBuffer buffer : buffers) {
       buffer.recycle();
     }
-  }
-
-  public void initialize(final ServerTransactionID stxnID, final ObjectIDSet dnaOids, final int count,
-                         final TCByteBuffer[] serializedDNAs, final ObjectStringSerializer objectSerializer,
-                         final Map roots, final long sqID, final ObjectIDSet deletedObjectIds) {
-    this.servertxnID = stxnID;
-    this.oids = dnaOids;
-    this.dnaCount = count;
-    this.dnas = serializedDNAs;
-    this.serializer = objectSerializer;
-    this.rootsMap = roots;
-    this.sequenceID = sqID;
-    this.deletedOids = deletedObjectIds;
   }
 
   public int getDnaCount() {

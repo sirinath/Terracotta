@@ -1,4 +1,3 @@
-//XXX MOVE ME
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
@@ -29,6 +28,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import junit.framework.TestCase;
 
+/*
+ * This test really belongs in the TC Messaging module but it's dependencies
+ * currently prevent that.  It needs some heavy refactoring.
+ */
 public class WireProtocolGroupMessageImplTest extends TestCase {
   private TCConnectionManager connMgr;
   private TCListener          server;

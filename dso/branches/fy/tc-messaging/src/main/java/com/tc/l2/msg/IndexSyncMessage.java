@@ -29,12 +29,9 @@ public class IndexSyncMessage extends AbstractGroupMessage implements OrderedEve
     super(-1);
   }
 
-  public IndexSyncMessage(final int type) {
-    super(type);
-  }
-
-  public void initialize(final String cName, String idxId, final String fName, final byte[] fileData, long sID,
+  public IndexSyncMessage(final String cName, String idxId, final String fName, final byte[] fileData, long sID,
                          boolean tcFile, boolean last) {
+    super(IndexSyncMessage.INDEX_SYNC_TYPE);
     this.cacheName = cName;
     indexId = idxId;
     this.fileName = fName;

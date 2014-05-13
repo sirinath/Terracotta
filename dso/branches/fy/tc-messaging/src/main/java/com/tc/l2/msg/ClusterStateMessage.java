@@ -19,6 +19,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.tc.net.groups.GroupMessage;
+
 public class ClusterStateMessage extends AbstractGroupMessage {
 
   public static final int        OBJECT_ID                    = 0x00;
@@ -211,5 +213,50 @@ public class ClusterStateMessage extends AbstractGroupMessage {
 
   public boolean isSplitBrainMessage() {
     return getType() == OPERATION_FAILED_SPLIT_BRAIN;
+  }
+
+  public static ClusterStateMessage createNextAvailableObjectIDMessage(ClusterState state) {
+    ClusterStateMessage msg = new ClusterStateMessage(ClusterStateMessage.OBJECT_ID);
+    msg.initMessage(state);
+    return msg;
+  }
+
+  public static ClusterStateMessage createOKResponse(ClusterStateMessage msg) {
+    ClusterStateMessage response = new ClusterStateMessage(ClusterStateMessage.OPERATION_SUCCESS, msg.getMessageID());
+    return response;
+  }
+
+  public static ClusterStateMessage createNGSplitBrainResponse(ClusterStateMessage msg) {
+    ClusterStateMessage response = new ClusterStateMessage(ClusterStateMessage.OPERATION_FAILED_SPLIT_BRAIN, msg
+        .getMessageID());
+    return response;
+  }
+
+  public static ClusterStateMessage createClusterStateMessage(ClusterState state) {
+    ClusterStateMessage msg = new ClusterStateMessage(ClusterStateMessage.COMPLETE_STATE);
+    msg.initMessage(state);
+    return msg;
+  }
+
+  public static ClusterStateMessage createNewConnectionCreatedMessage(ConnectionID connID) {
+    ClusterStateMessage msg = new ClusterStateMessage(ClusterStateMessage.NEW_CONNECTION_CREATED, connID);
+    return msg;
+  }
+
+  public static ClusterStateMessage createConnectionDestroyedMessage(ConnectionID connID) {
+    ClusterStateMessage msg = new ClusterStateMessage(ClusterStateMessage.CONNECTION_DESTROYED, connID);
+    return msg;
+  }
+
+  public static ClusterStateMessage createNextAvailableGlobalTransactionIDMessage(ClusterState state) {
+    ClusterStateMessage msg = new ClusterStateMessage(ClusterStateMessage.GLOBAL_TRANSACTION_ID);
+    msg.initMessage(state);
+    return msg;
+  }
+
+  public static ClusterStateMessage createNextAvailableDGCIterationMessage(ClusterState state) {
+    ClusterStateMessage msg = new ClusterStateMessage(ClusterStateMessage.DGC_ID);
+    msg.initMessage(state);
+    return msg;
   }
 }

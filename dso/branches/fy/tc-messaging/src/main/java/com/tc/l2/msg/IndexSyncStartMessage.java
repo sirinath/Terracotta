@@ -21,11 +21,8 @@ public class IndexSyncStartMessage extends AbstractGroupMessage implements Order
 
   }
 
-  public IndexSyncStartMessage(final int type) {
-    super(type);
-  }
-
-  public void initialize(long sID, int idxCt) {
+  public IndexSyncStartMessage(long sID, int idxCt) {
+    super(IndexSyncStartMessage.INDEX_SYNC_START_TYPE);
     this.sequenceID = sID;
     this.idxPerCache = idxCt;
   }
@@ -52,5 +49,4 @@ public class IndexSyncStartMessage extends AbstractGroupMessage implements Order
   public int getIdxPerCache() {
     return this.idxPerCache;
   }
-
 }

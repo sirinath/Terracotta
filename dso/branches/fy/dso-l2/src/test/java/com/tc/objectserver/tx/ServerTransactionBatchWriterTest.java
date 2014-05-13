@@ -1,4 +1,3 @@
-//XXX MOVE ME
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
@@ -46,6 +45,10 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
+/*
+ * This test really belongs in the TC Messaging module but it's dependencies
+ * currently prevent that.  It needs some heavy refactoring.
+ */
 public class ServerTransactionBatchWriterTest extends TestCase {
 
   private TxnBatchID batchID;

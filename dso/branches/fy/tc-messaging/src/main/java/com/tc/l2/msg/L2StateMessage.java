@@ -13,6 +13,8 @@ import com.tc.net.groups.MessageID;
 
 import java.io.IOException;
 
+import com.tc.net.groups.GroupMessage;
+
 public class L2StateMessage extends AbstractGroupMessage implements EventContext {
 
   public static final int START_ELECTION          = 0; // Sent during the start of an election by the initiator
@@ -87,4 +89,39 @@ public class L2StateMessage extends AbstractGroupMessage implements EventContext
     }
   }
 
+  public static L2StateMessage createElectionStartedMessage(Enrollment e) {
+    return new L2StateMessage(L2StateMessage.START_ELECTION, e);
+  }
+
+  public static L2StateMessage createElectionResultMessage(Enrollment e) {
+    return new L2StateMessage(L2StateMessage.ELECTION_RESULT, e);
+  }
+
+  public static L2StateMessage createAbortElectionMessage(L2StateMessage initiatingMsg, Enrollment e) {
+    return new L2StateMessage(initiatingMsg.getMessageID(), L2StateMessage.ABORT_ELECTION, e);
+  }
+
+  public static L2StateMessage createElectionStartedMessage(L2StateMessage initiatingMsg, Enrollment e) {
+    return new L2StateMessage(initiatingMsg.getMessageID(), L2StateMessage.START_ELECTION, e);
+  }
+
+  public static L2StateMessage createResultConflictMessage(L2StateMessage initiatingMsg, Enrollment e) {
+    return new L2StateMessage(initiatingMsg.getMessageID(), L2StateMessage.RESULT_CONFLICT, e);
+  }
+
+  public static L2StateMessage createResultAgreedMessage(L2StateMessage initiatingMsg, Enrollment e) {
+    return new L2StateMessage(initiatingMsg.getMessageID(), L2StateMessage.RESULT_AGREED, e);
+  }
+
+  public static L2StateMessage createElectionWonMessage(Enrollment e) {
+    return new L2StateMessage(L2StateMessage.ELECTION_WON, e);
+  }
+
+  public static L2StateMessage createElectionWonAlreadyMessage(Enrollment e) {
+    return new L2StateMessage(L2StateMessage.ELECTION_WON_ALREADY, e);
+  }
+
+  public static L2StateMessage createMoveToPassiveStandbyMessage(Enrollment e) {
+    return new L2StateMessage(L2StateMessage.MOVE_TO_PASSIVE_STANDBY, e);
+  }
 }
