@@ -17,6 +17,9 @@ import com.tc.util.TCCollections;
 import java.util.Collections;
 import java.util.Map;
 
+import com.tc.l2.msg.ObjectSyncMessage;
+import com.tc.object.tx.ServerTransactionID;
+
 public class ManagedObjectSyncContext implements EventContext {
 
   private final NodeID                nodeID;
@@ -140,5 +143,9 @@ public class ManagedObjectSyncContext implements EventContext {
 
   public ObjectIDSet getDeletedOids() {
     return deletedOids;
+  }
+
+  public ObjectSyncMessage createObjectSyncMessage(final ServerTransactionID stxnID) {
+    return new ObjectSyncMessage(stxnID, getSynchedOids(), getDNACount(), getSerializedDNAs(), getObjectSerializer(), getRootsMap(), getSequenceID(), getDeletedOids());
   }
 }

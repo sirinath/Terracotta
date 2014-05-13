@@ -13,6 +13,8 @@ import com.tc.net.groups.NodeIDSerializer;
 
 import java.io.IOException;
 
+import com.tc.net.groups.GroupMessage;
+
 public class ActiveJoinMessage extends AbstractGroupMessage {
   public static final int ACTIVE_JOIN         = 0x01;
   public static final int ACTIVE_LEFT         = 0x02;
@@ -64,5 +66,17 @@ public class ActiveJoinMessage extends AbstractGroupMessage {
   @Override
   public String toString() {
     return "ActiveJoinMessage: " + groupID + " -> " + serverID;
+  }
+
+  public static GroupMessage createActiveJoinMessage(GroupID groupID, ServerID serverID) {
+    return new ActiveJoinMessage(ActiveJoinMessage.ACTIVE_JOIN, groupID, serverID);
+  }
+
+  public static GroupMessage createActiveLeftMessage(GroupID groupID) {
+    return new ActiveJoinMessage(ActiveJoinMessage.ACTIVE_LEFT, groupID);
+  }
+
+  public static GroupMessage createActiveRequestJoinMessage(GroupID groupID, ServerID serverID) {
+    return new ActiveJoinMessage(ActiveJoinMessage.ACTIVE_REQUEST_JOIN, groupID, serverID);
   }
 }

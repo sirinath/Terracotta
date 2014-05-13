@@ -22,11 +22,8 @@ public class IndexSyncAckMessage extends AbstractGroupMessage implements EventCo
     super(-1);
   }
 
-  public IndexSyncAckMessage(int type, MessageID requestID) {
-    super(type, requestID);
-  }
-
-  public void initialize(int amountToAck) {
+  public IndexSyncAckMessage(MessageID requestID, int amountToAck) {
+    super(INDEX_SYNC_ACK_TYPE, requestID);
     this.amount = amountToAck;
   }
 

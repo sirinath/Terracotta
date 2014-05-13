@@ -118,4 +118,19 @@ public class ObjectListSyncMessage extends AbstractGroupMessage {
     }
   }
 
+  public static ObjectListSyncMessage createObjectListSyncRequestMessage() {
+    return new ObjectListSyncMessage(ObjectListSyncMessage.REQUEST);
+  }
+
+  public static ObjectListSyncMessage createObjectListSyncResponseMessage(ObjectListSyncMessage initiatingMsg,
+                                                                          State currentState, boolean syncAllowed,
+                                                                          final long dataStorageSize, final long offheapSize) {
+    return new ObjectListSyncMessage(initiatingMsg.getMessageID(), ObjectListSyncMessage.RESPONSE, currentState,
+        syncAllowed, dataStorageSize, offheapSize);
+  }
+
+  public static ObjectListSyncMessage createObjectListSyncFailedResponseMessage(ObjectListSyncMessage initiatingMsg) {
+    return new ObjectListSyncMessage(initiatingMsg.getMessageID(), ObjectListSyncMessage.FAILED_RESPONSE);
+  }
+
 }

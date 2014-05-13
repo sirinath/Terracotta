@@ -1,4 +1,3 @@
-//XXX MOVE ME
 /*
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
@@ -59,6 +58,10 @@ import java.util.Properties;
 
 import junit.framework.TestCase;
 
+/*
+ * This test really belongs in the TC Messaging module but it's dependencies
+ * currently prevent that.  It needs some heavy refactoring.
+ */
 public class TransactionBatchTest extends TestCase {
 
   private final DNAEncodingInternal           encoding = new ApplicatorDNAEncodingImpl(new MockClassProvider());

@@ -26,8 +26,8 @@ public class GCResultMessage extends AbstractGroupMessage implements EventContex
     super(-1);
   }
 
-  public GCResultMessage(int type, GarbageCollectionInfo gcInfo, ObjectIDSet deleted) {
-    super(type);
+  public GCResultMessage(GarbageCollectionInfo gcInfo, ObjectIDSet deleted) {
+    super(GCResultMessage.GC_RESULT);
     this.gcInfo = gcInfo;
     this.gcedOids = deleted;
   }

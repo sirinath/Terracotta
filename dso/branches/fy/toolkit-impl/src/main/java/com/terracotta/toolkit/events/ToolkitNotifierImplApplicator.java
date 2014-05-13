@@ -42,7 +42,7 @@ public class ToolkitNotifierImplApplicator extends BaseApplicator {
                                                                      + Arrays.asList(parameters)); }
 
           clusteredNotifierImpl.onNotification((String) parameters[0], (String) parameters[1]);
-        } else if (LogicalOperation.CLUSTERED_NOTIFIER.equals(la.getLogicalOperation())) {
+        } else if (LogicalOperation.DESTROY.equals(la.getLogicalOperation())) {
           clusteredNotifierImpl.applyDestroy();
         }
       } else if (action instanceof PhysicalAction) { throw new AssertionError(

@@ -14,7 +14,6 @@ import com.tc.async.impl.OrderedSink;
 import com.tc.l2.context.StateChangedEvent;
 import com.tc.l2.ha.L2HAZapNodeRequestProcessor;
 import com.tc.l2.msg.ObjectSyncResetMessage;
-import com.tc.l2.msg.ObjectSyncResetMessageFactory;
 import com.tc.l2.state.StateManager;
 import com.tc.lang.Recyclable;
 import com.tc.logging.TCLogger;
@@ -133,7 +132,7 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
 
   private void sendOKResponse(NodeID fromNode, ObjectSyncResetMessage msg) {
     try {
-      groupManager.sendTo(fromNode, ObjectSyncResetMessageFactory.createOKResponse(msg));
+      groupManager.sendTo(fromNode, ObjectSyncResetMessage.createOKResponse(msg));
     } catch (GroupException e) {
       logger.error("Error handling message : " + msg, e);
     }
@@ -142,7 +141,7 @@ public class ReplicatedTransactionManagerImpl implements ReplicatedTransactionMa
   @Override
   public void publishResetRequest(NodeID nodeID) throws GroupException {
     ObjectSyncResetMessage osr = (ObjectSyncResetMessage) groupManager
-        .sendToAndWaitForResponse(nodeID, ObjectSyncResetMessageFactory.createObjectSyncResetRequestMessage());
+        .sendToAndWaitForResponse(nodeID, ObjectSyncResetMessage.createObjectSyncResetRequestMessage());
     validateResponse(nodeID, osr);
   }
 

@@ -1,24 +1,23 @@
-//XXX MOVE ME
 /*
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
 package com.tc.l2.msg;
 
+import java.util.Iterator;
+
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
-import com.tc.object.ObjectID;
 import com.tc.objectserver.dgc.api.GarbageCollectionInfo;
-import com.tc.util.BitSetObjectIDSet;
+import com.tc.util.BasicObjectIDSet;
 import com.tc.util.ObjectIDSet;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import org.junit.Test;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
-public class GCResultMessageTest extends TestCase {
+public class GCResultMessageTest {
 
   private void validate(GCResultMessage gcmsg, GCResultMessage gcmsg1) {
     assertEquals(gcmsg.getType(), gcmsg1.getType());
@@ -51,47 +50,23 @@ public class GCResultMessageTest extends TestCase {
   }
 
   private ObjectIDSet makeObjectIDSet() {
-    List longList = new ArrayList();
-    longList.add(new ObjectID(25));
-    longList.add(new ObjectID(26));
-    longList.add(new ObjectID(27));
-    longList.add(new ObjectID(28));
-    longList.add(new ObjectID(9));
-    longList.add(new ObjectID(13));
-    longList.add(new ObjectID(12));
-    longList.add(new ObjectID(14));
-    longList.add(new ObjectID(18));
-    longList.add(new ObjectID(2));
-    longList.add(new ObjectID(23));
-    longList.add(new ObjectID(47));
-    longList.add(new ObjectID(35));
-    longList.add(new ObjectID(10));
-    longList.add(new ObjectID(1));
-    longList.add(new ObjectID(4));
-    longList.add(new ObjectID(15));
-    longList.add(new ObjectID(8));
-    longList.add(new ObjectID(56));
-    longList.add(new ObjectID(11));
-    longList.add(new ObjectID(10));
-    longList.add(new ObjectID(33));
-    longList.add(new ObjectID(17));
-    longList.add(new ObjectID(29));
-    longList.add(new ObjectID(19));
-
-    return new BitSetObjectIDSet(longList);
+    long[] ids = new long[]{1, 2, 4, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 23, 25, 26, 27, 28, 29, 33, 35, 47, 56};
+    return new BasicObjectIDSet("ImDoingTesting", ids);
   }
 
+  @Test
   public void testBasicSerialization() throws Exception {
     ObjectIDSet deleted = makeObjectIDSet();
-    GCResultMessage gcmsg = GCResultMessageFactory.createGCResultMessage(new GarbageCollectionInfo(), deleted);
+    GCResultMessage gcmsg = new GCResultMessage(new GarbageCollectionInfo(), deleted);
     
     GCResultMessage gcmsg1 = writeAndRead(gcmsg);
     validate(gcmsg, gcmsg1);
   }
   
+  @Test
   public void testUnmodifiableObjectIDSet() throws Exception {
     ObjectIDSet deleted = ObjectIDSet.unmodifiableObjectIDSet(makeObjectIDSet());
-    GCResultMessage gcmsg = GCResultMessageFactory.createGCResultMessage(new GarbageCollectionInfo(), deleted);
+    GCResultMessage gcmsg = new GCResultMessage(new GarbageCollectionInfo(), deleted);
     
     GCResultMessage gcmsg1 = writeAndRead(gcmsg);
     validate(gcmsg, gcmsg1);

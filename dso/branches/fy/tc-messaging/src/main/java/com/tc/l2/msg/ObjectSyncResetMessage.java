@@ -7,6 +7,7 @@ package com.tc.l2.msg;
 import com.tc.io.TCByteBufferInput;
 import com.tc.io.TCByteBufferOutput;
 import com.tc.net.groups.AbstractGroupMessage;
+import com.tc.net.groups.GroupMessage;
 import com.tc.net.groups.MessageID;
 import com.tc.util.Assert;
 
@@ -42,4 +43,11 @@ public class ObjectSyncResetMessage extends AbstractGroupMessage {
     return getType() == REQUEST_RESET;
   }
 
+  public static GroupMessage createObjectSyncResetRequestMessage() {
+    return new ObjectSyncResetMessage(ObjectSyncResetMessage.REQUEST_RESET);
+  }
+
+  public static GroupMessage createOKResponse(ObjectSyncResetMessage msg) {
+    return new ObjectSyncResetMessage(ObjectSyncResetMessage.OPERATION_SUCCESS, msg.getMessageID());
+  }
 }

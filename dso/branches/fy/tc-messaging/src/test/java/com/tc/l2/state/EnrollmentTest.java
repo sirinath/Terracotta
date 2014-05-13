@@ -1,4 +1,3 @@
-//XXX MOVE ME
 /*
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
@@ -7,16 +6,17 @@ package com.tc.l2.state;
 
 import com.tc.io.TCByteBufferInputStream;
 import com.tc.io.TCByteBufferOutputStream;
-import com.tc.l2.ha.WeightGeneratorFactory;
 import com.tc.net.ServerID;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class EnrollmentTest extends TestCase {
+import static org.junit.Assert.assertEquals;
 
+public class EnrollmentTest {
+
+  @Test
   public void testSerialization() throws Exception {
-    Enrollment e = EnrollmentFactory.createEnrollment(new ServerID("30001", new byte[] { 54, -125, 34, -4 }), true,
-                                                      WeightGeneratorFactory.createDefaultFactory());
+    Enrollment e = new Enrollment(new ServerID("30001", new byte[] { 54, -125, 34, -4 }), true, new long[] {Long.MIN_VALUE, -1, 0, 1, Long.MAX_VALUE});
     TCByteBufferOutputStream bo = new TCByteBufferOutputStream();
     e.serializeTo(bo);
     System.err.println("Written : " + e);

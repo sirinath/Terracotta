@@ -24,7 +24,6 @@ import com.tc.config.NodesStoreImpl;
 import com.tc.io.TCByteBufferOutputStream;
 import com.tc.l2.context.ManagedObjectSyncContext;
 import com.tc.l2.msg.ObjectSyncMessage;
-import com.tc.l2.msg.ObjectSyncMessageFactory;
 import com.tc.lang.TCThreadGroup;
 import com.tc.lang.ThrowableHandlerImpl;
 import com.tc.net.NodeID;
@@ -158,8 +157,7 @@ public class TCGroupSendLargeObjectSyncMessageTest extends TCTestCase {
                                                 (int) oidsCount, objectStringSerializer, TCCollections.EMPTY_OBJECT_ID_SET);
     managedObjectSyncContext.setSequenceID(11);
 
-    final ObjectSyncMessage osm = ObjectSyncMessageFactory
-        .createObjectSyncMessageFrom(managedObjectSyncContext, new ServerTransactionID(new ServerID("xyz", new byte[] {
+    final ObjectSyncMessage osm = managedObjectSyncContext.createObjectSyncMessage(new ServerTransactionID(new ServerID("xyz", new byte[] {
             3, 4, 5 }), new TransactionID(99)));
     return osm;
   }

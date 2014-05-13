@@ -1,4 +1,3 @@
-//XXX MOVE ME
 /*
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
@@ -29,6 +28,10 @@ import java.util.Iterator;
 
 import junit.framework.TestCase;
 
+/*
+ * This test really belongs in the TC Messaging module but it's dependencies
+ * currently prevent that.  It needs some heavy refactoring.
+ */
 public class ClusterStateMessageTest extends TestCase {
   private static final int CLUSTER_STATE_1 = 1;
   private static final int CLUSTER_STATE_2 = 2;
@@ -136,12 +139,11 @@ public class ClusterStateMessageTest extends TestCase {
   public void testBasicSerialization() throws Exception {
     modifyClusterState(CLUSTER_STATE_1);
 
-    ClusterStateMessage csm = (ClusterStateMessage) ClusterStateMessageFactory
-        .createClusterStateMessage(clusterState_1);
+    ClusterStateMessage csm = ClusterStateMessage.createClusterStateMessage(clusterState_1);
     ClusterStateMessage csm1 = writeAndRead(csm);
     validate(csm, csm1);
 
-    csm = (ClusterStateMessage) ClusterStateMessageFactory.createOKResponse(new ClusterStateMessage());
+    csm = ClusterStateMessage.createOKResponse(new ClusterStateMessage());
     csm1 = writeAndRead(csm);
     validate(csm, csm1);
   }
@@ -151,8 +153,7 @@ public class ClusterStateMessageTest extends TestCase {
 
     // COMPLETE_STATE
     modifyClusterState(CLUSTER_STATE_1);
-    ClusterStateMessage csm = (ClusterStateMessage) ClusterStateMessageFactory
-        .createClusterStateMessage(clusterState_1);
+    ClusterStateMessage csm = ClusterStateMessage.createClusterStateMessage(clusterState_1);
     ClusterStateMessage csm1 = writeAndRead(csm);
     validate(csm, csm1);
     csm1.initState(clusterState_2);
@@ -162,8 +163,7 @@ public class ClusterStateMessageTest extends TestCase {
     resetClusterState(CLUSTER_STATE_1);
     resetClusterState(CLUSTER_STATE_2);
     clusterState_1.setNextAvailableGlobalTransactionID(3423);
-    csm = (ClusterStateMessage) ClusterStateMessageFactory
-        .createNextAvailableGlobalTransactionIDMessage(clusterState_1);
+    csm = (ClusterStateMessage) ClusterStateMessage.createNextAvailableGlobalTransactionIDMessage(clusterState_1);
     csm1 = writeAndRead(csm);
     validate(csm, csm1);
     csm1.initState(clusterState_2);
@@ -173,14 +173,14 @@ public class ClusterStateMessageTest extends TestCase {
     resetClusterState(CLUSTER_STATE_1);
     resetClusterState(CLUSTER_STATE_2);
     clusterState_1.setNextAvailableObjectID(6868);
-    csm = (ClusterStateMessage) ClusterStateMessageFactory.createNextAvailableObjectIDMessage(clusterState_1);
+    csm = (ClusterStateMessage) ClusterStateMessage.createNextAvailableObjectIDMessage(clusterState_1);
     csm1 = writeAndRead(csm);
     validate(csm, csm1);
     csm1.initState(clusterState_2);
     validate(clusterState_1, clusterState_2);
 
     // NEW_CONNECTION_CREATED
-    csm = (ClusterStateMessage) ClusterStateMessageFactory.createNewConnectionCreatedMessage(connectionID);
+    csm = (ClusterStateMessage) ClusterStateMessage.createNewConnectionCreatedMessage(connectionID);
     csm1 = writeAndRead(csm);
     validate(csm, csm1);
     resetClusterState(CLUSTER_STATE_2);
@@ -188,7 +188,7 @@ public class ClusterStateMessageTest extends TestCase {
     assertEquals(connectionID, clusterState_2.getAllConnections().iterator().next());
 
     // CONNECTION_DESTROYED
-    csm = (ClusterStateMessage) ClusterStateMessageFactory.createConnectionDestroyedMessage(connectionID);
+    csm = (ClusterStateMessage) ClusterStateMessage.createConnectionDestroyedMessage(connectionID);
     csm1 = writeAndRead(csm);
     validate(csm, csm1);
     resetClusterState(CLUSTER_STATE_2);
