@@ -12,6 +12,7 @@ import org.apache.xmlbeans.XmlString;
 
 import com.tc.config.schema.ActiveServerGroupsConfigObject;
 import com.tc.config.schema.BaseConfigObject;
+import com.tc.config.schema.CommonL2Config;
 import com.tc.config.schema.HaConfigObject;
 import com.tc.config.schema.UpdateCheckConfigObject;
 import com.tc.config.schema.context.ConfigContext;
@@ -205,15 +206,19 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
     Assert.assertTrue(jmxPorts.length <= 1);
     if (!server.isSetJmxPort()) {
       BindPort jmxPort = server.addNewJmxPort();
-      int tempJmxPort = server.getDsoPort().getIntValue() + DEFAULT_JMXPORT_OFFSET_FROM_DSOPORT;
-      int defaultJmxPort = ((tempJmxPort <= MAX_PORTNUMBER) ? tempJmxPort : (tempJmxPort % MAX_PORTNUMBER)
-                                                                            + MIN_PORTNUMBER);
+      int defaultJmxPort = computeJMXPortFromTSAPort(server.getDsoPort().getIntValue());
 
       jmxPort.setIntValue(defaultJmxPort);
       jmxPort.setBind(server.getBind());
     } else if (!server.getJmxPort().isSetBind()) {
       server.getJmxPort().setBind(server.getBind());
     }
+  }
+
+  public static int computeJMXPortFromTSAPort(int tsaPort) {
+    int tempJmxPort = tsaPort + CommonL2Config.DEFAULT_JMXPORT_OFFSET_FROM_DSOPORT;
+    return ((tempJmxPort <= MAX_PORTNUMBER) ? tempJmxPort : (tempJmxPort % MAX_PORTNUMBER)
+                                                                          + MIN_PORTNUMBER);
   }
 
   private static void initializeL2GroupPort(Server server, DefaultValueProvider defaultValueProvider) {

@@ -12,6 +12,7 @@ import com.tc.cli.CommandLineBuilder;
 import com.tc.config.schema.CommonL2Config;
 import com.tc.config.schema.L2Info;
 import com.tc.config.schema.ServerGroupInfo;
+import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.ConfigurationSetupManagerFactory;
 import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
 import com.tc.config.schema.setup.L2ConfigurationSetupManager;
@@ -21,6 +22,8 @@ import com.tc.logging.TCLogger;
 import com.tc.management.TerracottaManagement;
 import com.tc.management.beans.L2MBeanNames;
 import com.tc.management.beans.TCServerInfoMBean;
+import com.tc.object.config.schema.L2DSOConfig;
+import com.tc.object.config.schema.L2DSOConfigObject;
 import com.tc.security.PwProvider;
 import com.tc.util.concurrent.ThreadUtil;
 
@@ -182,7 +185,7 @@ public class TCStop {
       if (host == null || host.equals("0.0.0.0")) host = serverConfig.host();
       if (host == null) host = name;
       if (host == null) host = DEFAULT_HOST;
-      port = serverConfig.jmxPort().getIntValue();
+      port = computeJMXPort(manager, serverConfig, name);
       consoleLogger.info("Host: " + host + ", port: " + port);
     } else {
       if (arguments.length == 0) {
@@ -214,6 +217,15 @@ public class TCStop {
         consoleLogger.error("There is a problem with your secured setup: " + root.getMessage());
       }
       System.exit(1);
+    }
+  }
+
+  static int computeJMXPort(L2ConfigurationSetupManager manager, CommonL2Config l2Config, String name) throws ConfigurationSetupException {
+    if (l2Config.jmxPort() != null) {
+      return l2Config.jmxPort().getIntValue() == 0 ? DEFAULT_PORT : l2Config.jmxPort().getIntValue();
+    } else {
+      L2DSOConfig l2DSOConfig = manager.dsoL2ConfigFor(name);
+      return L2DSOConfigObject.computeJMXPortFromTSAPort(l2DSOConfig.dsoPort().getIntValue());
     }
   }
 
