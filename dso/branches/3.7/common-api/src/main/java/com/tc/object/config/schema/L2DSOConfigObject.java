@@ -46,10 +46,6 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
   private static final TCLogger   logger                                = TCLogging.getLogger(L2DSOConfigObject.class);
   private static final String     WILDCARD_IP                           = "0.0.0.0";
   private static final String     LOCALHOST                             = "localhost";
-  public static final short       DEFAULT_JMXPORT_OFFSET_FROM_DSOPORT   = 10;
-  public static final short       DEFAULT_GROUPPORT_OFFSET_FROM_DSOPORT = 20;
-  public static final int         MIN_PORTNUMBER                        = 0x0FFF;
-  public static final int         MAX_PORTNUMBER                        = 0xFFFF;
 
   private final Persistence       persistence;
   private final Offheap           offHeapConfig;
@@ -217,8 +213,8 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
 
   public static int computeJMXPortFromTSAPort(int tsaPort) {
     int tempJmxPort = tsaPort + CommonL2Config.DEFAULT_JMXPORT_OFFSET_FROM_DSOPORT;
-    return ((tempJmxPort <= MAX_PORTNUMBER) ? tempJmxPort : (tempJmxPort % MAX_PORTNUMBER)
-                                                                          + MIN_PORTNUMBER);
+    return ((tempJmxPort <= CommonL2Config.MAX_PORTNUMBER) ? tempJmxPort : (tempJmxPort % CommonL2Config.MAX_PORTNUMBER)
+                                                                          + CommonL2Config.MIN_PORTNUMBER);
   }
 
   private static void initializeL2GroupPort(Server server, DefaultValueProvider defaultValueProvider) {
@@ -226,9 +222,9 @@ public class L2DSOConfigObject extends BaseConfigObject implements L2DSOConfig {
     Assert.assertTrue(l2GroupPorts.length <= 1);
     if (!server.isSetL2GroupPort()) {
       BindPort l2GrpPort = server.addNewL2GroupPort();
-      int tempGroupPort = server.getDsoPort().getIntValue() + DEFAULT_GROUPPORT_OFFSET_FROM_DSOPORT;
-      int defaultGroupPort = ((tempGroupPort <= MAX_PORTNUMBER) ? (tempGroupPort) : (tempGroupPort % MAX_PORTNUMBER)
-                                                                                    + MIN_PORTNUMBER);
+      int tempGroupPort = server.getDsoPort().getIntValue() + CommonL2Config.DEFAULT_GROUPPORT_OFFSET_FROM_DSOPORT;
+      int defaultGroupPort = ((tempGroupPort <= CommonL2Config.MAX_PORTNUMBER) ? (tempGroupPort) : (tempGroupPort % CommonL2Config.MAX_PORTNUMBER)
+                                                                                    + CommonL2Config.MIN_PORTNUMBER);
       l2GrpPort.setIntValue(defaultGroupPort);
       l2GrpPort.setBind(server.getBind());
     } else if (!server.getL2GroupPort().isSetBind()) {

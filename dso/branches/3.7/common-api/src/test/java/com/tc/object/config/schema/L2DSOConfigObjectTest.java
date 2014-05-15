@@ -18,10 +18,10 @@ public class L2DSOConfigObjectTest {
 
   @Test
   public void computeJMXPortFromTSAPortAboveMaximumPort() {
-    int tsaPort = L2DSOConfigObject.MAX_PORTNUMBER - 1;
+    int tsaPort = CommonL2Config.MAX_PORTNUMBER - 1;
     int jmxPort = L2DSOConfigObject.computeJMXPortFromTSAPort(tsaPort);
-    assertTrue(jmxPort >= L2DSOConfigObject.MIN_PORTNUMBER);
-    assertTrue(jmxPort <= L2DSOConfigObject.MAX_PORTNUMBER);
+    assertTrue(jmxPort >= CommonL2Config.MIN_PORTNUMBER);
+    assertTrue(jmxPort <= CommonL2Config.MAX_PORTNUMBER);
   }
 
 }

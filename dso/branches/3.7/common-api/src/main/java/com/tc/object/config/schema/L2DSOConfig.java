@@ -20,7 +20,6 @@ public interface L2DSOConfig extends Config {
   public static final String OBJECTDB_DIRNAME                      = "objectdb";
   public static final String DIRTY_OBJECTDB_BACKUP_DIRNAME         = "dirty-objectdb-backup";
   public static final String DIRTY_OBJECTDB_BACKUP_PREFIX          = "dirty-objectdb-";
-  public static final short  DEFAULT_GROUPPORT_OFFSET_FROM_DSOPORT = 20;
 
   Persistence getPersistence();
 
