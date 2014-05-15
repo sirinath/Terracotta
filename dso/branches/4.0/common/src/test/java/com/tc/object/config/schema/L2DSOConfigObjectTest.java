@@ -3,9 +3,8 @@ package com.tc.object.config.schema;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class L2DSOConfigObjectTest {
 
@@ -19,8 +18,8 @@ public class L2DSOConfigObjectTest {
   public void computeJMXPortFromTSAPortAboveMaximumPort() {
     int tsaPort = L2DSOConfigObject.MAX_PORTNUMBER - 1;
     int jmxPort = L2DSOConfigObject.computeJMXPortFromTSAPort(tsaPort);
-    assertThat(jmxPort, greaterThanOrEqualTo(L2DSOConfigObject.MIN_PORTNUMBER));
-    assertThat(jmxPort, lessThanOrEqualTo(L2DSOConfigObject.MAX_PORTNUMBER));
+    assertTrue(jmxPort >= L2DSOConfigObject.MIN_PORTNUMBER);
+    assertTrue(jmxPort <= L2DSOConfigObject.MAX_PORTNUMBER);
   }
 
 }
