@@ -41,7 +41,6 @@ public class ServerStat {
   private final String          password;
   private final boolean         secured;
   private JMXConnector          jmxc;
-  private MBeanServerConnection mbsc;
 
   private TCServerInfoMBean     infoBean;
   private boolean               connected;
@@ -71,7 +70,7 @@ public class ServerStat {
     closeQuietly(jmxc);
     try {
       jmxc = CommandLineBuilder.getJMXConnector(username, password, host, port, secured);
-      mbsc = jmxc.getMBeanServerConnection();
+      MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
       infoBean = MBeanServerInvocationHandler.newProxyInstance(mbsc, L2MBeanNames.TC_SERVER_INFO,
                                                                TCServerInfoMBean.class, false);
       connected = true;
@@ -127,13 +126,13 @@ public class ServerStat {
   public String toString() {
     String serverId = hostName != null ? hostName : host;
     StringBuilder sb = new StringBuilder();
-    sb.append(serverId + ".health: " + getHealth()).append(NEWLINE);
-    sb.append(serverId + ".role: " + getRole()).append(NEWLINE);
-    sb.append(serverId + ".state: " + getState()).append(NEWLINE);
-    sb.append(serverId + ".jmxport: " + port).append(NEWLINE);
-    sb.append(serverId + ".group name: " + getGroupName()).append(NEWLINE);
+    sb.append(serverId).append(".health: ").append(getHealth()).append(NEWLINE);
+    sb.append(serverId).append(".role: ").append(getRole()).append(NEWLINE);
+    sb.append(serverId).append(".state: ").append(getState()).append(NEWLINE);
+    sb.append(serverId).append(".jmxport: ").append(port).append(NEWLINE);
+    sb.append(serverId).append(".group name: ").append(getGroupName()).append(NEWLINE);
     if (!connected) {
-      sb.append(serverId + ".error: " + errorMessage).append(NEWLINE);
+      sb.append(serverId).append(".error: ").append(errorMessage).append(NEWLINE);
     }
     return sb.toString();
   }
@@ -205,7 +204,7 @@ public class ServerStat {
   }
 
   private static void handleConfigFile(String username, String password, boolean secured, String configFilePath) throws Exception {
-    TcConfigDocument tcConfigDocument = null;
+    TcConfigDocument tcConfigDocument;
     try {
 
       String configFileContent = FileUtils.readFileToString(new File(configFilePath));
