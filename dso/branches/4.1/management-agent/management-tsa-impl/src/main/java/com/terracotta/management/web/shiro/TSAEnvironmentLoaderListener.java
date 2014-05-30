@@ -6,6 +6,7 @@ package com.terracotta.management.web.shiro;
 import net.sf.ehcache.management.service.CacheManagerService;
 import net.sf.ehcache.management.service.CacheService;
 import net.sf.ehcache.management.service.EntityResourceFactory;
+
 import org.apache.shiro.web.env.EnvironmentLoaderListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,7 @@ import com.terracotta.management.service.BackupService;
 import com.terracotta.management.service.ConfigurationService;
 import com.terracotta.management.service.DiagnosticsService;
 import com.terracotta.management.service.JmxService;
+import com.terracotta.management.service.LicenseService;
 import com.terracotta.management.service.LogsService;
 import com.terracotta.management.service.MonitoringService;
 import com.terracotta.management.service.OperatorEventsService;
@@ -57,6 +59,7 @@ import com.terracotta.management.service.impl.BackupServiceImpl;
 import com.terracotta.management.service.impl.ConfigurationServiceImpl;
 import com.terracotta.management.service.impl.DiagnosticsServiceImpl;
 import com.terracotta.management.service.impl.JmxServiceImpl;
+import com.terracotta.management.service.impl.LicenseServiceImpl;
 import com.terracotta.management.service.impl.LogsServiceImpl;
 import com.terracotta.management.service.impl.MonitoringServiceImpl;
 import com.terracotta.management.service.impl.OperatorEventsServiceImpl;
@@ -152,6 +155,7 @@ public class TSAEnvironmentLoaderListener extends EnvironmentLoaderListener {
       serviceLocator.loadService(OperatorEventsService.class, new OperatorEventsServiceImpl(tsaManagementClientService));
       serviceLocator.loadService(ShutdownService.class, new ShutdownServiceImpl(tsaManagementClientService));
       serviceLocator.loadService(JmxService.class, new JmxServiceImpl(tsaManagementClientService));
+      serviceLocator.loadService(LicenseService.class, new LicenseServiceImpl(tsaManagementClientService));
 
       /// L1 bridge and Security Services ///
 

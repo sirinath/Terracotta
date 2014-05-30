@@ -9,6 +9,7 @@ import com.tc.license.ProductID;
 import com.terracotta.management.resource.BackupEntity;
 import com.terracotta.management.resource.ClientEntity;
 import com.terracotta.management.resource.ConfigEntity;
+import com.terracotta.management.resource.LicenseEntity;
 import com.terracotta.management.resource.LogEntity;
 import com.terracotta.management.resource.MBeanEntity;
 import com.terracotta.management.resource.OperatorEventEntity;
@@ -76,4 +77,6 @@ public interface TsaManagementClientService {
   List<String> performSecurityChecks();
 
   Collection<MBeanEntity> queryMBeans(Set<String> serverNames, String query) throws ServiceExecutionException;
+  
+  Collection<LicenseEntity> getLicenseProperties(Set<String> serverNames) throws ServiceExecutionException;
 }

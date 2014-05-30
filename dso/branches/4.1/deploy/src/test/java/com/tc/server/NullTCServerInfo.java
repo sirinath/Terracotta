@@ -12,6 +12,7 @@ import com.tc.objectserver.api.BackupManager;
 import com.tc.objectserver.api.ResourceManager;
 
 import java.util.Map;
+import java.util.Properties;
 
 import javax.management.NotCompliantMBeanException;
 
@@ -324,5 +325,10 @@ public class NullTCServerInfo extends AbstractTerracottaMBean implements TCServe
   @Override
   public boolean isLegacyProductionModeEnabled() {
     return false;
+  }
+
+  @Override
+  public Properties getLicenseProperties() {
+    return null;
   }
 }
