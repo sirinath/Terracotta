@@ -33,6 +33,7 @@ import com.terracotta.management.keychain.URIKeyName;
 import com.terracotta.management.resource.BackupEntity;
 import com.terracotta.management.resource.ClientEntity;
 import com.terracotta.management.resource.ConfigEntity;
+import com.terracotta.management.resource.LicenseEntity;
 import com.terracotta.management.resource.LogEntity;
 import com.terracotta.management.resource.MBeanEntity;
 import com.terracotta.management.resource.OperatorEventEntity;
@@ -548,6 +549,69 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     } catch (Exception e) {
       cancelFutures(futures);
       throw new ServiceExecutionException("error making JMX call", e);
+    }
+  }
+  
+  @Override
+  public Collection<LicenseEntity> getLicenseProperties(Set<String> serverNames) throws ServiceExecutionException {
+    List<Future<LicenseEntity>> futures = new ArrayList<Future<LicenseEntity>>();
+    try {
+      MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+      ServerGroupInfo[] serverGroupInfos = (ServerGroupInfo[])mBeanServer.getAttribute(
+          new ObjectName("org.terracotta.internal:type=Terracotta Server,name=Terracotta Server"), "ServerGroupInfo");
+
+      for (ServerGroupInfo serverGroupInfo : serverGroupInfos) {
+        L2Info[] members = serverGroupInfo.members();
+        for (L2Info member : members) {
+          if (serverNames != null && !serverNames.contains(member.name())) {
+            continue;
+          }
+
+          final int jmxPort = member.jmxPort();
+          final String jmxHost = member.host();
+          final String sourceId = member.name();
+
+          Future<LicenseEntity> future = executorService.submit(new Callable<LicenseEntity>() {
+            @Override
+            public LicenseEntity call() throws Exception {
+              return getLicenseProperties(sourceId, jmxPort, jmxHost);
+            }
+          });
+          futures.add(future);
+        }
+      }
+
+      return collectEntitiesFromFutures(futures, timeoutService.getCallTimeout(), "getLicenseProperties");
+    } catch (Exception e) {
+      cancelFutures(futures);
+      throw new ServiceExecutionException("error making JMX call", e);
+    }
+  }
+  
+  private LicenseEntity getLicenseProperties(String sourceId, int jmxPort, String jmxHost) {
+    JMXConnector jmxConnector = null;
+    try {
+      jmxConnector = jmxConnectorPool.getConnector(jmxHost, jmxPort);
+      MBeanServerConnection mBeanServerConnection = jmxConnector.getMBeanServerConnection();
+
+      TCServerInfoMBean tcServerInfoMBean = JMX.newMBeanProxy(mBeanServerConnection,
+          new ObjectName("org.terracotta.internal:type=Terracotta Server,name=Terracotta Server"), TCServerInfoMBean.class);
+
+      LicenseEntity licenseEntity = new LicenseEntity();
+      licenseEntity.setVersion(this.getClass().getPackage().getImplementationVersion());
+      licenseEntity.setSourceId(sourceId);
+      licenseEntity.setProperties(tcServerInfoMBean.getLicenseProperties());
+
+      return licenseEntity;
+    } catch (Exception e) {
+      LicenseEntity configEntity = new LicenseEntity();
+      configEntity.setVersion(this.getClass().getPackage().getImplementationVersion());
+      configEntity.setSourceId(sourceId);
+      configEntity.getProperties().setProperty("Error", e.getMessage());
+
+      return configEntity;
+    } finally {
+      closeConnector(jmxConnector);
     }
   }
 

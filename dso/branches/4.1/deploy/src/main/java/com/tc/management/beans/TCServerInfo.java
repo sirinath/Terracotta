@@ -4,11 +4,14 @@
  */
 package com.tc.management.beans;
 
+import org.terracotta.license.LicenseConstants;
+
 import com.tc.config.schema.L2Info;
 import com.tc.config.schema.ServerGroupInfo;
 import com.tc.l2.context.StateChangedEvent;
 import com.tc.l2.state.StateChangeListener;
 import com.tc.l2.state.StateManager;
+import com.tc.license.LicenseManager;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.management.AbstractTerracottaMBean;
@@ -524,5 +527,13 @@ public class TCServerInfo extends AbstractTerracottaMBean implements TCServerInf
   @Override
   public String getResourceState() {
     return server.getResourceState();
+  }
+
+  @Override
+  public Properties getLicenseProperties() {
+    Properties licenseProperties = new Properties();
+    licenseProperties.putAll(LicenseManager.getLicense().getProperties());
+    licenseProperties.remove(LicenseConstants.LICENSE_SIGNATURE);
+    return licenseProperties;
   }
 }

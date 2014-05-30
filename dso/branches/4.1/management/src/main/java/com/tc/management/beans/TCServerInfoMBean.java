@@ -11,6 +11,7 @@ import com.tc.management.TerracottaMBean;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Properties;
 
 public interface TCServerInfoMBean extends TerracottaMBean, RuntimeStatisticConstants {
   public static final String STOPPED    = "jmx.terracotta.L2.stopped";
@@ -135,4 +136,6 @@ public interface TCServerInfoMBean extends TerracottaMBean, RuntimeStatisticCons
   String getResourceState();
 
   boolean isLegacyProductionModeEnabled();
+
+  Properties getLicenseProperties();
 }
