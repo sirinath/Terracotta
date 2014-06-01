@@ -32,7 +32,7 @@ import javax.ws.rs.core.UriInfo;
  * @author Hung Huynh
  */
 @Path("/agents/licenseProperties")
-public class LicenseResourceServiceImpl {
+public class LicenseResourceServiceImpl implements LicenseResourceService {
 
   private static final Logger    LOG = LoggerFactory.getLogger(LicenseResourceServiceImpl.class);
 
@@ -49,6 +49,7 @@ public class LicenseResourceServiceImpl {
    * 
    * @return a collection of {@link LicenseService} objects.
    */
+  @Override
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public Collection<LicenseEntity> getLicenseProperties(@Context
