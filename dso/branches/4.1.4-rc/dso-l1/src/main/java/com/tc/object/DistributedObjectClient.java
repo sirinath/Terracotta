@@ -210,6 +210,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                                                              .getDSOGenericLogger();
   private static final TCLogger                      CONSOLE_LOGGER                      = CustomerLogging
                                                                                              .getConsoleLogger();
+  private static final int                           MAX_CONNECT_TRIES                     = -1;
 
   private final DSOClientBuilder                     dsoClientBuilder;
   private final DSOClientConfigHelper                config;
@@ -447,12 +448,12 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                                                   new ClusterInternalEventsHandler(dsoCluster), 1, maxSize);
 
     final int socketConnectTimeout = tcProperties.getInt(TCPropertiesConsts.L1_SOCKET_CONNECT_TIMEOUT);
-    final int maxConnectRetries = tcProperties.getInt(TCPropertiesConsts.L1_MAX_CONNECT_RETRIES);
+
     if (socketConnectTimeout < 0) { throw new IllegalArgumentException("invalid socket time value: "
                                                                        + socketConnectTimeout); }
     this.channel = this.dsoClientBuilder.createDSOClientMessageChannel(this.communicationsManager,
                                                                        this.connectionComponents, sessionProvider,
-                                                                       maxConnectRetries, socketConnectTimeout, this);
+                                                                       MAX_CONNECT_TRIES, socketConnectTimeout, this);
 
     final ClientIDLoggerProvider cidLoggerProvider = new ClientIDLoggerProvider(this.channel.getClientIDProvider());
     stageManager.setLoggerProvider(cidLoggerProvider);
@@ -726,7 +727,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                              receiveSearchResultStage, receiveInvalidationStage,
                              resourceManagerStage);
 
-    openChannel(serverHost, serverPort, maxConnectRetries);
+    openChannel(serverHost, serverPort);
     waitForHandshake();
 
     setLoggerOnExit();
@@ -739,9 +740,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
         new ServerEventDeliveryHandler(serverEventListenerManager), threadsCount, 1, queueSize);
   }
 
-  private void openChannel(final String serverHost, final int serverPort, final int maxConnectRetries) {
-    int i = 0;
-    while (maxConnectRetries <= 0 || i < maxConnectRetries) {
+  private void openChannel(final String serverHost, final int serverPort) {
+    while (true) {
       try {
         DSO_LOGGER.debug("Trying to open channel....");
         final char[] pw;
@@ -774,14 +774,9 @@ public class DistributedObjectClient extends SEDA implements TCClient {
                             + ioe.getMessage());
         ThreadUtil.reallySleep(5000);
       }
-      i++;
-    }
-    if (i == maxConnectRetries) {
-      String msg = "MaxConnectRetries '" + maxConnectRetries + "' exceeded";
-      CONSOLE_LOGGER.error(msg);
-      throw new IllegalStateException(msg);
-    }
 
+    }
+    
   }
 
   private void waitForHandshake() {
