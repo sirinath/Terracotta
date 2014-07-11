@@ -100,6 +100,12 @@
         <groupId>com.terracottatech.internal</groupId>
         <artifactId>bigmemory-core-storage</artifactId>
         <version>${bigmemory-core-storage.version}</version>
+        <exclusions>
+          <exclusion>
+             <groupId>org.hamcrest</groupId>
+             <artifactId>hamcrest-all</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
     <dependency>
         <groupId>org.terracotta</groupId>
