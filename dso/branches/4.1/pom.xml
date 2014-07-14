@@ -16,6 +16,10 @@
   <name>terracotta-root</name>
   <packaging>pom</packaging>
 
+  <scm>
+    <developerConnection>scm:svn:https://svn.terracotta.org/repo/internal/enterprise/branches/4.1</developerConnection>
+  </scm>
+  
   <properties>
     <build.edition>opensource</build.edition>
     <maven-forge-plugin.version>1.2.7</maven-forge-plugin.version>
