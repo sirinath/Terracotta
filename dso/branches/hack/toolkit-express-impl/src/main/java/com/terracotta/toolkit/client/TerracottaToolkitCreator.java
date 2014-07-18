@@ -124,8 +124,9 @@ public class TerracottaToolkitCreator {
     return internalClient.instantiate(className,
                                       new Class[] { TerracottaL1Instance.class,
                                           internalClient.loadClass(TOOLKIT_DEFAULT_CM_PROVIDER), boolean.class,
-                                          ClassLoader.class }, new Object[] { getTerracottaL1Instance(),
-                                          defaultToolkitCacheManagerProvider, isNonStop, loader });
+                                          ClassLoader.class, internalClient.loadClass(PLATFORM_SERVICE) },
+                                      new Object[] { getTerracottaL1Instance(), defaultToolkitCacheManagerProvider,
+                                          isNonStop, loader, internalClient.getPlatformService() });
   }
 
   private TerracottaInternalClient createInternalClient() {

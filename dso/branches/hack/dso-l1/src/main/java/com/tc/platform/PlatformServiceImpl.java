@@ -11,12 +11,11 @@ import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
 import com.tc.management.TCManagementEvent;
 import com.tc.net.GroupID;
-import com.tc.object.ObjectID;
 import com.tc.object.LogicalOperation;
+import com.tc.object.ObjectID;
 import com.tc.object.ServerEventDestination;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.Manager;
-import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.handshakemanager.ClientHandshakeManager;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
@@ -322,7 +321,7 @@ public class PlatformServiceImpl implements PlatformService {
 
   @Override
   public void throttlePutIfNecessary(final ObjectID object) throws AbortedOperationException {
-    ManagerUtil.throttlePutIfNecessary(object);
+    manager.throttlePutIfNecessary(object);
   }
 
   @Override
