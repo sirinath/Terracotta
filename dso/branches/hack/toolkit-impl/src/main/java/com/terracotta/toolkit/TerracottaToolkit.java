@@ -78,7 +78,6 @@ import com.terracotta.toolkit.object.serialization.SerializationStrategy;
 import com.terracotta.toolkit.object.serialization.SerializationStrategyImpl;
 import com.terracotta.toolkit.object.serialization.ThreadContextAwareClassLoader;
 import com.terracotta.toolkit.object.serialization.UserSuppliedClassLoader;
-import com.terracotta.toolkit.rejoin.PlatformServiceProvider;
 import com.terracotta.toolkit.rejoin.RejoinAwarePlatformService;
 import com.terracotta.toolkit.rejoin.RejoinAwareSerializerMap;
 import com.terracotta.toolkit.roots.impl.ToolkitTypeConstants;
@@ -122,7 +121,6 @@ public class TerracottaToolkit implements ToolkitInternal {
     this.tcClient = tcClient;
     this.isNonStop = isNonStop;
     this.platformService = wrapIfNeeded(platformService);
-    PlatformServiceProvider.setPlatformService(this.platformService);
     clusterInfoInstance = new TerracottaClusterInfo(platformService);
     SerializationStrategy strategy = createSerializationStrategy(loader);
     Object old = platformService.registerObjectByNameIfAbsent(TOOLKIT_SERIALIZER_REGISTRATION_NAME, strategy);

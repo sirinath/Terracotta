@@ -52,6 +52,7 @@ import com.tc.object.session.SessionProvider;
 import com.tc.object.tx.ClientTransactionBatchWriter.FoldingConfig;
 import com.tc.object.tx.RemoteTransactionManager;
 import com.tc.object.tx.TransactionIDGenerator;
+import com.tc.platform.PlatformService;
 import com.tc.runtime.logging.LongGCLogger;
 import com.tc.stats.counter.sampled.derived.SampledRateCounter;
 import com.tc.util.UUID;
@@ -126,7 +127,8 @@ public interface DSOClientBuilder {
                                               final TCClassFactory classFactory, final TCObjectFactory objectFactory,
                                               final Portability portability,
                                               TCObjectSelfStore tcObjectSelfStore,
-                                              AbortableOperationManager abortableOperationManager);
+                                              AbortableOperationManager abortableOperationManager,
+                                              PlatformService platformService);
 
   ClientLockManager createLockManager(final DSOClientMessageChannel dsoChannel, final ClientIDLogger clientIDLogger,
                                       final SessionManager sessionManager,

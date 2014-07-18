@@ -6,6 +6,7 @@ package com.tc.object;
 
 import com.tc.object.bytecode.NullTCObject;
 import com.tc.object.dna.api.DNA;
+import com.tc.platform.PlatformService;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -28,7 +29,8 @@ public interface TCObjectFactory {
   public Object getNewPeerObject(TCClass type) throws IllegalArgumentException, InstantiationException,
       IllegalAccessException, InvocationTargetException, SecurityException, NoSuchMethodException;
 
-  public Object getNewPeerObject(TCClass type, DNA dna) throws IOException, ClassNotFoundException;
+  public Object getNewPeerObject(TCClass type, DNA dna, PlatformService platformService) throws IOException,
+      ClassNotFoundException;
 
   public void initClazzIfRequired(Class clazz, TCObjectSelf tcObjectSelf);
 

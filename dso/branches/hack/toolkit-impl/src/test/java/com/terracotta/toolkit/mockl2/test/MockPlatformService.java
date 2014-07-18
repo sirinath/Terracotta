@@ -134,11 +134,11 @@ public class MockPlatformService implements PlatformService {
   @Override
   public Object lookupRoot(String name, GroupID gid) {
     if(name.equalsIgnoreCase(ToolkitTypeConstants.SERIALIZER_MAP_ROOT_NAME)) {
-      SerializerMapImpl serializerMapImpl =  new SerializerMapImpl();
+      SerializerMapImpl serializerMapImpl = new SerializerMapImpl(this);
       serializerMapImpl.__tc_managed(NullTCObject.INSTANCE);
       return serializerMapImpl;
     }
-    ToolkitTypeRootImpl t =  new ToolkitTypeRootImpl();
+    ToolkitTypeRootImpl t = new ToolkitTypeRootImpl(this);
     t.__tc_managed(NullTCObject.INSTANCE);
     return t;
   }
@@ -146,7 +146,7 @@ public class MockPlatformService implements PlatformService {
   @Override
   public <T> T lookupRegisteredObjectByName(String name, Class<T> expectedType) {
     if(expectedType.equals(SerializationStrategy.class) && name.equalsIgnoreCase(TerracottaToolkit.TOOLKIT_SERIALIZER_REGISTRATION_NAME)) {
-      SerializerMapImpl serializerMapImpl =  new SerializerMapImpl();
+      SerializerMapImpl serializerMapImpl = new SerializerMapImpl(this);
       serializerMapImpl.__tc_managed(NullTCObject.INSTANCE);
       return (T) new SerializationStrategyImpl(this, serializerMapImpl, getClass().getClassLoader());
     }

@@ -13,6 +13,7 @@ import com.tc.object.dna.impl.ProxyInstance;
 import com.tc.object.field.TCField;
 import com.tc.object.field.TCFieldFactory;
 import com.tc.object.loaders.Namespace;
+import com.tc.platform.PlatformService;
 import com.tc.util.ClassUtils;
 import com.tc.util.ReflectionUtil;
 
@@ -354,8 +355,9 @@ public class TCClassImpl implements TCClass {
   }
 
   @Override
-  public Object getNewInstanceFromNonDefaultConstructor(final DNA dna) throws IOException, ClassNotFoundException {
-    final Object o = this.applicator.getNewInstance(this.objectManager, dna);
+  public Object getNewInstanceFromNonDefaultConstructor(final DNA dna, PlatformService platformService)
+      throws IOException, ClassNotFoundException {
+    final Object o = this.applicator.getNewInstance(this.objectManager, dna, platformService);
 
     if (o == null) { throw new AssertionError("Can't find suitable constructor for class: " + getName() + "."); }
     return o;

@@ -26,6 +26,7 @@ import com.tc.object.loaders.Namespace;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.tx.ClientTransaction;
 import com.tc.object.tx.ClientTransactionManager;
+import com.tc.platform.PlatformService;
 import com.tc.text.DumpLoggerWriter;
 import com.tc.text.PrettyPrintable;
 import com.tc.text.PrettyPrinter;
@@ -111,23 +112,25 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private final RootsHolder                      rootsHolder;
   private final AbortableOperationManager        abortableOperationManager;
   private int                                    currentSession               = 0;
+  private final PlatformService                  platformService;
 
   public ClientObjectManagerImpl(final RemoteObjectManager remoteObjectManager, final ObjectIDProvider idProvider,
                                  final ClientIDProvider provider, final ClassProvider classProvider,
                                  final TCClassFactory classFactory, final TCObjectFactory objectFactory,
                                  final Portability portability, TCObjectSelfStore tcObjectSelfStore,
-                                 AbortableOperationManager abortableOperationManager) {
+                                 AbortableOperationManager abortableOperationManager, PlatformService platformService) {
     this(remoteObjectManager, idProvider, provider, classProvider, classFactory, objectFactory, portability,
-         tcObjectSelfStore, new RootsHolder(new GroupID[] { new GroupID(0) }),
-         abortableOperationManager);
+         tcObjectSelfStore, new RootsHolder(new GroupID[] { new GroupID(0) }), abortableOperationManager,
+         platformService);
   }
 
   public ClientObjectManagerImpl(final RemoteObjectManager remoteObjectManager, final ObjectIDProvider idProvider,
                                  final ClientIDProvider provider, final ClassProvider classProvider,
                                  final TCClassFactory classFactory, final TCObjectFactory objectFactory,
                                  final Portability portability, TCObjectSelfStore tcObjectSelfStore,
-                                 RootsHolder holder,
-                                 AbortableOperationManager abortableOperationManager) {
+                                 RootsHolder holder, AbortableOperationManager abortableOperationManager,
+                                 PlatformService platformService) {
+    this.platformService = platformService;
     this.objectStore = new ObjectStore(tcObjectSelfStore);
     this.remoteObjectManager = remoteObjectManager;
     this.idProvider = idProvider;
@@ -1061,7 +1064,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private Object createNewPojoObject(TCClass clazz, DNA dna) {
     if (clazz.isUseNonDefaultConstructor()) {
       try {
-        return this.factory.getNewPeerObject(clazz, dna);
+        return this.factory.getNewPeerObject(clazz, dna, platformService);
       } catch (final IOException e) {
         throw new TCRuntimeException(e);
       } catch (final ClassNotFoundException e) {

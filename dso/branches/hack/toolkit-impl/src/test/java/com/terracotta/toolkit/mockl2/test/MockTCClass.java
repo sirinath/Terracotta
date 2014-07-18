@@ -14,6 +14,7 @@ import com.tc.object.TraversedReferences;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.field.TCField;
+import com.tc.platform.PlatformService;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -128,7 +129,7 @@ public class MockTCClass implements TCClass {
   }
 
   @Override
-  public Object getNewInstanceFromNonDefaultConstructor(final DNA dna) {
+  public Object getNewInstanceFromNonDefaultConstructor(final DNA dna, PlatformService platformService) {
     throw new ImplementMe();
   }
 

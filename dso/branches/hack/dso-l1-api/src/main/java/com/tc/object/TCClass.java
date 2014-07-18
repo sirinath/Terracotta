@@ -3,12 +3,10 @@
  */
 package com.tc.object;
 
-import com.tc.object.ObjectID;
-import com.tc.object.TCObject;
-import com.tc.object.TraversedReferences;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.field.TCField;
+import com.tc.platform.PlatformService;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -124,7 +122,8 @@ public interface TCClass {
    * @throws IOException Reading DNA
    * @throws ClassNotFoundException Can't instantiate a class
    */
-  public Object getNewInstanceFromNonDefaultConstructor(DNA dna) throws IOException, ClassNotFoundException;
+  public Object getNewInstanceFromNonDefaultConstructor(DNA dna, PlatformService platformService) throws IOException,
+      ClassNotFoundException;
 
   /**
    * Get TCField for this class

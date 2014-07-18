@@ -29,6 +29,7 @@ import com.tc.object.locks.TestLocksRecallService;
 import com.tc.object.servermap.localcache.impl.L1ServerMapLocalCacheManagerImpl;
 import com.tc.object.tx.ClientTransactionManager;
 import com.tc.object.tx.MockTransactionManager;
+import com.tc.platform.PlatformService;
 import com.tc.util.Assert;
 import com.tc.util.Counter;
 import com.tc.util.concurrent.ThreadUtil;
@@ -78,8 +79,8 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
     this.mgr = new ClientObjectManagerImpl(this.remoteObjectManager, this.idProvider,
                                            new ClientIDProviderImpl(new TestChannelIDProvider()),
                                            this.classProvider, this.classFactory, this.objectFactory,
-                                           new PortabilityImpl(this.clientConfiguration),
-                                           this.tcObjectSelfStore, new NullAbortableOperationManager());
+                                           new PortabilityImpl(this.clientConfiguration), this.tcObjectSelfStore,
+                                           new NullAbortableOperationManager(), null);
     this.mgr.setTransactionManager(new MockTransactionManager());
   }
 
@@ -187,7 +188,8 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
                                                                                     new PortabilityImpl(
                                                                                                         this.clientConfiguration),
                                                                                     this.tcObjectSelfStore,
-                                                                                    new NullAbortableOperationManager());
+                                                                                    new NullAbortableOperationManager(),
+                                                                                    null);
     this.mgr = clientObjectManager;
     final MockTransactionManager mockTransactionManager = new MockTransactionManager();
     this.mgr.setTransactionManager(mockTransactionManager);
@@ -539,7 +541,7 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
     }
 
     @Override
-    public Object getNewPeerObject(final TCClass type, final DNA dna) {
+    public Object getNewPeerObject(final TCClass type, final DNA dna, PlatformService platformService) {
       return new TestObject();
     }
 

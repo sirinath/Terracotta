@@ -9,6 +9,7 @@ import com.tc.object.applicator.ChangeApplicator;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.field.TCField;
+import com.tc.platform.PlatformService;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -150,7 +151,7 @@ public class TestClassFactory implements TCClassFactory {
     }
 
     @Override
-    public Object getNewInstanceFromNonDefaultConstructor(final DNA dna) {
+    public Object getNewInstanceFromNonDefaultConstructor(final DNA dna, PlatformService platformService) {
       return null;
     }
 
