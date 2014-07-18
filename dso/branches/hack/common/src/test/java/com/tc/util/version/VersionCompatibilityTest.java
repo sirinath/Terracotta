@@ -3,6 +3,8 @@
  */
 package com.tc.util.version;
 
+import com.tc.util.ProductInfo;
+
 import junit.framework.TestCase;
 
 public class VersionCompatibilityTest extends TestCase {
@@ -35,6 +37,47 @@ public class VersionCompatibilityTest extends TestCase {
     } catch (NullPointerException npe) {
       // expected
     }
+  }
+
+  public void testPersistenceCompatibleWithMinimum() throws Exception {
+    assertTrue(versionCompatibility.isCompatibleServerPersistence(versionCompatibility.getMinimumCompatiblePersistence(),
+        incrementedVersion(versionCompatibility.getMinimumCompatiblePersistence(), 0, 1, 0)));
+  }
+
+  public void testPersistenceIncompatibleWithLessThanMinimum() throws Exception {
+    assertFalse(versionCompatibility.isCompatibleServerPersistence(
+        incrementedVersion(versionCompatibility.getMinimumCompatiblePersistence(), -1, 0, 0),
+        incrementedVersion(versionCompatibility.getMinimumCompatiblePersistence(), 0, 1, 0)));
+  }
+
+  public void testPersistenceCompatibleWithBetweenMinAndCurrent() throws Exception {
+    assertTrue(versionCompatibility.isCompatibleServerPersistence(
+        incrementedVersion(versionCompatibility.getMinimumCompatiblePersistence(), 0, 1, 0),
+        incrementedVersion(versionCompatibility.getMinimumCompatiblePersistence(), 0, 2, 0)));
+  }
+
+  public void testPersistenceCompatibleWithinMinor() throws Exception {
+    assertTrue(versionCompatibility.isCompatibleServerPersistence(
+        incrementedVersion(versionCompatibility.getMinimumCompatiblePersistence(), 0, 0, 1),
+        incrementedVersion(versionCompatibility.getMinimumCompatiblePersistence(), 0, 0, 2)));
+    assertTrue(versionCompatibility.isCompatibleServerPersistence(
+        incrementedVersion(versionCompatibility.getMinimumCompatiblePersistence(), 0, 0, 2),
+        incrementedVersion(versionCompatibility.getMinimumCompatiblePersistence(), 0, 0, 1)));
+  }
+
+  public void testPersistedSameMinorAsMinButLowerDot() throws Exception {
+    // Doesn't matter on .0's but check that the versions lower than the minimum are properly excluded.
+    if (versionCompatibility.getMinimumCompatiblePersistence().micro() != 0) {
+      assertFalse(versionCompatibility.isCompatibleServerPersistence(
+          incrementedVersion(versionCompatibility.getMinimumCompatiblePersistence(), 0, 0, -1),
+          incrementedVersion(versionCompatibility.getMinimumCompatiblePersistence(), 0, 0, 1)));
+    }
+  }
+
+  private static Version incrementedVersion(Version base, int majorIncrement, int minorIncrement, int microIncrement) {
+    return new Version((base.major() + majorIncrement) + "." +
+                       (base.minor() + minorIncrement) + "." +
+                       (base.micro() + microIncrement));
   }
 
   public void testSame() {
