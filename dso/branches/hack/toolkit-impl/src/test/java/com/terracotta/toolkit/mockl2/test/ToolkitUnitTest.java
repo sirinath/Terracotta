@@ -11,9 +11,6 @@ import com.terracotta.toolkit.TerracottaToolkit;
 import com.terracotta.toolkit.ToolkitCacheManagerProvider;
 import com.terracotta.toolkit.rejoin.PlatformServiceProvider;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-
 
 public class ToolkitUnitTest {
 
@@ -21,7 +18,6 @@ public class ToolkitUnitTest {
 
   public ToolkitUnitTest() {
     platformService = new MockPlatformService();
-    setPlatformService(platformService);
   }
 
   public Toolkit getToolKit() {
@@ -30,7 +26,7 @@ public class ToolkitUnitTest {
       public void shutdown() {
         throw new ImplementMe();
       }
-    }, new ToolkitCacheManagerProvider(), false, getClass().getClassLoader());
+    }, new ToolkitCacheManagerProvider(), false, getClass().getClassLoader(), platformService);
     return toolkit;
   }
 
@@ -38,26 +34,7 @@ public class ToolkitUnitTest {
     platformService.addPlatformListener(listener);
   }
   
-  
-  /* Bad implementation here. Not sure of any Better feasible Option Here.
-   * Dependency Injection would have been best suited here
-   */
-  private void setPlatformService(MockPlatformService mockPlatformService)  {
-    try {
-      Field platformServiceField = PlatformServiceProvider.class.getDeclaredField("platformService");
-      platformServiceField.setAccessible(true);
-      
-      // setting the static final field
-      Field modifiersField = Field.class.getDeclaredField("modifiers");
-      modifiersField.setAccessible(true);
-      modifiersField.setInt(platformServiceField, platformServiceField.getModifiers() & ~Modifier.FINAL);
-      platformServiceField.set(PlatformServiceProvider.class, mockPlatformService);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-  
-  public static void main(String[] args) throws SecurityException, IllegalArgumentException, NoSuchFieldException, IllegalAccessException{
+  public static void main(String[] args) throws SecurityException, IllegalArgumentException {
     new ToolkitUnitTest();
     System.out.println(PlatformServiceProvider.getPlatformService());
     

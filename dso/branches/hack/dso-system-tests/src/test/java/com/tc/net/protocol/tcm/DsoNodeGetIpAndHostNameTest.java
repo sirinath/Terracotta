@@ -19,7 +19,6 @@ import com.tc.object.DistributedObjectClient;
 import com.tc.object.MockRemoteSearchRequestManager;
 import com.tc.object.TestClientObjectManager;
 import com.tc.object.bytecode.ManagerImpl;
-import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.StandardDSOClientConfigHelperImpl;
 import com.tc.object.locks.MockClientLockManager;
@@ -59,7 +58,6 @@ public class DsoNodeGetIpAndHostNameTest extends BaseDSOTestCase {
       dsoCluster1 = (DsoClusterImpl) mgr1.getDsoCluster();
       final ManagerImpl mgr2 = startupClient(tsaPort, jmxPort);
       client2 = mgr2.getDso();
-      ManagerUtil.enableSingleton(mgr2);
       dsoCluster2 = (DsoClusterImpl) mgr2.getDsoCluster();
 
       try {
