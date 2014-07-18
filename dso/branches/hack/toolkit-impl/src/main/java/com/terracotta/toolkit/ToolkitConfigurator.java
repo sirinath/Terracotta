@@ -12,6 +12,7 @@ import com.terracotta.toolkit.collections.map.ServerMapApplicator;
 import com.terracotta.toolkit.collections.map.ToolkitMapImpl;
 import com.terracotta.toolkit.collections.map.ToolkitMapImplApplicator;
 import com.terracotta.toolkit.collections.map.ToolkitSortedMapImpl;
+import com.terracotta.toolkit.collections.map.ToolkitSortedMapImplApplicator;
 import com.terracotta.toolkit.events.ToolkitNotifierImpl;
 import com.terracotta.toolkit.events.ToolkitNotifierImplApplicator;
 import com.terracotta.toolkit.object.ToolkitObjectStripeImpl;
@@ -46,6 +47,7 @@ public class ToolkitConfigurator {
     // ToolkitTypeRoot
     spec = this.configHelper.getOrCreateSpec(ToolkitTypeRootImpl.class.getName(),
                                              ToolkitTypeRootImplApplicator.class.getName());
+    spec.setUseNonDefaultConstructor(true);
     spec.setHonorTransient(true);
 
     // SerializedClusterObject
@@ -55,10 +57,12 @@ public class ToolkitConfigurator {
 
     // ClusteredList
     spec = configHelper.getOrCreateSpec(ToolkitListImpl.class.getName(), ToolkitListImplApplicator.class.getName());
+    spec.setUseNonDefaultConstructor(true);
     spec.setHonorTransient(true);
 
     // SerializerMap
     spec = configHelper.getOrCreateSpec(SerializerMapImpl.class.getName(), SerializerMapImplApplicator.class.getName());
+    spec.setUseNonDefaultConstructor(true);
     spec.setHonorTransient(true);
 
     // ClusteredObjectStripe
@@ -74,6 +78,7 @@ public class ToolkitConfigurator {
     // ClusteredNotifier
     spec = configHelper.getOrCreateSpec(ToolkitNotifierImpl.class.getName(),
                                         ToolkitNotifierImplApplicator.class.getName());
+    spec.setUseNonDefaultConstructor(true);
     spec.setHonorTransient(true);
 
     // SerializedEntry
@@ -88,10 +93,13 @@ public class ToolkitConfigurator {
 
     // ToolkitMap
     spec = configHelper.getOrCreateSpec(ToolkitMapImpl.class.getName(), ToolkitMapImplApplicator.class.getName());
+    spec.setUseNonDefaultConstructor(true);
     spec.setHonorTransient(true);
 
     // ToolkitSortedMap
-    spec = configHelper.getOrCreateSpec(ToolkitSortedMapImpl.class.getName(), ToolkitMapImplApplicator.class.getName());
+    spec = configHelper.getOrCreateSpec(ToolkitSortedMapImpl.class.getName(),
+                                        ToolkitSortedMapImplApplicator.class.getName());
+    spec.setUseNonDefaultConstructor(true);
     spec.setHonorTransient(true);
   }
 }

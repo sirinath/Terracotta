@@ -15,6 +15,7 @@ import com.tc.object.bytecode.TransparentAccess;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
+import com.tc.platform.PlatformService;
 
 import java.io.IOException;
 
@@ -115,7 +116,8 @@ public class BaseApplicator implements ChangeApplicator {
   }
 
   @Override
-  public Object getNewInstance(ClientObjectManager objectManager, DNA dna) throws IOException, ClassNotFoundException {
+  public Object getNewInstance(ClientObjectManager objectManager, DNA dna, PlatformService platformService)
+      throws IOException, ClassNotFoundException {
     throw new UnsupportedOperationException();
   }
 

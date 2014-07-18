@@ -70,6 +70,7 @@ import com.tc.object.tx.RemoteTransactionManagerImpl;
 import com.tc.object.tx.TransactionBatchFactory;
 import com.tc.object.tx.TransactionBatchWriterFactory;
 import com.tc.object.tx.TransactionIDGenerator;
+import com.tc.platform.PlatformService;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.runtime.logging.LongGCLogger;
@@ -179,10 +180,11 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                                      final TCObjectFactory objectFactory,
                                                      final Portability portability,
                                                      TCObjectSelfStore tcObjectSelfStore,
-                                                     AbortableOperationManager abortableOperationManager) {
+                                                     AbortableOperationManager abortableOperationManager,
+                                                     PlatformService platformService) {
     return new ClientObjectManagerImpl(remoteObjectManager, idProvider, clientIDProvider, classProviderLocal,
                                        classFactory, objectFactory, portability, tcObjectSelfStore,
-                                       abortableOperationManager);
+                                       abortableOperationManager, platformService);
   }
 
   @Override

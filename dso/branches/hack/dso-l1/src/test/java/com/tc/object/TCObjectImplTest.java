@@ -10,6 +10,7 @@ import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAWriter;
 import com.tc.object.field.TCField;
 import com.tc.object.field.TCFieldFactory;
+import com.tc.platform.PlatformService;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -215,7 +216,7 @@ public class TCObjectImplTest extends BaseDSOTestCase {
     }
 
     @Override
-    public Object getNewInstanceFromNonDefaultConstructor(final DNA dna) {
+    public Object getNewInstanceFromNonDefaultConstructor(final DNA dna, PlatformService platformService) {
       return null;
     }
 

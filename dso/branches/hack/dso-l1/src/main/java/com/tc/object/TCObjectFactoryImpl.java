@@ -7,6 +7,7 @@ package com.tc.object;
 import com.tc.lang.TCThreadGroup;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.dna.api.DNA;
+import com.tc.platform.PlatformService;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -55,8 +56,9 @@ public class TCObjectFactoryImpl implements TCObjectFactory {
   // }
 
   @Override
-  public Object getNewPeerObject(TCClass type, DNA dna) throws IOException, ClassNotFoundException {
-    return type.getNewInstanceFromNonDefaultConstructor(dna);
+  public Object getNewPeerObject(TCClass type, DNA dna, PlatformService platformService) throws IOException,
+      ClassNotFoundException {
+    return type.getNewInstanceFromNonDefaultConstructor(dna, platformService);
   }
 
   @Override

@@ -9,7 +9,6 @@ import org.terracotta.toolkit.internal.TerracottaL1Instance;
 import com.tc.exception.ImplementMe;
 import com.terracotta.toolkit.TerracottaToolkit;
 import com.terracotta.toolkit.ToolkitCacheManagerProvider;
-import com.terracotta.toolkit.rejoin.PlatformServiceProvider;
 
 
 public class ToolkitUnitTest {
@@ -33,11 +32,5 @@ public class ToolkitUnitTest {
   public void addPlatformListener(MockPlatformListener listener) {
     platformService.addPlatformListener(listener);
   }
-  
-  public static void main(String[] args) throws SecurityException, IllegalArgumentException {
-    new ToolkitUnitTest();
-    System.out.println(PlatformServiceProvider.getPlatformService());
-    
-  }
-  
+
 }
