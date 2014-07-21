@@ -62,6 +62,7 @@ import com.tc.operatorevent.TerracottaOperatorEventImpl;
 import com.tc.operatorevent.TerracottaOperatorEventLogging;
 import com.tc.platform.PlatformService;
 import com.tc.platform.PlatformServiceImpl;
+import com.tc.platform.rejoin.RejoinAwarePlatformService;
 import com.tc.platform.rejoin.RejoinManagerImpl;
 import com.tc.platform.rejoin.RejoinManagerInternal;
 import com.tc.properties.TCProperties;
@@ -124,6 +125,7 @@ public class ManagerImpl implements Manager {
   private final String                                L1VMShutdownHookName      = "L1 VM Shutdown Hook";
   private volatile TaskRunner                         taskRunner;
   private final Queue<TCManagementEvent>              unfiredTcManagementEvents = new ConcurrentLinkedQueue<TCManagementEvent>();
+  private final PlatformService                       externalPlatformService;
 
   public ManagerImpl(final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents,
                      final TCSecurityManager securityManager) {
@@ -167,9 +169,15 @@ public class ManagerImpl implements Manager {
     this.classProvider = new SingleLoaderClassProvider(loader == null ? getClass().getClassLoader() : loader);
 
     this.lockIdFactory = new LockIdFactory(this);
-    this.platformService = new PlatformServiceImpl(this, isExpressRejoinMode);
+    this.platformService = new PlatformServiceImpl(this);
+    this.externalPlatformService = wrapIfNeeded(platformService, isExpressRejoinMode);
 
     logger.info("manager created with rejoinEnabled=" + isExpressRejoinMode);
+  }
+
+  private static PlatformService wrapIfNeeded(PlatformService platformService, boolean isExpressRejoinMode) {
+    if (isExpressRejoinMode) return new RejoinAwarePlatformService(platformService);
+    return platformService;
   }
 
   public void set(final DSOClientConfigHelper config, final PreparedComponentsFromL2Connection connectionComponents) {
@@ -194,6 +202,10 @@ public class ManagerImpl implements Manager {
       if (this.clientStarted.attemptSet()) {
         startClient(forTests);
         this.platformService.init(rejoinManager, this.dso.getClientHandshakeManager());
+
+        if (externalPlatformService instanceof RejoinAwarePlatformService) {
+          ((RejoinAwarePlatformService) externalPlatformService).init();
+        }
       }
     }
   }
@@ -967,7 +979,7 @@ public class ManagerImpl implements Manager {
 
   @Override
   public PlatformService getPlatformService() {
-    return platformService;
+    return externalPlatformService;
   }
 
   @Override

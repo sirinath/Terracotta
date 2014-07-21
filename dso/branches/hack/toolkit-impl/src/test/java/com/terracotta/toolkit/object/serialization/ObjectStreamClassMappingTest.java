@@ -3,6 +3,8 @@
  */
 package com.terracotta.toolkit.object.serialization;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,8 +46,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import junit.framework.Assert;
-
-import static org.junit.Assert.assertEquals;
 
 public class ObjectStreamClassMappingTest {
 
@@ -304,11 +304,6 @@ public class ObjectStreamClassMappingTest {
     @Override
     public void removeRejoinLifecycleListener(RejoinLifecycleListener listener) {
       //
-    }
-
-    @Override
-    public boolean isRejoinEnabled() {
-      return false;
     }
 
     @Override

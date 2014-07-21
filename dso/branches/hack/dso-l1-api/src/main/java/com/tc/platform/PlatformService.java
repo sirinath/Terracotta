@@ -114,8 +114,6 @@ public interface PlatformService {
 
   void removeRejoinLifecycleListener(RejoinLifecycleListener listener);
 
-  boolean isRejoinEnabled();
-
   void throttlePutIfNecessary(ObjectID object) throws AbortedOperationException;
 
   boolean isLockedBeforeRejoin();
