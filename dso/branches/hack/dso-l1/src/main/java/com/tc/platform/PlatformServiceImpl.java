@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 public class PlatformServiceImpl implements PlatformService {
   private final Manager                           manager;
   private volatile RejoinLifecycleEventController rejoinEventsController;
-  private final boolean                           rejoinEnabled;
+
   private static final int                               BASE_COUNT  = 1;
   private static final ThreadLocal<Map<LockInfo, Integer>> lockIdToCount = new VicariousThreadLocal<Map<LockInfo, Integer>>() {
                                                                          @Override
@@ -56,9 +56,8 @@ public class PlatformServiceImpl implements PlatformService {
                                                                          }
                                                                        };
 
-  public PlatformServiceImpl(Manager manager, boolean rejoinEnabled) {
+  public PlatformServiceImpl(Manager manager) {
     this.manager = manager;
-    this.rejoinEnabled = rejoinEnabled;
   }
 
   private void addContext(LockInfo lockInfo) {
@@ -93,11 +92,6 @@ public class PlatformServiceImpl implements PlatformService {
   @Override
   public void commitAtomicTransaction(LockID lock, LockLevel level) throws AbortedOperationException {
     manager.commitAtomicTransaction(lock, level);
-  }
-
-  @Override
-  public boolean isRejoinEnabled() {
-    return rejoinEnabled;
   }
 
   public void init(RejoinManager rejoinManager, ClientHandshakeManager clientHandshakeManager) {

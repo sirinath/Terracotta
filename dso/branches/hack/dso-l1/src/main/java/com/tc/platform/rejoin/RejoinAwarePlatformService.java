@@ -1,7 +1,7 @@
 /*
  * All content copyright Terracotta, Inc., unless otherwise indicated. All rights reserved.
  */
-package com.terracotta.toolkit.rejoin;
+package com.tc.platform.rejoin;
 
 import org.terracotta.toolkit.rejoin.RejoinException;
 
@@ -24,7 +24,6 @@ import com.tc.operatorevent.TerracottaOperatorEvent.EventLevel;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventSubsystem;
 import com.tc.operatorevent.TerracottaOperatorEvent.EventType;
 import com.tc.platform.PlatformService;
-import com.tc.platform.rejoin.RejoinLifecycleListener;
 import com.tc.properties.TCProperties;
 import com.tc.search.SearchQueryResults;
 import com.tc.search.SearchRequestID;
@@ -53,6 +52,9 @@ public class RejoinAwarePlatformService implements PlatformService {
   public RejoinAwarePlatformService(PlatformService delegate) {
     this.delegate = delegate;
     this.rejoinState = new RejoinStateListener();
+  }
+
+  public void init() {
     delegate.addRejoinLifecycleListener(rejoinState);
   }
 
@@ -129,11 +131,6 @@ public class RejoinAwarePlatformService implements PlatformService {
   @Override
   public void unregisterServerEventListener(final ServerEventDestination destination, final ServerEventType... listenTo) {
     delegate.unregisterServerEventListener(destination, listenTo);
-  }
-
-  @Override
-  public boolean isRejoinEnabled() {
-    return delegate.isRejoinEnabled();
   }
 
   @Override

@@ -227,11 +227,6 @@ public class MockPlatformService implements PlatformService {
   }
 
   @Override
-  public boolean isRejoinEnabled() {
-    return false;
-  }
-
-  @Override
   public boolean isLockedBeforeRejoin() {
     return false;
   }

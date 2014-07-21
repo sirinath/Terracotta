@@ -78,7 +78,6 @@ import com.terracotta.toolkit.object.serialization.SerializationStrategy;
 import com.terracotta.toolkit.object.serialization.SerializationStrategyImpl;
 import com.terracotta.toolkit.object.serialization.ThreadContextAwareClassLoader;
 import com.terracotta.toolkit.object.serialization.UserSuppliedClassLoader;
-import com.terracotta.toolkit.rejoin.RejoinAwarePlatformService;
 import com.terracotta.toolkit.rejoin.RejoinAwareSerializerMap;
 import com.terracotta.toolkit.roots.impl.ToolkitTypeConstants;
 import com.terracotta.toolkit.roots.impl.ToolkitTypeRootsStaticFactory;
@@ -120,7 +119,7 @@ public class TerracottaToolkit implements ToolkitInternal {
 
     this.tcClient = tcClient;
     this.isNonStop = isNonStop;
-    this.platformService = wrapIfNeeded(platformService);
+    this.platformService = platformService;
     clusterInfoInstance = new TerracottaClusterInfo(platformService);
     SerializationStrategy strategy = createSerializationStrategy(loader);
     Object old = platformService.registerObjectByNameIfAbsent(TOOLKIT_SERIALIZER_REGISTRATION_NAME, strategy);
@@ -166,11 +165,6 @@ public class TerracottaToolkit implements ToolkitInternal {
     clusteredSortedSetFactory = new ToolkitSortedSetFactoryImpl(this, context);
     transactionController = new ToolkitTransactionFeatureImpl(platformService);
     managementInternalFeature = new ManagementInternalFeatureImpl(platformService);
-  }
-
-  private static PlatformService wrapIfNeeded(PlatformService platformService) {
-    if (platformService.isRejoinEnabled()) { return new RejoinAwarePlatformService(platformService); }
-    return platformService;
   }
 
   protected boolean isNonStop() {
