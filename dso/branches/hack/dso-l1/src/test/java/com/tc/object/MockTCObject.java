@@ -139,7 +139,7 @@ public class MockTCObject implements TCObject {
 
   @Override
   public boolean isIndexed() {
-    throw new AssertionError();
+    return false;
   }
 
   @Override
@@ -149,7 +149,7 @@ public class MockTCObject implements TCObject {
 
   @Override
   public boolean isEnum() {
-    throw new AssertionError();
+    return false;
   }
 
   public static class MethodCall {
