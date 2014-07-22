@@ -4,7 +4,6 @@
 package com.terracotta.toolkit.mockl2.test;
 
 import com.tc.abortable.AbortableOperationManager;
-import com.tc.abortable.AbortedOperationException;
 import com.tc.cluster.DsoCluster;
 import com.tc.exception.ImplementMe;
 import com.tc.logging.TCLogger;
@@ -13,7 +12,6 @@ import com.tc.net.GroupID;
 import com.tc.object.LogicalOperation;
 import com.tc.object.ObjectID;
 import com.tc.object.ServerEventDestination;
-import com.tc.object.TCClassFactory;
 import com.tc.object.TCObject;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.bytecode.NullTCObject;
@@ -61,7 +59,7 @@ public class MockPlatformService implements PlatformService {
   }
 
   @Override
-  public void waitForAllCurrentTransactionsToComplete() throws AbortedOperationException {
+  public void waitForAllCurrentTransactionsToComplete() {
     MockUtil.logInfo("Platform Service : wait for All Current TransactionsToComplete" );
   }
 
@@ -81,18 +79,17 @@ public class MockPlatformService implements PlatformService {
   }
 
   @Override
-  public boolean tryBeginLock(Object lockID, LockLevel level, long timeout, TimeUnit timeUnit)
-      throws InterruptedException, AbortedOperationException {
+  public boolean tryBeginLock(Object lockID, LockLevel level, long timeout, TimeUnit timeUnit) {
     return false;
   }
 
   @Override
-  public boolean tryBeginLock(Object lockID, LockLevel level) throws AbortedOperationException {
+  public boolean tryBeginLock(Object lockID, LockLevel level) {
     return false;
   }
 
   @Override
-  public void throttlePutIfNecessary(ObjectID object) throws AbortedOperationException {
+  public void throttlePutIfNecessary(ObjectID object) {
     MockUtil.logInfo("Platform Service : throttlePutIfNecessary : ObjectID : " + object);
 
   }
@@ -127,7 +124,7 @@ public class MockPlatformService implements PlatformService {
   }
 
   @Override
-  public void preFetchObject(ObjectID id) throws AbortedOperationException {
+  public void preFetchObject(ObjectID id) {
     throw new ImplementMe();
   }
 
@@ -168,7 +165,7 @@ public class MockPlatformService implements PlatformService {
     TCObject tcObject = new MockTCObject(ObjectID.NULL_ID, obj);
     if(SerializedMapValue.class.isAssignableFrom(obj.getClass())) {
       SerializedMapValue manageable = (SerializedMapValue) obj;
-      manageable.initializeTCObject(ObjectID.NULL_ID, new MockTCClass(false, true), false);
+      manageable.initializeTCObject(ObjectID.NULL_ID, new MockTCClass(), false);
       manageable.__tc_managed(manageable);
     }else if(Manageable.class.isAssignableFrom(obj.getClass())) {
       Manageable manageable = (Manageable) obj;
@@ -180,9 +177,6 @@ public class MockPlatformService implements PlatformService {
         if(Manageable.class.isAssignableFrom(manObj.getClass())) {
           Manageable manageable = (Manageable) manObj;
           TCObject tcObj = new MockTCObjectServerMap();
-          if (manObj.getClass().equals(TCClassFactory.SERVER_MAP_CLASSNAME)) {
-
-          }
           manageable.__tc_managed(tcObj);
         }
       }
@@ -193,7 +187,7 @@ public class MockPlatformService implements PlatformService {
   }
 
   @Override
-  public Object lookupObject(ObjectID id) throws AbortedOperationException {
+  public Object lookupObject(ObjectID id) {
     return null;
   }
 
@@ -208,20 +202,19 @@ public class MockPlatformService implements PlatformService {
   }
 
   @Override
-  public void lockIDWait(Object lockID, long timeout, TimeUnit timeUnit) throws InterruptedException,
-      AbortedOperationException {
+  public void lockIDWait(Object lockID, long timeout, TimeUnit timeUnit) {
     throw new ImplementMe();
 
   }
 
   @Override
-  public void lockIDNotifyAll(Object lockID) throws AbortedOperationException {
+  public void lockIDNotifyAll(Object lockID) {
     throw new ImplementMe();
 
   }
 
   @Override
-  public void lockIDNotify(Object lockID) throws AbortedOperationException {
+  public void lockIDNotify(Object lockID) {
     throw new ImplementMe();
 
   }
@@ -232,7 +225,7 @@ public class MockPlatformService implements PlatformService {
   }
 
   @Override
-  public boolean isHeldByCurrentThread(Object lockID, LockLevel level) throws AbortedOperationException {
+  public boolean isHeldByCurrentThread(Object lockID, LockLevel level) {
     return false;
   }
 
@@ -292,8 +285,8 @@ public class MockPlatformService implements PlatformService {
   @Override
   public SearchQueryResults executeQuery(String cachename, List queryStack, Set<String> attributeSet,
                                          Set<String> groupByAttributes, List<NVPair> sortAttributes,
-                                         List<NVPair> aggregators, int maxResults, int batchSize, boolean waitForTxn, SearchRequestID queryId)
-      throws AbortedOperationException {
+                                         List<NVPair> aggregators, int maxResults, int batchSize, boolean waitForTxn,
+                                         SearchRequestID queryId) {
     return null;
   }
 
@@ -301,7 +294,8 @@ public class MockPlatformService implements PlatformService {
   public SearchQueryResults executeQuery(String cachename, List queryStack, boolean includeKeys,
                                          boolean includeValues, Set<String> attributeSet,
                                          List<NVPair> sortAttributes, List<NVPair> aggregators, int maxResults,
-                                         int batchSize, int pageSize, boolean waitForTxn, SearchRequestID queryId) throws AbortedOperationException {
+ int batchSize, int pageSize,
+                                         boolean waitForTxn, SearchRequestID queryId) {
     return null;
   }
 
@@ -311,30 +305,29 @@ public class MockPlatformService implements PlatformService {
   }
 
   @Override
-  public void commitLock(Object lockID, LockLevel level) throws AbortedOperationException {
+  public void commitLock(Object lockID, LockLevel level) {
     MockUtil.logInfo("commit lock lock id "+  lockID +" - "+ level);
   }
 
   @Override
-  public void commitAtomicTransaction(LockID lockID, LockLevel level) throws AbortedOperationException {
+  public void commitAtomicTransaction(LockID lockID, LockLevel level) {
     throw new ImplementMe();
 
   }
 
   @Override
-  public void beginLockInterruptibly(Object obj, LockLevel level) throws InterruptedException,
-      AbortedOperationException {
+  public void beginLockInterruptibly(Object obj, LockLevel level) {
     throw new ImplementMe();
 
   }
 
   @Override
-  public void beginLock(Object lockID, LockLevel level) throws AbortedOperationException {
+  public void beginLock(Object lockID, LockLevel level) {
     MockUtil.logInfo("begin lock lock id " + lockID + " - " + level);
   }
 
   @Override
-  public void beginAtomicTransaction(LockID lockID, LockLevel level) throws AbortedOperationException {
+  public void beginAtomicTransaction(LockID lockID, LockLevel level) {
     throw new ImplementMe();
 
   }

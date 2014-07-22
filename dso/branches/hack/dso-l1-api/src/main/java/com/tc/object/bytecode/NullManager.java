@@ -17,7 +17,6 @@ import com.tc.object.LogicalOperation;
 import com.tc.object.ObjectID;
 import com.tc.object.ServerEventDestination;
 import com.tc.object.TCObject;
-import com.tc.object.loaders.ClassProvider;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.Notify;
@@ -37,7 +36,6 @@ import com.tc.util.concurrent.Runners;
 import com.tc.util.concurrent.TaskRunner;
 import com.terracottatech.search.NVPair;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -83,21 +81,6 @@ public class NullManager implements Manager {
   }
 
   @Override
-  public Object lookupOrCreateRoot(String name, Object object) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Object lookupOrCreateRootNoDepth(String name, Object obj) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Object createOrReplaceRoot(String name, Object object) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public TCObject lookupExistingOrNull(Object obj) {
     return null;
   }
@@ -108,43 +91,8 @@ public class NullManager implements Manager {
   }
 
   @Override
-  public void checkWriteAccess(Object context) {
-    //
-  }
-
-  @Override
-  public boolean isManaged(Object object) {
-    return false;
-  }
-
-  @Override
-  public boolean isLiteralInstance(Object object) {
-    return false;
-  }
-
-  @Override
   public boolean isLiteralAutolock(Object o) {
     return false;
-  }
-
-  @Override
-  public boolean isLogical(Object object) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean isRoot(Field field) {
-    return false;
-  }
-
-  @Override
-  public Object lookupRoot(String name) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void logicalInvokeWithTransaction(Object object, Object lockObject, LogicalOperation method, Object[] params) {
-    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -158,33 +106,13 @@ public class NullManager implements Manager {
   }
 
   @Override
-  public TCObject lookupOrCreate(Object obj) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public Object lookupObject(ObjectID id) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Object lookupObject(ObjectID id, ObjectID parentContext) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public TCProperties getTCProperties() {
     return NullTCProperties.INSTANCE;
-  }
-
-  @Override
-  public boolean isFieldPortableByOffset(Object pojo, long fieldOffset) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public ClassProvider getClassProvider() {
-    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -205,11 +133,6 @@ public class NullManager implements Manager {
   @Override
   public void preFetchObject(ObjectID id) {
     return;
-  }
-
-  @Override
-  public Object getChangeApplicator(Class clazz) {
-    return null;
   }
 
   @Override
@@ -493,7 +416,7 @@ public class NullManager implements Manager {
   }
 
   @Override
-  public TaskRunner getTastRunner() {
+  public TaskRunner getTaskRunner() {
     return Runners.newDefaultCachedScheduledTaskRunner();
   }
 
@@ -514,9 +437,11 @@ public class NullManager implements Manager {
 
   @Override
   public void unregisterManagementService(Object serviceID) {
+    //
   }
 
   @Override
   public void sendEvent(TCManagementEvent event) {
+    //
   }
 }

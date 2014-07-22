@@ -7,7 +7,6 @@ import com.tc.abortable.AbortedOperationException;
 import com.tc.exception.TCClassNotFoundException;
 import com.tc.exception.TCNonPortableObjectError;
 import com.tc.net.GroupID;
-import com.tc.object.LogicalOperation;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.tx.ClientTransactionManager;
 
@@ -272,21 +271,6 @@ public interface ClientObjectManager extends TCObjectSelfCallback {
    * @return Weak reference referring to the peer
    */
   public WeakReference createNewPeer(TCClass clazz, DNA dna);
-
-  // public WeakObjectReference createNewPeer(TCClass clazz, DNA dna);
-
-  /**
-   * Create new peer object instance for the clazz, referred to through a WeakReference.
-   * 
-   * @param clazz The kind of class
-   * @param size The size if this is an array
-   * @param id The object identifier
-   * @param parentID The parent object, if this is an inner object
-   * @return Weak reference referring to the peer
-   */
-  public WeakReference createNewPeer(TCClass clazz, int size, ObjectID id, ObjectID parentID);
-
-  // public WeakObjectReference createNewPeer(TCClass clazz, int size, ObjectID id, ObjectID parentID);
 
   /**
    * Get or create a reference to the managed class for this clazz

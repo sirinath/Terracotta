@@ -10,8 +10,8 @@ import com.tc.net.GroupID;
 import com.tc.net.NodeID;
 import com.tc.object.BaseDSOTestCase;
 import com.tc.object.ClientObjectManager;
-import com.tc.object.ObjectID;
 import com.tc.object.LogicalOperation;
+import com.tc.object.ObjectID;
 import com.tc.object.TCClass;
 import com.tc.object.TCObject;
 import com.tc.object.TCObjectSelf;
@@ -337,11 +337,6 @@ public class ManagerImplTest extends BaseDSOTestCase {
 
     @Override
     public WeakReference createNewPeer(final TCClass clazz, final DNA dna) {
-      throw new ImplementMe();
-    }
-
-    @Override
-    public WeakReference createNewPeer(final TCClass clazz, final int size, final ObjectID id, final ObjectID parentID) {
       throw new ImplementMe();
     }
 

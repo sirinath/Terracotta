@@ -38,32 +38,24 @@ public class ToolkitConfigurator {
     addInstrumentation();
   }
 
-  protected TransparencyClassSpec getOrCreateSpec(final String expr) {
-    return configHelper.getOrCreateSpec(expr);
-  }
-
   protected void addInstrumentation() {
     TransparencyClassSpec spec;
     // ToolkitTypeRoot
     spec = this.configHelper.getOrCreateSpec(ToolkitTypeRootImpl.class.getName(),
                                              ToolkitTypeRootImplApplicator.class.getName());
     spec.setUseNonDefaultConstructor(true);
-    spec.setHonorTransient(true);
 
     // SerializedClusterObject
     spec = configHelper.getOrCreateSpec(SerializedClusterObjectImpl.class.getName(),
                                         SerializedClusterObjectImplApplicator.class.getName());
-    spec.setHonorTransient(true);
 
     // ClusteredList
     spec = configHelper.getOrCreateSpec(ToolkitListImpl.class.getName(), ToolkitListImplApplicator.class.getName());
     spec.setUseNonDefaultConstructor(true);
-    spec.setHonorTransient(true);
 
     // SerializerMap
     spec = configHelper.getOrCreateSpec(SerializerMapImpl.class.getName(), SerializerMapImplApplicator.class.getName());
     spec.setUseNonDefaultConstructor(true);
-    spec.setHonorTransient(true);
 
     // ClusteredObjectStripe
     spec = configHelper.getOrCreateSpec(ToolkitObjectStripeImpl.class.getName(),
@@ -73,33 +65,27 @@ public class ToolkitConfigurator {
     // ServerMap
     spec = configHelper.getOrCreateSpec(ServerMap.class.getName(), ServerMapApplicator.class.getName());
     spec.setUseNonDefaultConstructor(true);
-    spec.setHonorTransient(true);
 
     // ClusteredNotifier
     spec = configHelper.getOrCreateSpec(ToolkitNotifierImpl.class.getName(),
                                         ToolkitNotifierImplApplicator.class.getName());
     spec.setUseNonDefaultConstructor(true);
-    spec.setHonorTransient(true);
 
     // SerializedEntry
     spec = configHelper.getOrCreateSpec(SerializedMapValue.class.getName(),
                                         SerializedMapValueApplicator.class.getName());
-    spec.setHonorTransient(true);
 
     // CustomLifespanSerializedEntry
     spec = configHelper.getOrCreateSpec(CustomLifespanSerializedMapValue.class.getName(),
                                         CustomLifespanSerializedEntryApplicator.class.getName());
-    spec.setHonorTransient(true);
 
     // ToolkitMap
     spec = configHelper.getOrCreateSpec(ToolkitMapImpl.class.getName(), ToolkitMapImplApplicator.class.getName());
     spec.setUseNonDefaultConstructor(true);
-    spec.setHonorTransient(true);
 
     // ToolkitSortedMap
     spec = configHelper.getOrCreateSpec(ToolkitSortedMapImpl.class.getName(),
                                         ToolkitSortedMapImplApplicator.class.getName());
     spec.setUseNonDefaultConstructor(true);
-    spec.setHonorTransient(true);
   }
 }

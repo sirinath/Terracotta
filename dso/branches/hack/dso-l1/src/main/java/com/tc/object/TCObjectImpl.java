@@ -6,19 +6,14 @@ package com.tc.object;
 
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
-import com.tc.object.bytecode.TransparentAccess;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAException;
 import com.tc.object.dna.api.DNAWriter;
-import com.tc.object.field.TCField;
 import com.tc.util.Conversion;
 import com.tc.util.Util;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Implementation of TCObject interface.
@@ -141,49 +136,7 @@ public abstract class TCObjectImpl implements TCObject {
 
   @Override
   public void setValue(final String fieldName, final Object obj) {
-    try {
-      final TransparentAccess ta = (TransparentAccess) getPeerObject();
-      if (ta == null) {
-        // Object was GC'd so return which should lead to a re-retrieve
-        return;
-      }
-      clearReference(fieldName);
-      final TCField field = getTCClass().getField(fieldName);
-      if (field == null) {
-        logger.warn("Data for field:" + fieldName + " was recieved but that field does not exist in class:");
-        return;
-      }
-      if (obj instanceof ObjectID) {
-        setReference(fieldName, (ObjectID) obj);
-        ta.__tc_setfield(field.getName(), null);
-      } else {
-        // clean this up
-        ta.__tc_setfield(field.getName(), obj);
-      }
-    } catch (final Exception e) {
-      logger.error("Error setting field [" + fieldName + "] to value of type " + typeOf(obj) + " on instance of "
-                   + getTCClass().getPeerClass().getName() + " that has fields: " + fieldDesc());
-
-      // TODO: More elegant exception handling.
-      throw new com.tc.object.dna.api.DNAException(e);
-    }
-  }
-
-  private String fieldDesc() {
-    List<String> fields = new ArrayList<String>();
-    Class c = getTCClass().getPeerClass();
-    while (c != null) {
-      for (Field f : c.getDeclaredFields()) {
-        fields.add(c.getName() + "." + f.getName() + "(" + f.getType().getName() + ")");
-      }
-      c = c.getSuperclass();
-    }
-    return fields.toString();
-  }
-
-  private static String typeOf(Object obj) {
-    if (obj == null) { return "null"; }
-    return obj.getClass().getSimpleName();
+    throw new AssertionError(); // XXX: remove method when possible
   }
 
   @Override
@@ -261,10 +214,6 @@ public abstract class TCObjectImpl implements TCObject {
   public void objectFieldChangedByOffset(final String classname, final long fieldOffset, final Object newValue,
                                          final int index) {
     throw new AssertionError();
-  }
-
-  public boolean isFieldPortableByOffset(final long fieldOffset) {
-    return getTCClass().isPortableField(fieldOffset);
   }
 
   @Override
@@ -375,7 +324,7 @@ public abstract class TCObjectImpl implements TCObject {
 
   @Override
   public String getExtendingClassName() {
-    return getTCClass().getExtendingClassName();
+    return getClassName();
   }
 
   @Override
@@ -390,16 +339,16 @@ public abstract class TCObjectImpl implements TCObject {
 
   @Override
   public boolean isIndexed() {
-    return getTCClass().isIndexed();
+    throw new AssertionError(); // XXX: remove method when possible
   }
 
   @Override
   public boolean isLogical() {
-    return getTCClass().isLogical();
+    throw new AssertionError(); // XXX: remove method when possible
   }
 
   @Override
   public boolean isEnum() {
-    return getTCClass().isEnum();
+    throw new AssertionError(); // XXX: remove method when possible
   }
 }

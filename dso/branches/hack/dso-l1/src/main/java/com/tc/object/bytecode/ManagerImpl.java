@@ -82,7 +82,6 @@ import com.terracottatech.search.AbstractNVPair;
 import com.terracottatech.search.NVPair;
 import com.terracottatech.search.SearchBuilder.Search;
 
-import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -114,7 +113,7 @@ public class ManagerImpl implements Manager {
 
   private volatile DSOClientConfigHelper              config;
   private volatile PreparedComponentsFromL2Connection connectionComponents;
-  private final ProductID productId;
+  private final ProductID                             productId;
 
   private final ConcurrentHashMap<String, Object>     registeredObjects         = new ConcurrentHashMap<String, Object>();
   private final AbortableOperationManager             abortableOperationManager = new AbortableOperationManagerImpl();
@@ -324,6 +323,7 @@ public class ManagerImpl implements Manager {
       this.shutdownManager.registerBeforeShutdownHook(beforeShutdownHook);
     }
   }
+
   @Override
   public void unregisterBeforeShutdownHook(final Runnable beforeShutdownHook) {
     if (this.shutdownManager != null) {
@@ -393,18 +393,6 @@ public class ManagerImpl implements Manager {
     }
   }
 
-  @Override
-  public void logicalInvokeWithTransaction(final Object object, final Object lockObject, final LogicalOperation method,
-                                           final Object[] params) throws AbortedOperationException {
-    final LockID lock = generateLockIdentifier(lockObject);
-    lock(lock, LockLevel.WRITE);
-    try {
-      logicalInvoke(object, method, params);
-    } finally {
-      unlock(lock, LockLevel.WRITE);
-    }
-  }
-
   private void logicalAddAllInvoke(final Collection<?> collection, final TCObject tcobj) {
     for (Object obj : collection) {
       tcobj.logicalInvoke(LogicalOperation.ADD, new Object[] { obj });
@@ -415,11 +403,6 @@ public class ManagerImpl implements Manager {
     for (Object obj : collection) {
       tcobj.logicalInvoke(LogicalOperation.ADD_AT, new Object[] { index++, obj });
     }
-  }
-
-  @Override
-  public Object lookupOrCreateRoot(final String name, final Object object) {
-    return lookupOrCreateRoot(name, object, false);
   }
 
   @Override
@@ -443,47 +426,9 @@ public class ManagerImpl implements Manager {
   }
 
   @Override
-  public Object lookupOrCreateRootNoDepth(final String name, final Object obj) {
-    return lookupOrCreateRoot(name, obj, true);
-  }
-
-  @Override
-  public Object createOrReplaceRoot(final String name, final Object object) {
-    try {
-      return this.objectManager.createOrReplaceRoot(name, object);
-    } catch (final Throwable t) {
-      Util.printLogAndRethrowError(t, logger);
-
-      // shouldn't get here
-      throw new AssertionError();
-    }
-  }
-
-  private Object lookupOrCreateRoot(final String rootName, final Object object, final boolean noDepth) {
-    try {
-      if (noDepth) { return this.objectManager.lookupOrCreateRootNoDepth(rootName, object); }
-      return this.objectManager.lookupOrCreateRoot(rootName, object, true);
-    } catch (final Throwable t) {
-      Util.printLogAndRethrowError(t, logger);
-      // shouldn't get here
-      throw new AssertionError();
-    }
-  }
-
-  @Override
   public boolean isLiteralAutolock(final Object o) {
     if (o instanceof Manageable) { return false; }
     return (!(o instanceof Class)) && (!(o instanceof ObjectID)) && LiteralValues.isLiteralInstance(o);
-  }
-
-  @Override
-  public TCObject lookupOrCreate(final Object obj) {
-    if (obj instanceof Manageable) {
-      TCObject tco = ((Manageable) obj).__tc_managed();
-      if (tco != null) { return tco; }
-    }
-
-    return this.objectManager.lookupOrCreate(obj);
   }
 
   @Override
@@ -523,66 +468,6 @@ public class ManagerImpl implements Manager {
   }
 
   @Override
-  public Object lookupObject(final ObjectID id, final ObjectID parentContext) throws ClassNotFoundException,
-      AbortedOperationException {
-    return this.objectManager.lookupObject(id, parentContext);
-  }
-
-  @Override
-  public void checkWriteAccess(final Object context) {
-    // XXX: make sure that "context" is the ALWAYS the right object to check here, and then rename it
-    if (isManaged(context)) {
-      try {
-        this.txManager.checkWriteAccess(context);
-      } catch (final Throwable t) {
-        Util.printLogAndRethrowError(t, logger);
-      }
-    }
-  }
-
-  @Override
-  public boolean isLiteralInstance(final Object obj) {
-    return LiteralValues.isLiteralInstance(obj);
-  }
-
-  @Override
-  public boolean isManaged(final Object obj) {
-    if (obj instanceof Manageable) {
-      final TCObject tcobj = ((Manageable) obj).__tc_managed();
-
-      return tcobj != null && tcobj.isShared();
-    }
-    return this.objectManager.isManaged(obj);
-  }
-
-  @Override
-  public Object lookupRoot(final String name) {
-    try {
-      return this.objectManager.lookupRoot(name);
-    } catch (final Throwable t) {
-      Util.printLogAndRethrowError(t, logger);
-
-      // shouldn't get here
-      throw new AssertionError();
-    }
-  }
-
-  @Override
-  public Object getChangeApplicator(final Class clazz) {
-    return this.config.getChangeApplicator(clazz);
-  }
-
-  @Override
-  public boolean isLogical(final Object object) {
-    return this.config.isLogical(object.getClass().getName());
-  }
-
-  @Override
-  public boolean isRoot(final Field field) {
-    return false;
-  }
-
-  @Override
   public TCProperties getTCProperties() {
     return TCPropertiesImpl.getProperties();
   }
@@ -598,16 +483,6 @@ public class ManagerImpl implements Manager {
   @Override
   public TCLogger getLogger(final String loggerName) {
     return TCLogging.getLogger(loggerName);
-  }
-
-  @Override
-  public boolean isFieldPortableByOffset(final Object pojo, final long fieldOffset) {
-    throw new AssertionError();
-  }
-
-  @Override
-  public ClassProvider getClassProvider() {
-    return this.classProvider;
   }
 
   @Override
@@ -868,24 +743,20 @@ public class ManagerImpl implements Manager {
   public SearchQueryResults executeQuery(String cachename, List queryStack, boolean includeKeys, boolean includeValues,
                                          Set<String> attributeSet, List<NVPair> sortAttributes,
                                          List<NVPair> aggregators, int maxResults, int batchSize, int resultPageSize,
-                                         boolean waitForTxn, SearchRequestID reqId)
-      throws AbortedOperationException {
+                                         boolean waitForTxn, SearchRequestID reqId) throws AbortedOperationException {
     // Paginated queries are already transactional wrt local changes
     if (resultPageSize == Search.BATCH_SIZE_UNLIMITED && shouldWaitForTxn(waitForTxn)) {
       waitForAllCurrentTransactionsToComplete();
     }
     return searchRequestManager.query(cachename, queryStack, includeKeys, includeValues, attributeSet, sortAttributes,
-                                      aggregators,
-                                      maxResults, batchSize, reqId,
-                                      resultPageSize);
+                                      aggregators, maxResults, batchSize, reqId, resultPageSize);
   }
 
   @Override
   public SearchQueryResults executeQuery(String cachename, List queryStack, Set<String> attributeSet,
                                          Set<String> groupByAttribues, List<NVPair> sortAttributes,
                                          List<NVPair> aggregators, int maxResults, int batchSize, boolean waitForTxn,
-                                         SearchRequestID reqId)
-      throws AbortedOperationException {
+                                         SearchRequestID reqId) throws AbortedOperationException {
     if (shouldWaitForTxn(waitForTxn)) {
       waitForAllCurrentTransactionsToComplete();
     }
@@ -993,7 +864,8 @@ public class ManagerImpl implements Manager {
   }
 
   @Override
-  public void unregisterServerEventListener(final ServerEventDestination destination, final Set<ServerEventType> listenTo) {
+  public void unregisterServerEventListener(final ServerEventDestination destination,
+                                            final Set<ServerEventType> listenTo) {
     serverEventListenerManager.unregisterListener(destination, listenTo);
   }
 
@@ -1008,7 +880,7 @@ public class ManagerImpl implements Manager {
   }
 
   @Override
-  public TaskRunner getTastRunner() {
+  public TaskRunner getTaskRunner() {
     return taskRunner;
   }
 
@@ -1031,10 +903,9 @@ public class ManagerImpl implements Manager {
 
   @Override
   public void unregisterManagementService(Object serviceID) {
-    if (!(serviceID instanceof ServiceID)) {
-      throw new IllegalArgumentException("serviceID object must be of class " + ServiceID.class.getName());
-    }
-    dso.getManagementServicesManager().unregisterService((ServiceID)serviceID);
+    if (!(serviceID instanceof ServiceID)) { throw new IllegalArgumentException("serviceID object must be of class "
+                                                                                + ServiceID.class.getName()); }
+    dso.getManagementServicesManager().unregisterService((ServiceID) serviceID);
   }
 
   @Override
