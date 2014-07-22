@@ -28,16 +28,6 @@ public class TestObjectFactory implements TCObjectFactory {
   }
 
   @Override
-  public Object getNewPeerObject(TCClass type, Object parent) throws IllegalArgumentException, SecurityException {
-    return peerObject;
-  }
-
-  @Override
-  public Object getNewArrayInstance(TCClass type, int size) {
-    throw new ImplementMe();
-  }
-
-  @Override
   public Object getNewPeerObject(TCClass type) throws IllegalArgumentException, SecurityException {
     return peerObject;
   }

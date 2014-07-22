@@ -10,9 +10,7 @@ import com.tc.object.dna.api.DNA;
 import com.tc.platform.PlatformService;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -62,26 +60,14 @@ public class TCObjectFactoryImpl implements TCObjectFactory {
   }
 
   @Override
-  public Object getNewPeerObject(TCClass type, Object parent) throws IllegalArgumentException, SecurityException,
-      InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-    // This one is for non-static inner classes
-    return getNewPeerObject(type.getConstructor(), EMPTY_OBJECT_ARRAY, type, parent);
-  }
-
-  @Override
-  public Object getNewArrayInstance(TCClass type, int size) {
-    return Array.newInstance(type.getComponentType(), size);
-  }
-
-  @Override
   public Object getNewPeerObject(TCClass type) throws IllegalArgumentException, InstantiationException,
       IllegalAccessException, InvocationTargetException, SecurityException, NoSuchMethodException {
     Constructor ctor = type.getConstructor();
     if (ctor == null) throw new AssertionError("type:" + type.getName());
-    return getNewPeerObject(ctor, EMPTY_OBJECT_ARRAY, type, null);
+    return getNewPeerObject(ctor, EMPTY_OBJECT_ARRAY, type);
   }
 
-  private Object getNewPeerObject(Constructor ctor, Object[] args, TCClass type, Object parent)
+  private Object getNewPeerObject(Constructor ctor, Object[] args, TCClass type)
       throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
     final Object rv;
 
@@ -101,16 +87,6 @@ public class TCObjectFactoryImpl implements TCObjectFactory {
 
     try {
       rv = ctor.newInstance(args);
-      if (parent != null) {
-        while (type != null) {
-          if (type.getParentField() != null) {
-            Field f = type.getParentField();
-            f.setAccessible(true);
-            f.set(rv, parent);
-          }
-          type = type.getSuperclass();
-        }
-      }
     } finally {
       if (adjustTCL) thread.setContextClassLoader(prevLoader);
     }

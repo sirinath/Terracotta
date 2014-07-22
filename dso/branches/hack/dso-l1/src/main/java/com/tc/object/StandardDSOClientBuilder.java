@@ -36,7 +36,6 @@ import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.DSOMBeanConfig;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAEncodingInternal;
-import com.tc.object.field.TCFieldFactory;
 import com.tc.object.gtx.ClientGlobalTransactionManager;
 import com.tc.object.gtx.ClientGlobalTransactionManagerImpl;
 import com.tc.object.handshakemanager.ClientHandshakeCallback;
@@ -292,7 +291,7 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                              final DNAEncoding dnaEncoding, final Manager manager,
                                              final L1ServerMapLocalCacheManager localCacheManager,
                                              final RemoteServerMapManager remoteServerMapManager) {
-    return new TCClassFactoryImpl(new TCFieldFactory(config), config, classProvider, dnaEncoding, manager,
+    return new TCClassFactoryImpl(config, classProvider, dnaEncoding, manager,
                                   localCacheManager, remoteServerMapManager);
   }
 

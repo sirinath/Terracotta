@@ -26,7 +26,6 @@ import com.tc.object.bytecode.ManagerImpl;
 import com.tc.object.bytecode.hook.DSOContext;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.StandardDSOClientConfigHelperImpl;
-import com.tc.object.loaders.ClassProvider;
 import com.tc.platform.PlatformService;
 import com.tc.util.Assert;
 import com.terracotta.management.security.SecretProvider;
@@ -108,11 +107,11 @@ public class DSOContextImpl implements DSOContext {
 
   private static DSOContextImpl createContext(ManagerImpl manager, String configSpec,
                                               TCSecurityManager securityManager, SecurityInfo securityInfo) {
-    return new DSOContextImpl(manager.getClassProvider(), manager, configSpec, securityManager, securityInfo);
+    return new DSOContextImpl(manager, configSpec, securityManager, securityInfo);
   }
 
-  private DSOContextImpl(ClassProvider classProvider, ManagerImpl manager, String configSpec,
-                         TCSecurityManager securityManager, SecurityInfo securityInfo) {
+  private DSOContextImpl(ManagerImpl manager, String configSpec, TCSecurityManager securityManager,
+                         SecurityInfo securityInfo) {
     resolveClasses();
 
     this.manager = manager;

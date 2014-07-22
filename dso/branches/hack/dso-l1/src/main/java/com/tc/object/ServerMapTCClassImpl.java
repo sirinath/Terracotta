@@ -4,7 +4,6 @@
 package com.tc.object;
 
 import com.tc.object.bytecode.Manager;
-import com.tc.object.field.TCFieldFactory;
 import com.tc.object.servermap.localcache.L1ServerMapLocalCacheManager;
 
 public class ServerMapTCClassImpl extends TCClassImpl implements TCClass {
@@ -14,13 +13,10 @@ public class ServerMapTCClassImpl extends TCClassImpl implements TCClass {
   private final Manager                      manager;
 
   ServerMapTCClassImpl(final Manager manager, final L1ServerMapLocalCacheManager globalLocalCacheManager,
-                       final RemoteServerMapManager remoteServerMapManager, final TCFieldFactory factory,
+                       final RemoteServerMapManager remoteServerMapManager,
                        final TCClassFactory clazzFactory, final ClientObjectManager objectManager, final Class peer,
-                       final Class logicalSuperClass, final String logicalExtendingClassName, final boolean isLogical,
-                       final boolean useNonDefaultConstructor, final boolean useResolveLockWhileClearing,
-                       final String postCreateMethod, final String preCreateMethod) {
-    super(factory, clazzFactory, objectManager, peer, logicalSuperClass, logicalExtendingClassName, isLogical,
-          useNonDefaultConstructor, useResolveLockWhileClearing, postCreateMethod, preCreateMethod);
+                       final boolean useNonDefaultConstructor) {
+    super(clazzFactory, objectManager, peer, useNonDefaultConstructor);
     this.globalLocalCacheManager = globalLocalCacheManager;
     this.remoteServerMapManager = remoteServerMapManager;
     this.manager = manager;

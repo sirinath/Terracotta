@@ -22,7 +22,6 @@ import com.tc.object.dna.api.DNA;
 import com.tc.object.handshakemanager.ClientHandshakeCallback;
 import com.tc.object.idprovider.api.ObjectIDProvider;
 import com.tc.object.loaders.ClassProvider;
-import com.tc.object.loaders.Namespace;
 import com.tc.object.msg.ClientHandshakeMessage;
 import com.tc.object.tx.ClientTransaction;
 import com.tc.object.tx.ClientTransactionManager;
@@ -45,15 +44,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -376,33 +371,9 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     Assert.assertNotNull(pojo);
     TCObject obj = basicLookup(pojo);
     if (obj == null || obj.isNew()) {
-      executePreCreateMethods(pojo);
       obj = create(pojo, gid);
     }
     return obj;
-  }
-
-  private void executePreCreateMethods(final Object pojo) {
-    final TCClass tcClass = this.clazzFactory.getOrCreate(pojo.getClass(), this);
-
-    for (final Method m : tcClass.getPreCreateMethods()) {
-      executeMethod(pojo, m, "preCreate method (" + m.getName() + ") failed on object of " + pojo.getClass());
-    }
-  }
-
-  private void executeMethod(final Object pojo, final Method method, final String loggingMessage) {
-    // This method used to use beanshell, but I changed it to reflection to hopefully avoid a deadlock -- CDV-130
-
-    try {
-      method.invoke(pojo, new Object[] {});
-    } catch (Throwable t) {
-      if (t instanceof InvocationTargetException) {
-        t = t.getCause();
-      }
-      this.logger.warn(loggingMessage, t);
-
-      wrapIfNeededAndThrow(t);
-    }
   }
 
   private static void wrapIfNeededAndThrow(final Throwable t) {
@@ -609,7 +580,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private TCObject createObjectWithDNA(DNA dna) throws ClassNotFoundException {
     TCObject obj = null;
 
-    Class clazz = this.classProvider.getClassFor(Namespace.parseClassNameIfNecessary(dna.getTypeName()));
+    Class clazz = this.classProvider.getClassFor(dna.getTypeName());
     TCClass tcClazz = clazzFactory.getOrCreate(clazz, this);
     Object pojo = createNewPojoObject(tcClazz, dna);
     obj = this.factory.getNewInstance(dna.getObjectID(), pojo, clazz, false);
@@ -945,63 +916,20 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   private void traverse(final Object root, final TraversalAction action, final GroupID gid) {
-    // if set this will be final exception thrown
-    Throwable exception = null;
-
-    final PostCreateMethodGatherer postCreate = (PostCreateMethodGatherer) action;
     try {
       this.traverser.traverse(root, this.traverseTest, action, gid);
     } catch (final Throwable t) {
-      exception = t;
-    } finally {
-      // even if we're throwing an exception from the traversal the postCreate methods for the objects that became
-      // shared should still be called
-      for (final Entry<Object, List<Method>> entry : postCreate.getPostCreateMethods().entrySet()) {
-        final Object target = entry.getKey();
-
-        for (final Method method : entry.getValue()) {
-          try {
-            executeMethod(target, method,
-                          "postCreate method (" + method.getName() + ") failed on object of " + target.getClass());
-          } catch (final Throwable t) {
-            if (exception == null) {
-              exception = t;
-            } else {
-              // exceptions are already logged, no need to do it here
-            }
-          }
-        }
-      }
-    }
-
-    if (exception != null) {
-      wrapIfNeededAndThrow(exception);
+      wrapIfNeededAndThrow(t);
     }
   }
 
-  private class AddManagedObjectAction implements TraversalAction, PostCreateMethodGatherer {
-    private final Map<Object, List<Method>> toCall = new IdentityHashMap<Object, List<Method>>();
-
+  private class AddManagedObjectAction implements TraversalAction {
     @Override
     public final void visit(final List objects, final GroupID gid) {
-      for (final Object pojo : objects) {
-        final List<Method> postCreateMethods = ClientObjectManagerImpl.this.clazzFactory
-            .getOrCreate(pojo.getClass(), ClientObjectManagerImpl.this).getPostCreateMethods();
-        if (!postCreateMethods.isEmpty()) {
-          final Object prev = this.toCall.put(pojo, postCreateMethods);
-          Assert.assertNull(prev);
-        }
-      }
-
       final List tcObjects = basicCreateIfNecessary(objects, gid);
       for (final Iterator i = tcObjects.iterator(); i.hasNext();) {
         ClientObjectManagerImpl.this.clientTxManager.createObject((TCObject) i.next());
       }
-    }
-
-    @Override
-    public final Map<Object, List<Method>> getPostCreateMethods() {
-      return this.toCall;
     }
   }
 
@@ -1022,7 +950,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     public void checkPortability(final TraversedReference reference, final Class referringClass)
         throws TCNonPortableObjectError {
       checkPortabilityOfTraversedReference(reference, referringClass);
-      executePreCreateMethods(reference.getValue());
     }
   }
 
@@ -1071,25 +998,13 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
         throw new TCRuntimeException(e);
       }
     } else {
-      return createNewPojoObject(clazz, dna.getArraySize(), dna.getObjectID(), dna.getParentObjectID());
+      return createNewPojoObject(clazz);
     }
   }
 
-  @Override
-  public WeakReference createNewPeer(final TCClass clazz, final int size, final ObjectID id, final ObjectID parentID) {
-    return newWeakObjectReference(id, createNewPojoObject(clazz, size, id, parentID));
-  }
-
-  private Object createNewPojoObject(TCClass clazz, int size, ObjectID id, ObjectID parentID) {
+  private Object createNewPojoObject(TCClass clazz) {
     try {
-      if (clazz.isIndexed()) {
-        final Object array = this.factory.getNewArrayInstance(clazz, size);
-        return array;
-      } else if (parentID.isNull()) {
-        return this.factory.getNewPeerObject(clazz);
-      } else {
-        return this.factory.getNewPeerObject(clazz, lookupObject(parentID));
-      }
+      return this.factory.getNewPeerObject(clazz);
     } catch (final Exception e) {
       throw new TCRuntimeException(e);
     }
@@ -1296,10 +1211,6 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
     public int getSession() {
       return session;
     }
-  }
-
-  private interface PostCreateMethodGatherer {
-    Map<Object, List<Method>> getPostCreateMethods();
   }
 
   @Override

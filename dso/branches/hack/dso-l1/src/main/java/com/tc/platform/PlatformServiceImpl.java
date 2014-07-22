@@ -363,7 +363,7 @@ public class PlatformServiceImpl implements PlatformService {
 
   @Override
   public TaskRunner getTaskRunner() {
-    return this.manager.getTastRunner();
+    return this.manager.getTaskRunner();
   }
 
   @Override

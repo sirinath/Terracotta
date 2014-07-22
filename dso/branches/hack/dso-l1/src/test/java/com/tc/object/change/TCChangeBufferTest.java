@@ -67,7 +67,7 @@ public class TCChangeBufferTest extends TestCase {
     final ObjectStringSerializer serializer = new ObjectStringSerializerImpl();
     final ClassProvider classProvider = new MockClassProvider();
     final DNAEncodingInternal encoding = new ApplicatorDNAEncodingImpl(classProvider);
-    final MockTCObject mockTCObject = new MockTCObject(new ObjectID(1), this, true, false);
+    final MockTCObject mockTCObject = new MockTCObject(new ObjectID(1), this);
     final TCChangeBuffer buffer = new TCChangeBufferImpl(mockTCObject);
 
     for (int i = 0; i < 100; i++) {

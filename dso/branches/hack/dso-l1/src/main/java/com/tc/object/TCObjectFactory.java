@@ -19,13 +19,6 @@ public interface TCObjectFactory {
 
   public TCObject getNewInstance(ObjectID id, Object peer, Class clazz, boolean isNew);
 
-  // public TCObject getNewInstance(ObjectID id, Class clazz, boolean isNew);
-
-  public Object getNewPeerObject(TCClass type, Object parent) throws IllegalArgumentException, SecurityException,
-      InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException;
-
-  public Object getNewArrayInstance(TCClass type, int size);
-
   public Object getNewPeerObject(TCClass type) throws IllegalArgumentException, InstantiationException,
       IllegalAccessException, InvocationTargetException, SecurityException, NoSuchMethodException;
 

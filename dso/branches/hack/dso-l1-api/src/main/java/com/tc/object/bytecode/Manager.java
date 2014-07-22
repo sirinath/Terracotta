@@ -7,17 +7,15 @@ package com.tc.object.bytecode;
 import com.tc.abortable.AbortableOperationManager;
 import com.tc.abortable.AbortedOperationException;
 import com.tc.cluster.DsoCluster;
-import com.tc.exception.TCClassNotFoundException;
 import com.tc.logging.TCLogger;
 import com.tc.management.TCManagementEvent;
 import com.tc.management.TunneledDomainUpdater;
 import com.tc.net.ClientID;
 import com.tc.net.GroupID;
-import com.tc.object.ObjectID;
 import com.tc.object.LogicalOperation;
+import com.tc.object.ObjectID;
 import com.tc.object.ServerEventDestination;
 import com.tc.object.TCObject;
-import com.tc.object.loaders.ClassProvider;
 import com.tc.object.locks.LockID;
 import com.tc.object.locks.LockLevel;
 import com.tc.object.locks.TerracottaLocking;
@@ -34,7 +32,6 @@ import com.tc.server.ServerEventType;
 import com.tc.util.concurrent.TaskRunner;
 import com.terracottatech.search.NVPair;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -55,16 +52,6 @@ public interface Manager extends TerracottaLocking {
    * Stop the manager
    */
   public void stop();
-
-  /**
-   * Look up or create a new root object
-   * 
-   * @param name Root name
-   * @param object Root object to use if none exists yet
-   * @return The root object actually used, may or may not == object
-   * @throws AbortedOperationException
-   */
-  public Object lookupOrCreateRoot(String name, Object object);
 
   /**
    * Look up or create a new root object in the particular group
@@ -88,26 +75,6 @@ public interface Manager extends TerracottaLocking {
   public Object lookupRoot(final String name, GroupID gid);
 
   /**
-   * Look up or create a new root object. Objects faulted in to arbitrary depth.
-   * 
-   * @param name Root name
-   * @param obj Root object to use if none exists yet
-   * @return The root object actually used, may or may not == object
-   * @throws AbortedOperationException
-   */
-  public Object lookupOrCreateRootNoDepth(String name, Object obj) throws AbortedOperationException;
-
-  /**
-   * Create or replace root, typically used for replaceable roots.
-   * 
-   * @param rootName Root name
-   * @param object Root object
-   * @return Root object used
-   * @throws AbortedOperationException
-   */
-  public Object createOrReplaceRoot(String rootName, Object object) throws AbortedOperationException;
-
-  /**
    * Look up object by ID, faulting into the JVM if necessary
    * 
    * @param id Object identifier
@@ -126,33 +93,12 @@ public interface Manager extends TerracottaLocking {
   public void preFetchObject(ObjectID id) throws AbortedOperationException;
 
   /**
-   * Look up object by ID, faulting into the JVM if necessary, This method also passes the parent Object context so that
-   * more intelligent prefetching is possible at the L2.
-   * 
-   * @param id Object identifier of the object we are looking up
-   * @param parentContext Object identifier of the parent object
-   * @return The actual object
-   * @throws AbortedOperationException
-   * @throws TCClassNotFoundException If a class is not found during faulting
-   */
-  public Object lookupObject(ObjectID id, ObjectID parentContext) throws ClassNotFoundException,
-      AbortedOperationException;
-
-  /**
    * Find managed object, which may be null
    * 
    * @param obj The object instance
    * @return The TCObject
    */
   public TCObject lookupExistingOrNull(Object obj);
-
-  /**
-   * Find or create new TCObject
-   * 
-   * @param obj The object instance
-   * @return The TCObject
-   */
-  public TCObject lookupOrCreate(Object obj);
 
   public TCObject lookupOrCreate(Object obj, GroupID gid);
 
@@ -166,78 +112,10 @@ public interface Manager extends TerracottaLocking {
   public void logicalInvoke(Object object, LogicalOperation method, Object[] params);
 
   /**
-   * Perform invoke on logical managed object in lock
-   * 
-   * @param object The object
-   * @param lockObject The lock object
-   * @param methodName The method to call
-   * @param params The parameters to the method
-   * @throws AbortedOperationException
-   */
-  public void logicalInvokeWithTransaction(Object object, Object lockObject, LogicalOperation method, Object[] params)
-      throws AbortedOperationException;
-
-  /**
-   * Lookup root by name
-   * 
-   * @param name Name of root
-   * @return Root object
-   * @throws AbortedOperationException
-   */
-  public Object lookupRoot(String name) throws AbortedOperationException;
-
-  /**
-   * Check whether current context has write access
-   * 
-   * @param context Context object
-   * @throws com.tc.object.util.ReadOnlyException If in read-only transaction
-   */
-  public void checkWriteAccess(Object context);
-
-  /**
-   * @return true if obj is an instance of a {@link com.tc.object.LiteralValues literal type}, e.g., Class, Integer,
-   *         etc.
-   */
-  public boolean isLiteralInstance(Object obj);
-
-  /**
-   * Check whether an object is managed
-   * 
-   * @param object Instance
-   * @return True if managed
-   */
-  public boolean isManaged(Object object);
-
-  /**
    * @return true if obj is an instance of a {@link com.tc.object.LiteralValues literal type} and is suitable for
    *         cluster-wide locking,
    */
   public boolean isLiteralAutolock(final Object o);
-
-  /**
-   * Retrieve the customer change applicator that was registered for a particular class.
-   * 
-   * @param clazz The class for which the custom change application has to be returned
-   * @return the instance of the custom change applicator; or {@code null} if no custom applicator was registered for
-   *         this class
-   */
-  public Object getChangeApplicator(Class clazz);
-
-  /**
-   * Check whether object is logically instrumented
-   * 
-   * @param object Instance
-   * @return True if logically instrumented
-   */
-  public boolean isLogical(Object object);
-
-  /**
-   * Check whether field is a root
-   * 
-   * @param field Field
-   * @return True if root
-   */
-  public boolean isRoot(Field field);
 
   /**
    * Get JVM Client identifier
@@ -265,20 +143,6 @@ public interface Manager extends TerracottaLocking {
    * @return TCProperties
    */
   public TCProperties getTCProperties();
-
-  /**
-   * Returns true if the field represented by the offset is a portable field, i.e., not static and not dso transient
-   * 
-   * @param pojo Object
-   * @param fieldOffset The index
-   * @return true if the field is portable and false otherwise
-   */
-  public boolean isFieldPortableByOffset(Object pojo, long fieldOffset);
-
-  /**
-   * Get the ClassProvider associated with this Manager
-   */
-  public ClassProvider getClassProvider();
 
   /**
    * Get the TunneledDomainUpdater associated with this Manager
@@ -318,14 +182,12 @@ public interface Manager extends TerracottaLocking {
   public SearchQueryResults executeQuery(String cachename, List queryStack, boolean includeKeys, boolean includeValues,
                                          Set<String> attributeSet, List<NVPair> sortAttributes,
                                          List<NVPair> aggregators, int maxResults, int batchSize, int resultPageSize,
-                                         boolean waitForTxn, SearchRequestID reqId)
-      throws AbortedOperationException;
+                                         boolean waitForTxn, SearchRequestID reqId) throws AbortedOperationException;
 
   public SearchQueryResults executeQuery(String cachename, List queryStack, Set<String> attributeSet,
                                          Set<String> groupByAttribues, List<NVPair> sortAttributes,
                                          List<NVPair> aggregators, int maxResults, int batchSize, boolean waitForTxn,
-                                         SearchRequestID reqId)
-      throws AbortedOperationException;
+                                         SearchRequestID reqId) throws AbortedOperationException;
 
   public NVPair createNVPair(String name, Object value);
 
@@ -383,7 +245,7 @@ public interface Manager extends TerracottaLocking {
 
   boolean isRejoinInProgress();
 
-  TaskRunner getTastRunner();
+  TaskRunner getTaskRunner();
 
   public long getLockAwardIDFor(LockID lock);
 

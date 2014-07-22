@@ -7,7 +7,6 @@ package com.tc.object;
 import com.tc.exception.ImplementMe;
 import com.tc.exception.TCNonPortableObjectError;
 import com.tc.net.GroupID;
-import com.tc.object.LogicalOperation;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.tx.ClientTransactionManager;
@@ -112,11 +111,6 @@ public class TestClientObjectManager implements ClientObjectManager {
   @Override
   public TCObject lookupQuiet(final ObjectID id) {
     return lookup(id);
-  }
-
-  @Override
-  public WeakReference createNewPeer(final TCClass clazz, final int size, final ObjectID id, final ObjectID parentID) {
-    throw new ImplementMe();
   }
 
   @Override
