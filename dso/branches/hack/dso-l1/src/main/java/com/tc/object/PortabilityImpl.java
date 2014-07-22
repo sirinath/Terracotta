@@ -29,7 +29,7 @@ public class PortabilityImpl implements Portability {
 
     String clazzName = clazz.getName();
 
-    boolean bool = LiteralValues.isLiteral(clazzName) || (config.getSpec(clazzName) != null);
+    boolean bool = LiteralValues.isLiteral(clazzName) || (config.getSpec(clazzName) != null) || clazz == Object.class;
     portableCache.put(clazz, Boolean.valueOf(bool));
     return bool;
   }
