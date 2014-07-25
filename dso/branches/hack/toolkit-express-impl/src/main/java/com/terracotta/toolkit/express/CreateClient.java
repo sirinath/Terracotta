@@ -11,13 +11,13 @@ import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.core.SecurityInfo;
 import com.tc.net.core.security.TCSecurityManager;
-import com.tc.object.bytecode.hook.impl.DSOContextImpl;
+import com.tc.object.DistributedObjectClientFactory;
 import com.tc.util.ProductInfo;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-public class L1Boot implements Callable<Object> {
+public class CreateClient implements Callable<Callable<Object>> {
 
   static {
     /*
@@ -29,19 +29,19 @@ public class L1Boot implements Callable<Object> {
     dummy.put("dummy", new Object());
   }
 
-  private static TCLogger           logger = TCLogging.getLogger(L1Boot.class);
+  private static TCLogger           logger = TCLogging.getLogger(CreateClient.class);
 
   private final String              embeddedTcConfig;
   private final boolean             isURLConfig;
   private final String              productIdName;
-  private final ClassLoader         appLevelTimLoader;
+  private final ClassLoader         loader;
   private final boolean             rejoin;
 
   private final SecurityInfo        securityInfo;
   private final Map<String, Object> env;
 
-  public L1Boot(String embeddedTcConfig, boolean isURLConfig, ClassLoader appLevelTimLoader, boolean rejoin,
-                String productIdName, Map<String, Object> env) {
+  public CreateClient(String embeddedTcConfig, boolean isURLConfig, ClassLoader loader, boolean rejoin,
+                      String productIdName, Map<String, Object> env) {
     this.embeddedTcConfig = embeddedTcConfig;
     this.isURLConfig = isURLConfig;
     this.productIdName = productIdName;
@@ -50,13 +50,13 @@ public class L1Boot implements Callable<Object> {
       username = URLConfigUtil.getUsername(embeddedTcConfig);
     }
     this.securityInfo = new SecurityInfo(username != null, username);
-    this.appLevelTimLoader = appLevelTimLoader;
+    this.loader = loader;
     this.rejoin = rejoin;
     this.env = env;
   }
 
   @Override
-  public Object call() throws Exception {
+  public Callable<Object> call() throws Exception {
     TCSecurityManager securityManager = null;
 
     if (securityInfo.isSecure()) {
@@ -64,7 +64,7 @@ public class L1Boot implements Callable<Object> {
                                                                                   "You're trying to setup a secured environment, which requires a EE version of Terracotta"); }
       logger.info("Secured environment! Enabling SSL & will be authenticating as user '" + securityInfo.getUsername()
                   + "'");
-      securityManager = DSOContextImpl.createSecurityManager(env);
+      securityManager = DistributedObjectClientFactory.createSecurityManager(env);
     }
 
     String configSpec = embeddedTcConfig;
@@ -74,8 +74,30 @@ public class L1Boot implements Callable<Object> {
                    + Base64.encodeBytes(embeddedTcConfig.getBytes("UTF-8"), Base64.GZIP | Base64.DONT_BREAK_LINES);
     }
 
-    ProductID productID = productIdName == null ? ProductID.USER : ProductID.valueOf(productIdName);
-    return DSOContextImpl.createStandaloneContext(configSpec, appLevelTimLoader, rejoin, securityManager, securityInfo,
-        productID);
+    ProductID productId = productIdName == null ? ProductID.USER : ProductID.valueOf(productIdName);
+    final DistributedObjectClientFactory distributedObjectClientFactory = new DistributedObjectClientFactory(
+                                                                                                             configSpec,
+                                                                                                             securityManager,
+                                                                                                             securityInfo,
+                                                                                                             loader,
+                                                                                                             rejoin,
+                                                                                                             productId);
+    return new CreateCallable(distributedObjectClientFactory);
   }
+
+  public static class CreateCallable implements Callable<Object> {
+
+    private final DistributedObjectClientFactory distributedObjectClientFactory;
+
+    public CreateCallable(DistributedObjectClientFactory distributedObjectClientFactory) {
+      this.distributedObjectClientFactory = distributedObjectClientFactory;
+    }
+
+    @Override
+    public Object call() throws Exception {
+      return distributedObjectClientFactory.create();
+    }
+
+  }
+
 }

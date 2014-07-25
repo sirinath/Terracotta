@@ -5,7 +5,7 @@ package com.terracotta.toolkit.express;
 
 import java.util.Set;
 
-public interface DSOContextControl {
+public interface ClientHandle {
 
   void activateTunnelledMBeanDomains(Set<String> tunnelledMBeanDomains);
 
@@ -14,7 +14,5 @@ public interface DSOContextControl {
   boolean isOnline();
 
   Object getPlatformService();
-
-  void init();
 
 }

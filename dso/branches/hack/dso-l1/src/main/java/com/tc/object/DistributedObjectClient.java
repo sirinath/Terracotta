@@ -1389,4 +1389,8 @@ public class DistributedObjectClient extends SEDA implements TCClient {
       shutdown(true, false);
     }
   }
+
+  public void addTunneledMBeanDomain(String mbeanDomain) {
+    this.config.addTunneledMBeanDomain(mbeanDomain);
+  }
 }
