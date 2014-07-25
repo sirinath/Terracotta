@@ -25,7 +25,7 @@ public class SpiInit implements DSOContextControl {
       }
     }
     if (sendCurrentTunnelledDomains) {
-      dsoContext.getManager().getTunneledDomainUpdater().sendCurrentTunneledDomains();
+      dsoContext.sendCurrentTunneledDomains();
     }
   }
 
@@ -36,6 +36,6 @@ public class SpiInit implements DSOContextControl {
 
   @Override
   public boolean isOnline() {
-    return dsoContext.getManager().getDsoCluster().areOperationsEnabled();
+    return dsoContext.getDsoCluster().areOperationsEnabled();
   }
 }

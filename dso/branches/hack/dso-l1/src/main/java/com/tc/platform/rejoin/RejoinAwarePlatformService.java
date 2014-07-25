@@ -52,10 +52,37 @@ public class RejoinAwarePlatformService implements PlatformService {
   public RejoinAwarePlatformService(PlatformService delegate) {
     this.delegate = delegate;
     this.rejoinState = new RejoinStateListener();
+    delegate.addRejoinLifecycleListener(rejoinState);
   }
 
-  public void init() {
-    delegate.addRejoinLifecycleListener(rejoinState);
+  @Override
+  public TCObject lookupExistingOrNull(Object obj) {
+    return delegate.lookupExistingOrNull(obj);
+  }
+
+  @Override
+  public LockID generateLockIdentifier(Object obj) {
+    return delegate.generateLockIdentifier(obj);
+  }
+
+  @Override
+  public long getLockAwardIDFor(LockID lock) {
+    return delegate.getLockAwardIDFor(lock);
+  }
+
+  @Override
+  public boolean isLockAwardValid(LockID lock, long awardID) {
+    return delegate.isLockAwardValid(lock, awardID);
+  }
+
+  @Override
+  public void pinLock(LockID lock, long awardID) {
+    delegate.pinLock(lock, awardID);
+  }
+
+  @Override
+  public void unpinLock(LockID lock, long awardID) {
+    delegate.unpinLock(lock, awardID);
   }
 
   @Override
@@ -124,7 +151,8 @@ public class RejoinAwarePlatformService implements PlatformService {
   }
 
   @Override
-  public void unregisterServerEventListener(final ServerEventDestination destination, final Set<ServerEventType> listenTo) {
+  public void unregisterServerEventListener(final ServerEventDestination destination,
+                                            final Set<ServerEventType> listenTo) {
     delegate.unregisterServerEventListener(destination, listenTo);
   }
 
@@ -434,8 +462,7 @@ public class RejoinAwarePlatformService implements PlatformService {
   public SearchQueryResults executeQuery(String cachename, List queryStack, boolean includeKeys, boolean includeValues,
                                          Set<String> attributeSet, List<NVPair> sortAttributes,
                                          List<NVPair> aggregators, int maxResults, int batchSize, int pageSize,
-                                         boolean waitForTxn, SearchRequestID queryId)
-      throws AbortedOperationException {
+                                         boolean waitForTxn, SearchRequestID queryId) throws AbortedOperationException {
     assertRejoinNotInProgress();
     try {
       assertNotLockedBeforeRejoin();
@@ -449,8 +476,8 @@ public class RejoinAwarePlatformService implements PlatformService {
   @Override
   public SearchQueryResults executeQuery(String cachename, List queryStack, Set<String> attributeSet,
                                          Set<String> groupByAttributes, List<NVPair> sortAttributes,
-                                         List<NVPair> aggregators, int maxResults, int batchSize, boolean waitForTxn, SearchRequestID queryId)
-      throws AbortedOperationException {
+                                         List<NVPair> aggregators, int maxResults, int batchSize, boolean waitForTxn,
+                                         SearchRequestID queryId) throws AbortedOperationException {
     assertRejoinNotInProgress();
     try {
       assertNotLockedBeforeRejoin();

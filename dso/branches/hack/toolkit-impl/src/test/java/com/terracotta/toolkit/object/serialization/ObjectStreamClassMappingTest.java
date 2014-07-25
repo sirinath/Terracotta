@@ -385,6 +385,36 @@ public class ObjectStreamClassMappingTest {
     public void sendEvent(TCManagementEvent event) {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public LockID generateLockIdentifier(Object obj) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long getLockAwardIDFor(LockID lock) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isLockAwardValid(LockID lock, long awardID) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void pinLock(LockID lock, long awardID) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void unpinLock(LockID lock, long awardID) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TCObject lookupExistingOrNull(Object obj) {
+      throw new UnsupportedOperationException();
+    }
   }
 
 }

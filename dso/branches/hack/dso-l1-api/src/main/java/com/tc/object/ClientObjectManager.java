@@ -9,6 +9,7 @@ import com.tc.exception.TCNonPortableObjectError;
 import com.tc.net.GroupID;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.tx.ClientTransactionManager;
+import com.tc.platform.PlatformService;
 
 import java.lang.ref.WeakReference;
 
@@ -286,6 +287,8 @@ public interface ClientObjectManager extends TCObjectSelfCallback {
    * @param txManager Transaction manager
    */
   public void setTransactionManager(ClientTransactionManager txManager);
+
+  public void setPlatformService(PlatformService platformService);
 
   /**
    * Get the client transaction manager

@@ -11,43 +11,59 @@ import org.apache.log4j.PatternLayout;
 import org.apache.log4j.WriterAppender;
 import org.apache.log4j.spi.RootLogger;
 
+import com.tc.abortable.AbortableOperationManager;
+import com.tc.abortable.AbortableOperationManagerImpl;
 import com.tc.client.AbstractClientFactory;
+import com.tc.cluster.DsoCluster;
+import com.tc.cluster.DsoClusterImpl;
 import com.tc.config.schema.L2ConfigForL1.L2Data;
 import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.config.schema.setup.FatalIllegalConfigurationChangeHandler;
 import com.tc.config.schema.setup.L1ConfigurationSetupManager;
 import com.tc.config.schema.setup.StandardConfigurationSetupManagerFactory;
+import com.tc.lang.L1ThrowableHandler;
+import com.tc.lang.StartupHelper;
+import com.tc.lang.StartupHelper.StartupAction;
+import com.tc.lang.TCThreadGroup;
 import com.tc.license.ProductID;
 import com.tc.logging.TCLogging;
 import com.tc.net.core.SecurityInfo;
 import com.tc.net.core.security.TCSecurityManager;
-import com.tc.object.bytecode.Manager;
-import com.tc.object.bytecode.ManagerImpl;
+import com.tc.object.DistributedObjectClient;
 import com.tc.object.bytecode.hook.DSOContext;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.config.StandardDSOClientConfigHelperImpl;
+import com.tc.object.loaders.ClassProvider;
+import com.tc.object.loaders.SingleLoaderClassProvider;
+import com.tc.object.tx.ClusterEventListener;
 import com.tc.platform.PlatformService;
+import com.tc.platform.rejoin.RejoinManagerImpl;
+import com.tc.platform.rejoin.RejoinManagerInternal;
 import com.tc.util.Assert;
+import com.tc.util.UUID;
+import com.tcclient.cluster.DsoClusterInternal;
 import com.terracotta.management.security.SecretProvider;
 
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 public class DSOContextImpl implements DSOContext {
-  private final ManagerImpl              manager;
-  private final String                   configSpec;
-  private final TCSecurityManager        securityManager;
-  private final SecurityInfo             securityInfo;
+  private final String                       configSpec;
+  private final TCSecurityManager            securityManager;
+  private final SecurityInfo                 securityInfo;
+  private final ClassLoader                  loader;
+  private final boolean                      rejoin;
+  private final ProductID                    productId;
 
-  private volatile DSOClientConfigHelper configHelper;
+  private volatile DSOClientConfigHelper     configHelper;
+  private volatile DistributedObjectClient   client;
 
-  public static DSOContext createStandaloneContext(String configSpec, ClassLoader loader, boolean expressRejoinClient,
+  public static DSOContext createStandaloneContext(String configSpec, ClassLoader loader, boolean rejoin,
                                                    TCSecurityManager securityManager, SecurityInfo securityInfo,
                                                    ProductID productId) {
-    ManagerImpl manager = new ManagerImpl(true, null, null, null, null, null, null, true, loader, expressRejoinClient,
-                                          securityManager, productId);
-    return createContext(manager, configSpec, securityManager, securityInfo);
+    return createContext(configSpec, loader, rejoin, securityManager, securityInfo, productId);
   }
 
   public void init() throws ConfigurationSetupException {
@@ -60,28 +76,64 @@ public class DSOContextImpl implements DSOContext {
 
     L1ConfigurationSetupManager config = factory.getL1TVSConfigurationSetupManager(securityInfo);
     config.setupLogging();
-    PreparedComponentsFromL2Connection l2Connection;
+
+    final PreparedComponentsFromL2Connection connectionComponents;
     try {
-      l2Connection = validateMakeL2Connection(config, securityManager);
+      connectionComponents = validateMakeL2Connection(config, securityManager);
     } catch (Exception e) {
       throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
     }
 
-    DSOClientConfigHelper configHelperLocal = new StandardDSOClientConfigHelperImpl(config);
-
-    this.configHelper = configHelperLocal;
-    manager.set(configHelper, l2Connection);
+    this.configHelper = new StandardDSOClientConfigHelperImpl(config);
 
     try {
       startToolkitConfigurator();
     } catch (Exception e) {
       throw new ConfigurationSetupException(e.getLocalizedMessage(), e);
     }
-    manager.init();
+
+    L1ThrowableHandler throwableHandler = new L1ThrowableHandler(TCLogging.getLogger(DistributedObjectClient.class),
+                                                                 new Callable<Void>() {
+
+                                                                   @Override
+                                                                   public Void call() throws Exception {
+                                                                     shutdown();
+                                                                     return null;
+                                                                   }
+                                                                 });
+    final TCThreadGroup group = new TCThreadGroup(throwableHandler);
+
+    final ClassProvider classProvider = new SingleLoaderClassProvider(loader == null ? getClass().getClassLoader()
+        : loader);
+
+    final RejoinManagerInternal rejoinManager = new RejoinManagerImpl(rejoin);
+    final DsoClusterInternal dsoCluster = new DsoClusterImpl(rejoinManager);
+    final UUID uuid = UUID.getUUID();
+    final AbortableOperationManager abortableOperationManager = new AbortableOperationManagerImpl();
+
+    final StartupAction action = new StartupHelper.StartupAction() {
+      @Override
+      public void execute() throws Throwable {
+        final AbstractClientFactory clientFactory = AbstractClientFactory.getFactory();
+        DSOContextImpl.this.client = clientFactory.createClient(configHelper, group, classProvider,
+                                                                connectionComponents, dsoCluster, securityManager,
+                                                                abortableOperationManager, rejoinManager, uuid,
+                                                                productId);
+
+        DSOContextImpl.this.client.start();
+
+        dsoCluster.init(client.getClusterMetaDataManager(), client.getObjectManager(), client.getClusterEventsStage());
+        dsoCluster.addClusterListener(new ClusterEventListener(client.getRemoteTransactionManager()));
+      }
+
+    };
+
+    final StartupHelper startupHelper = new StartupHelper(group, action);
+    startupHelper.startUp();
   }
 
   public PlatformService getPlatformService() {
-    return manager.getPlatformService();
+    return client.getPlatformService();
   }
 
   public static TCSecurityManager createSecurityManager(Map<String, Object> env) {
@@ -105,19 +157,22 @@ public class DSOContextImpl implements DSOContext {
     start.invoke(toolkitConfigurator, configHelper);
   }
 
-  private static DSOContextImpl createContext(ManagerImpl manager, String configSpec,
-                                              TCSecurityManager securityManager, SecurityInfo securityInfo) {
-    return new DSOContextImpl(manager, configSpec, securityManager, securityInfo);
+  private static DSOContextImpl createContext(String configSpec, ClassLoader loader, boolean rejoin,
+                                              TCSecurityManager securityManager, SecurityInfo securityInfo,
+                                              ProductID productId) {
+    return new DSOContextImpl(configSpec, loader, rejoin, securityManager, securityInfo, productId);
   }
 
-  private DSOContextImpl(ManagerImpl manager, String configSpec, TCSecurityManager securityManager,
-                         SecurityInfo securityInfo) {
+  private DSOContextImpl(String configSpec, ClassLoader loader, boolean rejoin, TCSecurityManager securityManager,
+                         SecurityInfo securityInfo, ProductID productId) {
     resolveClasses();
 
-    this.manager = manager;
     this.configSpec = configSpec;
+    this.loader = loader;
+    this.rejoin = rejoin;
     this.securityManager = securityManager;
     this.securityInfo = securityInfo;
+    this.productId = productId;
   }
 
   private void resolveClasses() {
@@ -131,11 +186,6 @@ public class DSOContextImpl implements DSOContext {
       }
     }));
     l.debug(h.toString(), new Throwable());
-  }
-
-  @Override
-  public Manager getManager() {
-    return this.manager;
   }
 
   @Override
@@ -153,6 +203,16 @@ public class DSOContextImpl implements DSOContext {
 
   @Override
   public void shutdown() {
-    manager.stop();
+    client.shutdown();
+  }
+
+  @Override
+  public void sendCurrentTunneledDomains() {
+    client.getTunneledDomainManager().sendCurrentTunneledDomains();
+  }
+
+  @Override
+  public DsoCluster getDsoCluster() {
+    return client.getDsoCluster();
   }
 }

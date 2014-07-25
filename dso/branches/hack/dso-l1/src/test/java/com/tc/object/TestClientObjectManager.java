@@ -10,6 +10,7 @@ import com.tc.net.GroupID;
 import com.tc.object.bytecode.Manageable;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.tx.ClientTransactionManager;
+import com.tc.platform.PlatformService;
 import com.tc.util.Assert;
 
 import java.lang.ref.ReferenceQueue;
@@ -136,6 +137,11 @@ public class TestClientObjectManager implements ClientObjectManager {
   @Override
   public void setTransactionManager(final ClientTransactionManager txManager) {
     this.txManager = txManager;
+  }
+
+  @Override
+  public void setPlatformService(PlatformService platformService) {
+    throw new ImplementMe();
   }
 
   @Override

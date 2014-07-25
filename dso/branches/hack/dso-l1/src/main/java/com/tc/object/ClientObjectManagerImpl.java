@@ -107,25 +107,22 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private final RootsHolder                      rootsHolder;
   private final AbortableOperationManager        abortableOperationManager;
   private int                                    currentSession               = 0;
-  private final PlatformService                  platformService;
+  private volatile PlatformService               platformService;
 
   public ClientObjectManagerImpl(final RemoteObjectManager remoteObjectManager, final ObjectIDProvider idProvider,
                                  final ClientIDProvider provider, final ClassProvider classProvider,
                                  final TCClassFactory classFactory, final TCObjectFactory objectFactory,
                                  final Portability portability, TCObjectSelfStore tcObjectSelfStore,
-                                 AbortableOperationManager abortableOperationManager, PlatformService platformService) {
+                                 AbortableOperationManager abortableOperationManager) {
     this(remoteObjectManager, idProvider, provider, classProvider, classFactory, objectFactory, portability,
-         tcObjectSelfStore, new RootsHolder(new GroupID[] { new GroupID(0) }), abortableOperationManager,
-         platformService);
+         tcObjectSelfStore, new RootsHolder(new GroupID[] { new GroupID(0) }), abortableOperationManager);
   }
 
   public ClientObjectManagerImpl(final RemoteObjectManager remoteObjectManager, final ObjectIDProvider idProvider,
                                  final ClientIDProvider provider, final ClassProvider classProvider,
                                  final TCClassFactory classFactory, final TCObjectFactory objectFactory,
                                  final Portability portability, TCObjectSelfStore tcObjectSelfStore,
-                                 RootsHolder holder, AbortableOperationManager abortableOperationManager,
-                                 PlatformService platformService) {
-    this.platformService = platformService;
+                                 RootsHolder holder, AbortableOperationManager abortableOperationManager) {
     this.objectStore = new ObjectStore(tcObjectSelfStore);
     this.remoteObjectManager = remoteObjectManager;
     this.idProvider = idProvider;
@@ -991,7 +988,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private Object createNewPojoObject(TCClass clazz, DNA dna) {
     if (clazz.isUseNonDefaultConstructor()) {
       try {
-        return this.factory.getNewPeerObject(clazz, dna, platformService);
+        return this.factory.getNewPeerObject(clazz, dna, getPlatformService());
       } catch (final IOException e) {
         throw new TCRuntimeException(e);
       } catch (final ClassNotFoundException e) {
@@ -1216,6 +1213,17 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   @Override
   public void initializeTCClazzIfRequired(TCObjectSelf tcObjectSelf) {
     this.factory.initClazzIfRequired(tcObjectSelf.getClass(), tcObjectSelf);
+  }
+
+  @Override
+  public void setPlatformService(PlatformService platformService) {
+    this.platformService = platformService;
+  }
+
+  private PlatformService getPlatformService() {
+    PlatformService rv = platformService;
+    if (rv == null) { throw new IllegalStateException(); }
+    return rv;
   }
 
 }

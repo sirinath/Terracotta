@@ -29,7 +29,6 @@ import com.tc.net.protocol.transport.ConnectionPolicy;
 import com.tc.net.protocol.transport.HealthCheckerConfig;
 import com.tc.net.protocol.transport.ReconnectionRejectedHandler;
 import com.tc.net.protocol.transport.TransportHandshakeErrorHandlerForL1;
-import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.object.config.ConnectionInfoConfig;
 import com.tc.object.config.DSOClientConfigHelper;
@@ -69,7 +68,6 @@ import com.tc.object.tx.RemoteTransactionManagerImpl;
 import com.tc.object.tx.TransactionBatchFactory;
 import com.tc.object.tx.TransactionBatchWriterFactory;
 import com.tc.object.tx.TransactionIDGenerator;
-import com.tc.platform.PlatformService;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.runtime.logging.LongGCLogger;
@@ -120,7 +118,8 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
     return new CommunicationsManagerImpl(CommunicationsManager.COMMSMGR_CLIENT, monitor, messageRouter,
                                          stackHarnessFactory, null, connectionPolicy, 0, aConfig,
                                          new TransportHandshakeErrorHandlerForL1(), messageTypeClassMapping,
-                                         messageTypeFactoryMapping, reconnectionRejectedHandler, securityManager, productId);
+                                         messageTypeFactoryMapping, reconnectionRejectedHandler, securityManager,
+                                         productId);
   }
 
   @Override
@@ -179,11 +178,10 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
                                                      final TCObjectFactory objectFactory,
                                                      final Portability portability,
                                                      TCObjectSelfStore tcObjectSelfStore,
-                                                     AbortableOperationManager abortableOperationManager,
-                                                     PlatformService platformService) {
+                                                     AbortableOperationManager abortableOperationManager) {
     return new ClientObjectManagerImpl(remoteObjectManager, idProvider, clientIDProvider, classProviderLocal,
                                        classFactory, objectFactory, portability, tcObjectSelfStore,
-                                       abortableOperationManager, platformService);
+                                       abortableOperationManager);
   }
 
   @Override
@@ -288,11 +286,10 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
 
   @Override
   public TCClassFactory createTCClassFactory(final DSOClientConfigHelper config, final ClassProvider classProvider,
-                                             final DNAEncoding dnaEncoding, final Manager manager,
+                                             final DNAEncoding dnaEncoding,
                                              final L1ServerMapLocalCacheManager localCacheManager,
                                              final RemoteServerMapManager remoteServerMapManager) {
-    return new TCClassFactoryImpl(config, classProvider, dnaEncoding, manager,
-                                  localCacheManager, remoteServerMapManager);
+    return new TCClassFactoryImpl(config, classProvider, dnaEncoding, localCacheManager, remoteServerMapManager);
   }
 
   @Override
@@ -315,7 +312,8 @@ public class StandardDSOClientBuilder implements DSOClientBuilder {
   public RemoteSearchRequestManager createRemoteSearchRequestManager(final TCLogger logger,
                                                                      final DSOClientMessageChannel dsoChannel,
                                                                      final SessionManager sessionManager,
-                                                                     SearchResultManager resultManager, final AbortableOperationManager abortableOperationManager) {
+                                                                     SearchResultManager resultManager,
+                                                                     final AbortableOperationManager abortableOperationManager) {
     return new NullRemoteSearchRequestManager();
   }
 
