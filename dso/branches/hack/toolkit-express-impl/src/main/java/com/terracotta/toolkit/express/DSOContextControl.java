@@ -13,4 +13,8 @@ public interface DSOContextControl {
 
   boolean isOnline();
 
+  Object getPlatformService();
+
+  void init();
+
 }

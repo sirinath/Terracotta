@@ -3,15 +3,16 @@
  */
 package com.terracotta.toolkit.express;
 
+import com.tc.config.schema.setup.ConfigurationSetupException;
 import com.tc.object.bytecode.hook.DSOContext;
 
 import java.util.Set;
 
-public class SpiInit implements DSOContextControl {
+public class DSOContextControlImpl implements DSOContextControl {
 
   private final DSOContext dsoContext;
 
-  public SpiInit(Object context) {
+  public DSOContextControlImpl(Object context) {
     this.dsoContext = (DSOContext) context;
   }
 
@@ -36,6 +37,20 @@ public class SpiInit implements DSOContextControl {
 
   @Override
   public boolean isOnline() {
-    return dsoContext.getDsoCluster().areOperationsEnabled();
+    return dsoContext.getPlatformService().getDsoCluster().areOperationsEnabled();
+  }
+
+  @Override
+  public Object getPlatformService() {
+    return dsoContext.getPlatformService();
+  }
+
+  @Override
+  public void init() {
+    try {
+      dsoContext.init();
+    } catch (ConfigurationSetupException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
