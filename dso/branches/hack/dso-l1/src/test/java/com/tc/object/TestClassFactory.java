@@ -24,6 +24,11 @@ public class TestClassFactory implements TCClassFactory {
     throw new ImplementMe();
   }
 
+  @Override
+  public void setPlatformService(PlatformService platformService) {
+    throw new UnsupportedOperationException();
+  }
+
   public static class MockTCClass implements TCClass {
 
     private ClientObjectManager clientObjectManager;

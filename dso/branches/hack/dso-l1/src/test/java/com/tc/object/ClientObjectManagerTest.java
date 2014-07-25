@@ -72,7 +72,7 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
                                            new ClientIDProviderImpl(new TestChannelIDProvider()),
                                            this.classProvider, this.classFactory, this.objectFactory,
                                            new PortabilityImpl(this.clientConfiguration), this.tcObjectSelfStore,
-                                           new NullAbortableOperationManager(), null);
+                                           new NullAbortableOperationManager());
     this.mgr.setTransactionManager(new MockTransactionManager());
   }
 

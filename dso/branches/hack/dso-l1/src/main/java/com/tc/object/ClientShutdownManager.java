@@ -118,13 +118,7 @@ public class ClientShutdownManager {
   }
 
   private void shutdown() {
-    client.shutdown();
-
-  }
-
-  public RemoteTransactionManager getRemoteTransactionManager() {
-    return rtxManager;
-
+    client.shutdownResources();
   }
 
 }
