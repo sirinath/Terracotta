@@ -107,7 +107,7 @@ public class TerracottaToolkit implements ToolkitInternal {
   private final CacheManager                                      defaultToolkitCacheManager;
   private final TerracottaL1Instance                              tcClient;
   private final WeakValueMapManager                               weakValueMapManager                  = new WeakValueMapManager();
-  private ToolkitProperties                                       toolkitProperties;
+  private final ToolkitProperties                                 toolkitProperties;
   private final PlatformService                                   platformService;
   private final ClusterInfo                                       clusterInfoInstance;
   private final boolean                                           isNonStop;
@@ -116,7 +116,7 @@ public class TerracottaToolkit implements ToolkitInternal {
 
   public TerracottaToolkit(TerracottaL1Instance tcClient, ToolkitCacheManagerProvider toolkitCacheManagerProvider,
                            boolean isNonStop, ClassLoader loader, PlatformService platformService) {
-
+    this.toolkitProperties = new TerracottaProperties(platformService);
     this.tcClient = tcClient;
     this.isNonStop = isNonStop;
     this.platformService = platformService;
@@ -343,10 +343,7 @@ public class TerracottaToolkit implements ToolkitInternal {
   }
 
   @Override
-  public synchronized ToolkitProperties getProperties() {
-    if (toolkitProperties == null) {
-      toolkitProperties = new TerracottaProperties(platformService);
-    }
+  public ToolkitProperties getProperties() {
     return toolkitProperties;
   }
 
