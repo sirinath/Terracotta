@@ -14,7 +14,6 @@ import org.apache.log4j.spi.RootLogger;
 import com.tc.abortable.AbortableOperationManager;
 import com.tc.abortable.AbortableOperationManagerImpl;
 import com.tc.client.AbstractClientFactory;
-import com.tc.cluster.DsoCluster;
 import com.tc.cluster.DsoClusterImpl;
 import com.tc.config.schema.L2ConfigForL1.L2Data;
 import com.tc.config.schema.setup.ConfigurationSetupException;
@@ -132,6 +131,7 @@ public class DSOContextImpl implements DSOContext {
     startupHelper.startUp();
   }
 
+  @Override
   public PlatformService getPlatformService() {
     return client.getPlatformService();
   }
@@ -209,10 +209,5 @@ public class DSOContextImpl implements DSOContext {
   @Override
   public void sendCurrentTunneledDomains() {
     client.getTunneledDomainManager().sendCurrentTunneledDomains();
-  }
-
-  @Override
-  public DsoCluster getDsoCluster() {
-    return client.getDsoCluster();
   }
 }

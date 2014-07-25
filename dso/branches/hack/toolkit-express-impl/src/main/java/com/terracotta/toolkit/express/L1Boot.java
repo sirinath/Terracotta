@@ -17,7 +17,7 @@ import com.tc.util.ProductInfo;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-public class StandaloneL1Boot implements Callable<Object> {
+public class L1Boot implements Callable<Object> {
 
   static {
     /*
@@ -29,7 +29,7 @@ public class StandaloneL1Boot implements Callable<Object> {
     dummy.put("dummy", new Object());
   }
 
-  private static TCLogger           logger = TCLogging.getLogger(StandaloneL1Boot.class);
+  private static TCLogger           logger = TCLogging.getLogger(L1Boot.class);
 
   private final String              embeddedTcConfig;
   private final boolean             isURLConfig;
@@ -40,8 +40,8 @@ public class StandaloneL1Boot implements Callable<Object> {
   private final SecurityInfo        securityInfo;
   private final Map<String, Object> env;
 
-  public StandaloneL1Boot(String embeddedTcConfig, boolean isURLConfig, ClassLoader appLevelTimLoader, boolean rejoin,
-                          final String productIdName, Map<String, Object> env) {
+  public L1Boot(String embeddedTcConfig, boolean isURLConfig, ClassLoader appLevelTimLoader, boolean rejoin,
+                String productIdName, Map<String, Object> env) {
     this.embeddedTcConfig = embeddedTcConfig;
     this.isURLConfig = isURLConfig;
     this.productIdName = productIdName;

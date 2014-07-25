@@ -4,7 +4,8 @@
  */
 package com.tc.object.bytecode.hook;
 
-import com.tc.cluster.DsoCluster;
+import com.tc.config.schema.setup.ConfigurationSetupException;
+import com.tc.platform.PlatformService;
 
 /**
  * The idea behind DSOContext is to encapsulate a DSO "world" in a client VM. But this idea has not been fully realized.
@@ -17,6 +18,8 @@ public interface DSOContext {
 
   public void sendCurrentTunneledDomains();
 
-  public DsoCluster getDsoCluster();
+  public PlatformService getPlatformService();
+
+  public void init() throws ConfigurationSetupException;
 
 }

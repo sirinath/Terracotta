@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 class TerracottaInternalClientImpl implements TerracottaInternalClient {
 
-  private static final String SPI_INIT                                                         = "com.terracotta.toolkit.express.SpiInit";
+  private static final String DSO_CONTEXT_CONTROL_IMPL                                         = "com.terracotta.toolkit.express.DSOContextControlImpl";
   public static final String  SECRET_PROVIDER                                                  = "com.terracotta.express.SecretProvider";
   public static final String  DSO_CONTEXT_IMPL                                                 = "com.tc.object.bytecode.hook.impl.DSOContextImpl";
 
@@ -55,11 +55,10 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
       this.appClassLoader = new AppClassLoader(appLoader);
       this.clusteredStateLoader = createClusteredStateLoader(appLoader);
 
-      Class bootClass = clusteredStateLoader.loadClass(StandaloneL1Boot.class.getName());
+      Class bootClass = clusteredStateLoader.loadClass(L1Boot.class.getName());
       Constructor<?> cstr = bootClass.getConstructor(String.class, Boolean.TYPE, ClassLoader.class, Boolean.TYPE,
                                                      String.class, Map.class);
 
-      // XXX: It's be nice to not use Object here, but exposing the necessary type (DSOContext) seems wrong too)
       if (isUrlConfig && isRequestingSecuredEnv(tcConfig)) {
         if (env != null) {
           env.put(TERRACOTTA_CUSTOM_SECRET_PROVIDER_PROP,
@@ -81,13 +80,10 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
     if (isInitialized) { return; }
 
     try {
-      Class dsoContextClass = clusteredStateLoader.loadClass(DSO_CONTEXT_IMPL);
-      Method method = dsoContextClass.getMethod("init");
+      Class contextControlImpl = clusteredStateLoader.loadClass(DSO_CONTEXT_CONTROL_IMPL);
+      contextControl = (DSOContextControl) contextControlImpl.getConstructor(Object.class).newInstance(dsoContext);
+      contextControl.init();
 
-      method.invoke(dsoContext);
-
-      Class spiInit = clusteredStateLoader.loadClass(SPI_INIT);
-      contextControl = (DSOContextControl) spiInit.getConstructor(Object.class).newInstance(dsoContext);
       isInitialized = true;
       join(tunneledMBeanDomains);
       setSecretHackOMFG();
@@ -121,13 +117,7 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
 
   @Override
   public Object getPlatformService() {
-    try {
-      Class dsoContextClass = clusteredStateLoader.loadClass(DSO_CONTEXT_IMPL);
-      Method method = dsoContextClass.getMethod("getPlatformService");
-      return method.invoke(dsoContext);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    return contextControl.getPlatformService();
   }
 
   @Override
@@ -238,8 +228,8 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
     } else {
       loader = new ClusteredStateLoaderImpl(appClassLoader, isEmbeddedEhcacheRequired());
     }
-    loader.addExtraClass(SpiInit.class.getName(), getClassBytes(SpiInit.class));
-    loader.addExtraClass(StandaloneL1Boot.class.getName(), getClassBytes(StandaloneL1Boot.class));
+    loader.addExtraClass(DSOContextControlImpl.class.getName(), getClassBytes(DSOContextControlImpl.class));
+    loader.addExtraClass(L1Boot.class.getName(), getClassBytes(L1Boot.class));
     return loader;
   }
 
