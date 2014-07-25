@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class TerracottaInternalClientImpl implements TerracottaInternalClient {
 
@@ -37,14 +36,13 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
     //
   }
 
-  private final ClusteredStateLoader            clusteredStateLoader;
-  private final AppClassLoader                  appClassLoader;
-  private volatile DSOContextControl            contextControl;
-  private final AtomicInteger                   refCount             = new AtomicInteger(0);
-  private boolean                               shutdown             = false;
-  private volatile Object                       dsoContext;
-  private final Set<String>                     tunneledMBeanDomains = new HashSet<String>();
-  private volatile boolean                      isInitialized        = false;
+  private final ClusteredStateLoader clusteredStateLoader;
+  private final AppClassLoader       appClassLoader;
+  private volatile DSOContextControl contextControl;
+  private boolean                    shutdown             = false;
+  private volatile Object            dsoContext;
+  private final Set<String>          tunneledMBeanDomains = new HashSet<String>();
+  private volatile boolean           isInitialized        = false;
 
   TerracottaInternalClientImpl(String tcConfig, boolean isUrlConfig, ClassLoader appLoader, boolean rejoinEnabled,
                                Set<String> tunneledMBeanDomains, final String productId, Map<String, Object> env) {
@@ -102,7 +100,7 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
       appClassLoader.loadClass("com.terracotta.management.keychain.KeyChain");
       final Class<?> omfg = appClassLoader.loadClass("net.sf.ehcache.thrift.server.tc.TkSecurityManager");
       final Field secret = omfg.getDeclaredField("SECRET");
-      if(secret.getType() == byte[].class) {
+      if (secret.getType() == byte[].class) {
         secret.setAccessible(true);
         Class dsoContextClass = clusteredStateLoader.loadClass(DSO_CONTEXT_IMPL);
         Method method = dsoContextClass.getMethod("getSecret");
@@ -120,15 +118,9 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
     return contextControl.getPlatformService();
   }
 
-  @Override
-  public boolean isDedicatedClient() {
-    return true;
-  }
-
-  @Override
-  public synchronized void join(Set<String> tunnelledMBeanDomainsParam) throws ClientShutdownException {
+  private synchronized void join(Set<String> tunnelledMBeanDomainsParam) throws ClientShutdownException {
     if (shutdown) throw new ClientShutdownException();
-    refCount.incrementAndGet();
+
     if (isInitialized) {
       contextControl.activateTunnelledMBeanDomains(tunnelledMBeanDomainsParam);
     } else {
@@ -141,9 +133,9 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
   @Override
   public <T> T instantiate(String className, Class[] cstrArgTypes, Object[] cstrArgs) throws Exception {
     try {
-    Class clazz = clusteredStateLoader.loadClass(className);
-    Constructor cstr = clazz.getConstructor(cstrArgTypes);
-    return (T) cstr.newInstance(cstrArgs);
+      Class clazz = clusteredStateLoader.loadClass(className);
+      Constructor cstr = clazz.getConstructor(cstrArgTypes);
+      return (T) cstr.newInstance(cstrArgs);
     } catch (InvocationTargetException e) {
       Throwable targetEx = e.getTargetException();
       throw (targetEx instanceof ToolkitRuntimeException) ? (ToolkitRuntimeException) targetEx
@@ -163,29 +155,11 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
 
   @Override
   public synchronized void shutdown() {
-    final boolean shutdownClient;
-    if (isDedicatedClient()) {
-      shutdownClient = true;
-    } else {
-      // decrement the reference counter by 1 as its shared client
-      // destroy real client when count == 0;
-      int count = refCount.decrementAndGet();
-      if (count < 0) {
-        //
-        throw new IllegalStateException(
-                                        "shutdown() called too many times, this represents a bug in the caller. count = "
-                                            + count);
-      }
-      shutdownClient = count == 0;
-    }
-
-    if (shutdownClient) {
-      shutdown = true;
-      try {
-        contextControl.shutdown();
-      } finally {
-        appClassLoader.clear();
-      }
+    shutdown = true;
+    try {
+      contextControl.shutdown();
+    } finally {
+      appClassLoader.clear();
     }
   }
 

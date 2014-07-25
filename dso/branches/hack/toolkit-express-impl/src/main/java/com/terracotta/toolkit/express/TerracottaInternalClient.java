@@ -3,9 +3,6 @@
  */
 package com.terracotta.toolkit.express;
 
-import com.terracotta.toolkit.express.TerracottaInternalClientImpl.ClientShutdownException;
-
-import java.util.Set;
 
 public interface TerracottaInternalClient {
 
@@ -33,16 +30,6 @@ public interface TerracottaInternalClient {
    * Return the class using a capable class loader.
    */
   Class loadClass(String className) throws ClassNotFoundException;
-
-  /**
-   * Returns true if the client is a dedicated client. Otherwise false
-   */
-  boolean isDedicatedClient();
-
-  /**
-   * Join the same client
-   */
-  void join(Set<String> tunnelledMBeanDomains) throws ClientShutdownException;
 
   /**
    * Shuts down the client
