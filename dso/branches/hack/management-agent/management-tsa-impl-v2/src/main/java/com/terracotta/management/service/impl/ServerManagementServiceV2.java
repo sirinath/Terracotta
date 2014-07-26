@@ -121,11 +121,10 @@ public class ServerManagementServiceV2 implements L1MBeansSource {
             .path("diagnostics")
             .path("threadDump")
             .path("servers")
-            .matrixParam("serverNames", member.name());
+            .matrixParam("names", member.name());
 
         try {
-          return remoteManagementSource.getFromRemoteL2(member.name(),
-              uriBuilder.build(), ResponseEntityV2.class, ThreadDumpEntityV2.class);
+          return remoteManagementSource.getFromRemoteL2(member.name(), uriBuilder.build(), ResponseEntityV2.class, ThreadDumpEntityV2.class);
         } catch (ProcessingException che) {
           ResponseEntityV2<ThreadDumpEntityV2> responseEntityV2 = new ResponseEntityV2<ThreadDumpEntityV2>();
           ThreadDumpEntityV2 threadDumpEntityV2 = new ThreadDumpEntityV2();
@@ -139,7 +138,7 @@ public class ServerManagementServiceV2 implements L1MBeansSource {
     });
   }
 
-  public ResponseEntityV2<StatisticsEntityV2> getServersStatistics(Set<String> serverNames, Set<String> attributesToShow) throws ServiceExecutionException {
+  public ResponseEntityV2<StatisticsEntityV2> getServersStatistics(Set<String> serverNames, final Set<String> attributesToShow) throws ServiceExecutionException {
     final String[] mbeanAttributeNames = (attributesToShow == null) ?
         SERVER_STATS_ATTRIBUTE_NAMES :
         new ArrayList<String>(attributesToShow).toArray(new String[attributesToShow.size()]);
@@ -165,6 +164,7 @@ public class ServerManagementServiceV2 implements L1MBeansSource {
             .path("statistics")
             .path("servers")
             .matrixParam("names", member.name());
+        if (attributesToShow != null) { uriBuilder.queryParam("show", toCsv(attributesToShow)); }
 
         return remoteManagementSource.getFromRemoteL2(member.name(), uriBuilder.build(), ResponseEntityV2.class, StatisticsEntityV2.class);
       }
