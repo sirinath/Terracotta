@@ -124,7 +124,7 @@ public class MockTCObject implements TCObject {
 
   @Override
   public String getExtendingClassName() {
-    throw new ImplementMe();
+    return getClassName();
   }
 
   @Override
