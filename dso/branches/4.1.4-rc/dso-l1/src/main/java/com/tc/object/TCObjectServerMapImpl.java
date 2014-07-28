@@ -269,8 +269,16 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
       if (mdd != null) {
         addMetaData(mdd);
       }
-      boolean rv = logicalInvokeWithResult(SerializationUtil.PUT_IF_ABSENT, SerializationUtil.PUT_IF_ABSENT_SIGNATURE,
-                                           parameters);
+      boolean rv;
+      try {
+        rv = logicalInvokeWithResult(SerializationUtil.PUT_IF_ABSENT, SerializationUtil.PUT_IF_ABSENT_SIGNATURE,
+                                             parameters);
+      } catch (AbortedOperationException e) {
+        // Timed out. Don't know if the logical invoke succeeded so just assume it failed and dump the value, we can
+        // refetch it afterwards.
+        removeIfTCObjectSelf(value);
+        throw e;
+      }
       if (rv) {
         updateLocalCacheOnPut(key, value, valueObjectID);
       } else {
@@ -295,8 +303,17 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
       if (mdd != null) {
         addMetaData(mdd);
       }
-      boolean rv = logicalInvokeWithResult(SerializationUtil.REPLACE_IF_VALUE_EQUAL,
-                                           SerializationUtil.REPLACE_IF_VALUE_EQUAL_SIGNATURE, parameters);
+      boolean rv;
+      try {
+        rv = logicalInvokeWithResult(SerializationUtil.REPLACE_IF_VALUE_EQUAL,
+                                             SerializationUtil.REPLACE_IF_VALUE_EQUAL_SIGNATURE, parameters);
+      } catch (AbortedOperationException e) {
+        // Don't know what the result is since we timed out, so just dump both the new value and the old value and
+        // refetch from the server.
+        removeValueFromLocalCache(key);
+        removeIfTCObjectSelf(newValue);
+        throw e;
+      }
       if (rv) {
         updateLocalCacheOnPut(key, newValue, valueObjectID);
       } else {
@@ -406,7 +423,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
    * 
    * @param map ServerTCMap
    * @param key Key Object
-   * @return
+   * @return remove success
    * @throws AbortedOperationException
    */
   @Override
@@ -425,11 +442,9 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
       if (mdd != null) {
         addMetaData(mdd);
       }
-      boolean rv = invokeLogicalRemove(key, value);
-      if (rv) {
-        updateCacheOnRemoveUnlocked(key);
-      }
-      return rv;
+      // Just remove the value ahead of time, worst case we go out to the server and pick it up again if the remove fails
+      removeValueFromLocalCache(key);
+      return invokeLogicalRemove(key, value);
     } finally {
       lock.unlock();
     }
