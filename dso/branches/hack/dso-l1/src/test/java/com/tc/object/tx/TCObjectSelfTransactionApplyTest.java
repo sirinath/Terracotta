@@ -65,7 +65,7 @@ public class TCObjectSelfTransactionApplyTest extends TestCase {
                                                                                        new NullAbortableOperationManager());
     Collection changes = Collections.singletonList(new MyDna(oid, 200));
     Assert.assertEquals(100, serializedEntry.getLastAccessedTime());
-    transactionManager.apply(TxnType.NORMAL, null, changes, Collections.EMPTY_MAP);
+    transactionManager.apply(TxnType.NORMAL, null, changes);
     Assert.assertEquals(100, serializedEntry.getLastAccessedTime());
 
     MyMockSerializedEntry entryFetched = (MyMockSerializedEntry) store.getById(oid);

@@ -60,6 +60,11 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
   public void handleEvent(EventContext context) {
     final BroadcastTransactionMessageImpl btm = (BroadcastTransactionMessageImpl) context;
 
+    if (btm.getNewRoots().size() > 0) {
+      // XXX: delete this from the message class when possible!
+      throw new AssertionError();
+    }
+
     final GlobalTransactionID lowWaterMark = btm.getLowGlobalTransactionIDWatermark();
     if (!lowWaterMark.isNull()) {
       this.gtxManager.setLowWatermark(lowWaterMark, btm.getSourceNodeID());
@@ -68,9 +73,9 @@ public class ReceiveTransactionHandler extends AbstractEventHandler {
     if (this.gtxManager.startApply(btm.getCommitterID(), btm.getTransactionID(), btm.getGlobalTransactionID(),
         btm.getSourceNodeID())) {
       final Collection changes = btm.getObjectChanges();
-      if (changes.size() > 0 || btm.getNewRoots().size() > 0) {
+      if (changes.size() > 0) {
         try {
-          this.txManager.apply(btm.getTransactionType(), btm.getLockIDs(), changes, btm.getNewRoots());
+          this.txManager.apply(btm.getTransactionType(), btm.getLockIDs(), changes);
         } catch (TCClassNotFoundException cnfe) {
           logger.warn("transaction apply failed for " + btm.getTransactionID(), cnfe);
           // Do not ignore, re-throw to kill this L1

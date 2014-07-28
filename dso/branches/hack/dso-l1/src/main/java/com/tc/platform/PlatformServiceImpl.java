@@ -587,8 +587,8 @@ public class PlatformServiceImpl implements PlatformService {
   }
 
   private boolean clusteredLockingEnabled(final LockID lock) {
-    return !((lock instanceof UnclusteredLockID) || this.txManager.isTransactionLoggingDisabled() || this.txManager
-        .isObjectCreationInProgress());
+    return !((lock instanceof UnclusteredLockID) || this.txManager.isTransactionLoggingDisabled() || this.objectManager
+        .isCreationInProgress());
   }
 
   private void lockInterruptibly(final LockID lock, final LockLevel level) throws InterruptedException,
