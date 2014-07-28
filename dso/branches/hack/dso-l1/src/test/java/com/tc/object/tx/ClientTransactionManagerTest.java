@@ -63,55 +63,6 @@ public class ClientTransactionManagerTest extends TestCase {
     if (error.get() != null) { throw new RuntimeException(error.get()); }
   }
 
-  public void testCheckWriteAccess() throws Exception {
-    // Test that we get an exception when we have no TXN started
-    try {
-      clientTxnMgr.checkWriteAccess(new Object());
-      fail();
-    } catch (UnlockedSharedObjectException usoe) {
-      // expected
-    }
-
-    // Test that we get an exception when checking while only holding a read lock
-    clientTxnMgr.begin(new StringLockID("lock"), LockLevel.READ, false);
-    try {
-      clientTxnMgr.checkWriteAccess(new Object());
-      fail();
-    } catch (UnlockedSharedObjectException roe) {
-      // expected
-    }
-    clientTxnMgr.commit(new StringLockID("lock"), LockLevel.READ, false, null);
-
-    clientTxnMgr.begin(new StringLockID("test"), LockLevel.WRITE, false);
-    clientTxnMgr.checkWriteAccess(new Object());
-    clientTxnMgr.commit(new StringLockID("test"), LockLevel.WRITE, false, null);
-
-    clientTxnMgr.begin(new StringLockID("test"), LockLevel.SYNCHRONOUS_WRITE, false);
-    clientTxnMgr.checkWriteAccess(new Object());
-    clientTxnMgr.commit(new StringLockID("test"), LockLevel.SYNCHRONOUS_WRITE, false, null);
-
-    clientTxnMgr.begin(new StringLockID("test"), LockLevel.CONCURRENT, false);
-    clientTxnMgr.checkWriteAccess(new Object());
-    clientTxnMgr.commit(new StringLockID("test"), LockLevel.CONCURRENT, false, null);
-  }
-
-  public void testDoIllegalReadChange() throws Exception {
-    clientTxnMgr.begin(new StringLockID("lock"), LockLevel.READ, false);
-
-    try {
-      clientTxnMgr.fieldChanged(new MockTCObject(new ObjectID(1), new Object()), null, null, null, -1);
-      assertFalse(true);
-    } catch (UnlockedSharedObjectException e) {
-      // expected
-
-      // System.out.println("THIS IS A GOOD THING");
-      // e.printStackTrace();
-      // System.out.println("THIS IS A GOOD THING");
-    }
-
-    clientTxnMgr.commit(new StringLockID("lock"), LockLevel.READ, false, null);
-  }
-
   public void testInvalidAtomicSequence() throws Exception {
     clientTxnMgr.begin(new StringLockID("lock"), LockLevel.WRITE, true);
     try {

@@ -4,7 +4,6 @@
 package com.tc.object;
 
 import com.tc.abortable.AbortedOperationException;
-import com.tc.exception.TCClassNotFoundException;
 import com.tc.exception.TCNonPortableObjectError;
 import com.tc.net.GroupID;
 import com.tc.object.dna.api.DNA;
@@ -28,48 +27,6 @@ public interface ClientObjectManager extends TCObjectSelfCallback {
   public Class getClassFor(String className) throws ClassNotFoundException;
 
   /**
-   * Checks whether the state of an ObjectID is present on the current node.
-   * 
-   * @param objectID the object ID to check
-   * @return {@code true} when the state of the object ID is present on the current node; or {@code false} otherwise
-   */
-  public boolean isLocal(ObjectID objectID);
-
-  /**
-   * Determine whether this instance is managed.
-   * 
-   * @param pojo The instance
-   * @return True if managed
-   */
-  public boolean isManaged(Object pojo);
-
-  /**
-   * Determine whether this class is portable
-   * 
-   * @param clazz The class to check
-   * @return True if portable
-   */
-  public boolean isPortableClass(Class clazz);
-
-  /**
-   * Determine whether this instance is portable
-   * 
-   * @param instance The instance to check
-   * @return True if portable
-   */
-  public boolean isPortableInstance(Object instance);
-
-  /**
-   * Check whether field of an instance is portable
-   * 
-   * @param value Field value
-   * @param fieldName Field name
-   * @param pojo Instance to check
-   * @throws TCNonPortableObjectError If field is not portable
-   */
-  public void checkPortabilityOfField(Object value, String fieldName, Object pojo) throws TCNonPortableObjectError;
-
-  /**
    * Check whether logical action is portable
    * 
    * @param params Method call parameters
@@ -80,15 +37,6 @@ public interface ClientObjectManager extends TCObjectSelfCallback {
    */
   public void checkPortabilityOfLogicalAction(LogicalOperation method, Object[] params, int paramIndex, Object pojo)
       throws TCNonPortableObjectError;
-
-  /**
-   * Replace root ID. Primitive roots are replaceable. Object reference roots generally are not but this can be
-   * controlled by the configuration.
-   * 
-   * @param rootName Root object name
-   * @param newRootID New root object identifier
-   */
-  public void replaceRootIDIfNecessary(String rootName, ObjectID newRootID);
 
   /**
    * Prefetch object by ID, faulting into the JVM if necessary, Async lookup and will not cause ObjectNotFoundException
@@ -122,31 +70,6 @@ public interface ClientObjectManager extends TCObjectSelfCallback {
   public Object lookupObject(ObjectID id) throws ClassNotFoundException, AbortedOperationException;
 
   /**
-   * Look up object by ID, faulting into the JVM if necessary, This method also passes the parent Object context so that
-   * more intelligent prefetching is possible at the L2. The default fault-count will be used to limit the number of
-   * dependent objects that are also faulted in.
-   * 
-   * @param id Object identifier of the object we are looking up
-   * @param parentContext Object identifier of the parent object
-   * @return The actual object
-   * @throws AbortedOperationException
-   * @throws TCClassNotFoundException If a class is not found during faulting
-   */
-  public Object lookupObject(ObjectID id, ObjectID parentContext) throws ClassNotFoundException,
-      AbortedOperationException;
-
-  /**
-   * Find object by ID. If necessary, the object will be faulted into the JVM. No fault-count depth will be used and all
-   * dependent objects will be faulted into memory.
-   * 
-   * @param id Identifier
-   * @return Instance for the id
-   * @throws ClassNotFoundException If class can't be found in this VM
-   * @throws AbortedOperationException
-   */
-  public Object lookupObjectNoDepth(ObjectID id) throws ClassNotFoundException, AbortedOperationException;
-
-  /**
    * Find the managed object for this instance or create a new one if it does not yet exist.
    * 
    * @param obj Instance
@@ -176,26 +99,18 @@ public interface ClientObjectManager extends TCObjectSelfCallback {
    * 
    * @param name Root name
    * @return Root object
+   * @throws ClassNotFoundException
    */
-  public Object lookupRoot(String name);
+  public Object lookupRoot(String name) throws ClassNotFoundException;
 
   /**
    * Find named root object in a particular group
    * 
    * @param name Root name
    * @return Root object
+   * @throws ClassNotFoundException
    */
-  public Object lookupRoot(String name, GroupID groupID);
-
-  /**
-   * Find and create if necessary a root object for the specified named root. All dependent objects needed will be
-   * faulted in to arbitrary depth.
-   * 
-   * @param rootName Root name
-   * @param object Instance to use if new
-   * @return New or existing object to use as root
-   */
-  public Object lookupOrCreateRootNoDepth(String rootName, Object object);
+  public Object lookupRoot(String name, GroupID groupID) throws ClassNotFoundException;
 
   /**
    * Find and create if necessary a root object for the specified named root. All dependent objects needed will be
@@ -205,7 +120,7 @@ public interface ClientObjectManager extends TCObjectSelfCallback {
    * @param obj Instance to use if new
    * @return New or existing object to use as root
    */
-  public Object lookupOrCreateRoot(String name, Object obj);
+  public Object lookupOrCreateRoot(String name, Object obj) throws ClassNotFoundException;
 
   /**
    * Find and create if necessary a root object for the specified named root.
@@ -215,26 +130,7 @@ public interface ClientObjectManager extends TCObjectSelfCallback {
    * @param gid GroupID where the object needs to be created
    * @return New or existing object to use as root
    */
-  public Object lookupOrCreateRoot(String name, Object obj, GroupID gid);
-
-  /**
-   * Find and create if necessary a root object for the specified named root. All dependent objects needed will be
-   * faulted in, limited to the fault-count specified in the configuration.
-   * 
-   * @param name Root name
-   * @param obj Instance to use if new
-   * @param dsoFinal Specify whether this is root is considered final and whether an existing root can be replaced
-   * @return New or existing object to use as root
-   */
-  public Object lookupOrCreateRoot(String name, Object obj, boolean dsoFinal);
-
-  /**
-   * Find managed object locally (don't fault in an object from the server).
-   * 
-   * @param id Identifier
-   * @return Managed object or null if not in client
-   */
-  public TCObject lookupIfLocal(ObjectID id);
+  public Object lookupOrCreateRoot(String name, Object obj, GroupID gid) throws ClassNotFoundException;
 
   /**
    * Find managed object by identifier
@@ -306,14 +202,6 @@ public interface ClientObjectManager extends TCObjectSelfCallback {
    * @return True if creation in progress
    */
   public boolean isCreationInProgress();
-
-  /**
-   * Create or replace a root value, typically used for replacable roots.
-   * 
-   * @param rootName Root name
-   * @param root New root value
-   */
-  public Object createOrReplaceRoot(String rootName, Object root);
 
   /**
    * Create new WeakReference wrapper for the given id and peer object.

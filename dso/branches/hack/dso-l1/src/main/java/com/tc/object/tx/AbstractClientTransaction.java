@@ -4,8 +4,8 @@
  */
 package com.tc.object.tx;
 
-import com.tc.object.ObjectID;
 import com.tc.object.LogicalOperation;
+import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.dna.api.LogicalChangeID;
 import com.tc.object.locks.LockID;
@@ -93,8 +93,7 @@ abstract class AbstractClientTransaction implements ClientTransaction {
 
   @Override
   public final void createObject(TCObject source) {
-    alreadyCommittedCheck();
-    basicCreate(source);
+    throw new AssertionError(); // XXX: remove method when possible
   }
 
   @Override
@@ -105,23 +104,17 @@ abstract class AbstractClientTransaction implements ClientTransaction {
 
   @Override
   public final void fieldChanged(TCObject source, String classname, String fieldname, Object newValue, int index) {
-    if (source.isEnum()) { throw new AssertionError("fieldChanged() on an enum type "
-                                                                 + source.getPeerClass().getName()); }
-
-    alreadyCommittedCheck();
-    basicFieldChanged(source, classname, fieldname, newValue, index);
+    throw new AssertionError(); // XXX: remove method when possible
   }
 
   @Override
   public final void literalValueChanged(TCObject source, Object newValue, Object oldValue) {
-    alreadyCommittedCheck();
-    basicLiteralValueChanged(source, newValue, oldValue);
+    throw new AssertionError(); // XXX: remove method when possible
   }
 
   @Override
   public final void arrayChanged(TCObject source, int startPos, Object array, int length) {
-    alreadyCommittedCheck();
-    basicArrayChanged(source, startPos, array, length);
+    throw new AssertionError(); // XXX: remove method when possible
   }
 
   @Override
@@ -196,18 +189,10 @@ abstract class AbstractClientTransaction implements ClientTransaction {
         : this.onCommitCallableQueue;
   }
 
-  abstract protected void basicCreate(TCObject object);
-
   abstract protected void basicCreateRoot(String name, ObjectID rootID);
 
-  abstract protected void basicFieldChanged(TCObject source, String classname, String fieldname, Object newValue,
-                                            int index);
-
-  abstract protected void basicLiteralValueChanged(TCObject source, Object newValue, Object oldValue);
-
-  abstract protected void basicArrayChanged(TCObject source, int startPos, Object array, int length);
-
-  abstract protected void basicLogicalInvoke(TCObject source, LogicalOperation method, Object[] parameters, LogicalChangeID id);
+  abstract protected void basicLogicalInvoke(TCObject source, LogicalOperation method, Object[] parameters,
+                                             LogicalChangeID id);
 
   abstract protected void basicAddMetaDataDescriptor(TCObject tco, MetaDataDescriptorInternal md);
 

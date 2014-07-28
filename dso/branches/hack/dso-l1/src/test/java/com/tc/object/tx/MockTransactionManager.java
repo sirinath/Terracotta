@@ -9,9 +9,8 @@ import com.tc.exception.ImplementMe;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 import com.tc.net.NodeID;
-import com.tc.object.ClientIDProvider;
-import com.tc.object.ObjectID;
 import com.tc.object.LogicalOperation;
+import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.dna.api.LogicalChangeID;
 import com.tc.object.dna.api.LogicalChangeResult;
@@ -91,11 +90,6 @@ public class MockTransactionManager implements ClientTransactionManager {
   }
 
   @Override
-  public void fieldChanged(TCObject source, String classname, String fieldname, Object newValue, int index) {
-    throw new ImplementMe();
-  }
-
-  @Override
   public void logicalInvoke(TCObject source, LogicalOperation name, Object[] parameters) {
     throw new ImplementMe();
   }
@@ -121,28 +115,13 @@ public class MockTransactionManager implements ClientTransactionManager {
   }
 
   @Override
-  public void apply(TxnType txType, List<LockID> lockIDs, Collection objectChanges, Map newRoots) {
+  public void apply(TxnType txType, List<LockID> lockIDs, Collection objectChanges) {
     throw new ImplementMe();
-  }
-
-  @Override
-  public void checkWriteAccess(Object context) {
-    //
   }
 
   @Override
   public void receivedAcknowledgement(SessionID sessionID, TransactionID requestID, NodeID nodeID) {
     throw new ImplementMe();
-  }
-
-  @Override
-  public void addReference(TCObject tco) {
-    throw new ImplementMe();
-  }
-
-  @Override
-  public ClientIDProvider getClientIDProvider() {
-    return null;
   }
 
   public boolean isLocked(String lockName, int lockLevel) {
@@ -199,28 +178,8 @@ public class MockTransactionManager implements ClientTransactionManager {
     return (txnStack != null) && (((ThreadTransactionLoggingStack) txnStack).get() > 0);
   }
 
-  @Override
-  public boolean isObjectCreationInProgress() {
-    return false;
-  }
-
-  @Override
-  public void literalValueChanged(TCObject source, Object newValue, Object oldValue) {
-    throw new ImplementMe();
-  }
-
-  @Override
-  public void arrayChanged(TCObject src, int startPos, Object array, int length) {
-    throw new ImplementMe();
-  }
-
   public int localHeldCount(String lockName, int lockLevel) {
     throw new ImplementMe();
-  }
-
-  @Override
-  public boolean isLockOnTopStack(LockID lock) {
-    return false;
   }
 
   @Override
