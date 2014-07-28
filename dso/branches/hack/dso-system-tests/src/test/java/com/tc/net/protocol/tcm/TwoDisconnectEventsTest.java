@@ -114,6 +114,7 @@ public class TwoDisconnectEventsTest extends BaseDSOTestCase {
         ThreadUtil.reallySleep(2000);
 
       } finally {
+        client.getCommunicationsManager().shutdown();
         client.shutdown();
       }
     } finally {
