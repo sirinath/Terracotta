@@ -1193,6 +1193,16 @@ public class DistributedObjectClient extends SEDA implements TCClient {
         this.objectManager = null;
       }
     }
+    
+    if (this.remoteTxnManager != null) {
+      try {
+        this.remoteTxnManager.stop();
+      } catch (Throwable t) {
+        logger.error("Error shutting down remote txn mgr", t);
+      } finally {
+        this.remoteTxnManager = null;
+      }
+    }
 
     clientChannelEventController.shutdown();
 
