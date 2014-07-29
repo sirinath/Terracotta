@@ -6,6 +6,8 @@ package com.terracotta.toolkit.express;
 import org.terracotta.license.util.Base64;
 
 import com.google.common.collect.MapMaker;
+import com.tc.abortable.AbortableOperationManager;
+import com.tc.abortable.AbortableOperationManagerImpl;
 import com.tc.license.ProductID;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
@@ -13,11 +15,12 @@ import com.tc.net.core.SecurityInfo;
 import com.tc.net.core.security.TCSecurityManager;
 import com.tc.object.DistributedObjectClientFactory;
 import com.tc.util.ProductInfo;
+import com.tc.util.UUID;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-public class CreateClient implements Callable<Callable<Object>> {
+public class CreateClient implements Callable<ClientCreatorCallable> {
 
   static {
     /*
@@ -56,7 +59,7 @@ public class CreateClient implements Callable<Callable<Object>> {
   }
 
   @Override
-  public Callable<Object> call() throws Exception {
+  public ClientCreatorCallable call() throws Exception {
     TCSecurityManager securityManager = null;
 
     if (securityInfo.isSecure()) {
@@ -75,27 +78,46 @@ public class CreateClient implements Callable<Callable<Object>> {
     }
 
     ProductID productId = productIdName == null ? ProductID.USER : ProductID.valueOf(productIdName);
+    AbortableOperationManager abortableOperationManager = new AbortableOperationManagerImpl();
+    UUID uuid = UUID.getUUID();
     final DistributedObjectClientFactory distributedObjectClientFactory = new DistributedObjectClientFactory(
                                                                                                              configSpec,
                                                                                                              securityManager,
                                                                                                              securityInfo,
                                                                                                              loader,
                                                                                                              rejoin,
-                                                                                                             productId);
-    return new CreateCallable(distributedObjectClientFactory);
+                                                                                                             productId,
+                                                                                                             abortableOperationManager,
+                                                                                                             uuid);
+    return new ClientCreatorCallableImpl(distributedObjectClientFactory, abortableOperationManager, uuid);
   }
 
-  public static class CreateCallable implements Callable<Object> {
+  public static class ClientCreatorCallableImpl implements ClientCreatorCallable {
 
     private final DistributedObjectClientFactory distributedObjectClientFactory;
+    private final AbortableOperationManager      abortableOperationManager;
+    private final UUID                           uuid;
 
-    public CreateCallable(DistributedObjectClientFactory distributedObjectClientFactory) {
+    public ClientCreatorCallableImpl(DistributedObjectClientFactory distributedObjectClientFactory,
+                                     AbortableOperationManager abortableOperationManager, UUID uuid) {
       this.distributedObjectClientFactory = distributedObjectClientFactory;
+      this.abortableOperationManager = abortableOperationManager;
+      this.uuid = uuid;
     }
 
     @Override
     public Object call() throws Exception {
       return distributedObjectClientFactory.create();
+    }
+
+    @Override
+    public Object getAbortableOperationManager() {
+      return abortableOperationManager;
+    }
+
+    @Override
+    public String getUuid() {
+      return uuid.toString();
     }
 
   }
