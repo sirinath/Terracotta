@@ -93,7 +93,8 @@ abstract class AbstractClientTransaction implements ClientTransaction {
 
   @Override
   public final void createObject(TCObject source) {
-    throw new AssertionError(); // XXX: remove method when possible
+    alreadyCommittedCheck();
+    basicCreate(source);
   }
 
   @Override
@@ -188,6 +189,8 @@ abstract class AbstractClientTransaction implements ClientTransaction {
     return (this.onCommitCallableQueue == null) ? (List<OnCommitCallable>) Collections.EMPTY_LIST
         : this.onCommitCallableQueue;
   }
+
+  abstract protected void basicCreate(TCObject object);
 
   abstract protected void basicCreateRoot(String name, ObjectID rootID);
 

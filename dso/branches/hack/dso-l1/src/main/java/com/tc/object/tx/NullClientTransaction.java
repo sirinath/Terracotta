@@ -92,4 +92,9 @@ public class NullClientTransaction extends AbstractClientTransaction {
     return 0;
   }
 
+  @Override
+  protected void basicCreate(TCObject object) {
+    //
+  }
+
 }
