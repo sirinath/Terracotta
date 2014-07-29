@@ -2,9 +2,14 @@ package com.tc.object;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyMap;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.Before;
@@ -14,8 +19,13 @@ import org.mockito.stubbing.Answer;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+import com.tc.abortable.AbortedOperationException;
+import com.tc.net.GroupID;
 import com.tc.object.servermap.ExpirableMapEntry;
 import com.tc.object.servermap.localcache.L1ServerMapLocalCacheManager;
+import com.tc.object.servermap.localcache.L1ServerMapLocalCacheStore;
+import com.tc.object.servermap.localcache.PinnedEntryFaultCallback;
+import com.tc.object.servermap.localcache.ServerMapLocalCache;
 import com.tc.platform.PlatformService;
 
 import java.util.Map;
@@ -29,6 +39,7 @@ public class TCObjectServerMapImplTest {
   private ObjectID objectID;
   private L1ServerMapLocalCacheManager globalLocalCacheManager;
   private PlatformService              platformService;
+  private ServerMapLocalCache serverMapLocalCache;
 
   @Before
   public void setUp() throws Exception {
@@ -37,6 +48,12 @@ public class TCObjectServerMapImplTest {
     serverMapManager = mock(RemoteServerMapManager.class);
     objectID = new ObjectID(1);
     globalLocalCacheManager = mock(L1ServerMapLocalCacheManager.class);
+    serverMapLocalCache = mock(ServerMapLocalCache.class);
+    when(globalLocalCacheManager.getOrCreateLocalCache(any(ObjectID.class), any(ClientObjectManager.class),
+                                                       any(PlatformService.class), anyBoolean(),
+                                                       any(L1ServerMapLocalCacheStore.class),
+                                                       any(PinnedEntryFaultCallback.class)))
+        .thenReturn(serverMapLocalCache);
   }
 
   @Test
@@ -70,5 +87,70 @@ public class TCObjectServerMapImplTest {
     assertThat(result, hasEntry((Object) "foo", new VersionedObject(expirableMapEntry, 5)));
     assertThat(result, hasEntry((Object) "bar", new VersionedObject(expirableMapEntry, 4)));
     assertThat(result, hasEntry((Object) "baz", null));
+  }
+
+  @Test
+  public void testCleanupReplaceOnTimeout() throws Exception {
+    TCObjectServerMap tcObjectServerMap = new TCObjectServerMapImpl(platformService, clientObjectManager,
+        serverMapManager, objectID, null, mock(TCClass.class), false, globalLocalCacheManager) {
+      @Override
+      public boolean logicalInvokeWithResult(final LogicalOperation method, final Object[] parameters) throws AbortedOperationException {
+        throw new AbortedOperationException();
+      }
+    };
+    tcObjectServerMap.setupLocalStore(mock(L1ServerMapLocalCacheStore.class), mock(PinnedEntryFaultCallback.class));
+    TCObjectSelf value = mock(TCObjectSelf.class);
+    when(clientObjectManager.lookupOrCreate(eq(value), any(GroupID.class))).thenReturn(value);
+
+    try {
+      tcObjectServerMap.doLogicalReplaceUnlocked(null, "foo", "bar", value, null);
+      fail("Did not get a timeout");
+    } catch (AbortedOperationException e) {
+      // expected
+    }
+    verify(globalLocalCacheManager).removeTCObjectSelfTemp(value, true);
+    verify(serverMapLocalCache).removeFromLocalCache("foo");
+  }
+
+  @Test
+  public void testCleanupOnRemoveTimeout() throws Exception {
+    TCObjectServerMap tcObjectServerMap = new TCObjectServerMapImpl(platformService, clientObjectManager,
+        serverMapManager, objectID, null, mock(TCClass.class), false, globalLocalCacheManager) {
+      @Override
+      public boolean logicalInvokeWithResult(final LogicalOperation method, final Object[] parameters) throws AbortedOperationException {
+        throw new AbortedOperationException();
+      }
+    };
+    tcObjectServerMap.setupLocalStore(mock(L1ServerMapLocalCacheStore.class), mock(PinnedEntryFaultCallback.class));
+
+    try {
+      tcObjectServerMap.doLogicalRemoveUnlocked(null, "foo", "bar", null);
+      fail("Did not get a timeout");
+    } catch (AbortedOperationException e) {
+      // expected
+    }
+    verify(serverMapLocalCache).removeFromLocalCache("foo");
+  }
+
+  @Test
+  public void testCleanupOnPutIfAbsentTimeout() throws Exception {
+    TCObjectServerMap tcObjectServerMap = new TCObjectServerMapImpl(platformService, clientObjectManager,
+        serverMapManager, objectID, null, mock(TCClass.class), false, globalLocalCacheManager) {
+      @Override
+      public boolean logicalInvokeWithResult(final LogicalOperation method, final Object[] parameters) throws AbortedOperationException {
+        throw new AbortedOperationException();
+      }
+    };
+    tcObjectServerMap.setupLocalStore(mock(L1ServerMapLocalCacheStore.class), mock(PinnedEntryFaultCallback.class));
+    TCObjectSelf value = mock(TCObjectSelf.class);
+    when(clientObjectManager.lookupOrCreate(eq(value), any(GroupID.class))).thenReturn(value);
+
+    try {
+      tcObjectServerMap.doLogicalPutIfAbsentUnlocked(null, "foo", value, null);
+      fail("Did not get a timeout");
+    } catch (AbortedOperationException e) {
+      // expected
+    }
+    verify(globalLocalCacheManager).removeTCObjectSelfTemp(value, true);
   }
 }
