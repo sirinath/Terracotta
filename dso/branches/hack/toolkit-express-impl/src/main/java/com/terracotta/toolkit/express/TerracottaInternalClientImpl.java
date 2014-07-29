@@ -35,13 +35,13 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
     //
   }
 
-  private final ClusteredStateLoader clusteredStateLoader;
-  private final AppClassLoader       appClassLoader;
-  private final Callable<Object>     clientCreator;
-  private final Set<String>          tunneledMBeanDomains = new HashSet<String>();
-  private volatile ClientHandle      clientHandle;
-  private volatile boolean           shutdown             = false;
-  private volatile boolean           isInitialized        = false;
+  private final ClusteredStateLoader  clusteredStateLoader;
+  private final AppClassLoader        appClassLoader;
+  private final ClientCreatorCallable clientCreator;
+  private final Set<String>           tunneledMBeanDomains = new HashSet<String>();
+  private volatile ClientHandle       clientHandle;
+  private volatile boolean            shutdown             = false;
+  private volatile boolean            isInitialized        = false;
 
   TerracottaInternalClientImpl(String tcConfig, boolean isUrlConfig, ClassLoader appLoader, boolean rejoinEnabled,
                                Set<String> tunneledMBeanDomains, final String productId, Map<String, Object> env) {
@@ -62,7 +62,7 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
                   newSecretProviderDelegate(clusteredStateLoader, env.get(TerracottaInternalClientImpl.SECRET_PROVIDER)));
         }
       }
-      Callable<Callable<Object>> boot = (Callable<Callable<Object>>) cstr.newInstance(tcConfig, isUrlConfig,
+      Callable<ClientCreatorCallable> boot = (Callable<ClientCreatorCallable>) cstr.newInstance(tcConfig, isUrlConfig,
                                                                                       clusteredStateLoader,
                                                                                       rejoinEnabled, productId, env);
       this.clientCreator = boot.call();
@@ -99,8 +99,8 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
       final Field secret = omfg.getDeclaredField("SECRET");
       if (secret.getType() == byte[].class) {
         secret.setAccessible(true);
-        Class dsoContextClass = clusteredStateLoader.loadClass("com.terracotta.management.security.SecretProvider");
-        Method method = dsoContextClass.getMethod("getSecret");
+        Class secretProviderClass = clusteredStateLoader.loadClass("com.terracotta.management.security.SecretProvider");
+        Method method = secretProviderClass.getMethod("getSecret");
         secret.set(null, method.invoke(null));
       }
     } catch (ClassNotFoundException e) {
@@ -113,6 +113,16 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
   @Override
   public Object getPlatformService() {
     return clientHandle.getPlatformService();
+  }
+
+  @Override
+  public Object getAbortableOperationManager() {
+    return clientCreator.getAbortableOperationManager();
+  }
+
+  @Override
+  public String getUuid() {
+    return clientCreator.getUuid();
   }
 
   private synchronized void join(Set<String> tunnelledMBeanDomainsParam) throws ClientShutdownException {
@@ -154,8 +164,11 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
   public synchronized void shutdown() {
     shutdown = true;
     try {
-      clientHandle.shutdown();
+      if (clientHandle != null) {
+        clientHandle.shutdown();
+      }
     } finally {
+      clientHandle = null;
       appClassLoader.clear();
     }
   }
@@ -201,7 +214,8 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
     }
     loader.addExtraClass(ClientHandleImpl.class.getName(), getClassBytes(ClientHandleImpl.class));
     loader.addExtraClass(CreateClient.class.getName(), getClassBytes(CreateClient.class));
-    loader.addExtraClass(CreateClient.CreateCallable.class.getName(), getClassBytes(CreateClient.CreateCallable.class));
+    loader.addExtraClass(CreateClient.ClientCreatorCallableImpl.class.getName(),
+                         getClassBytes(CreateClient.ClientCreatorCallableImpl.class));
     return loader;
   }
 
@@ -228,7 +242,8 @@ class TerracottaInternalClientImpl implements TerracottaInternalClient {
 
   @Override
   public boolean isOnline() {
-    return clientHandle.isOnline();
+    ClientHandle handle = clientHandle;
+    return handle == null ? false : handle.isOnline();
   }
 
   @Override

@@ -4,7 +4,6 @@
 package com.tc.object;
 
 import com.tc.abortable.AbortableOperationManager;
-import com.tc.abortable.AbortableOperationManagerImpl;
 import com.tc.client.AbstractClientFactory;
 import com.tc.cluster.DsoClusterImpl;
 import com.tc.config.schema.L2ConfigForL1.L2Data;
@@ -45,6 +44,8 @@ public class DistributedObjectClientFactory {
   private final ClassLoader       loader;
   private final boolean           rejoin;
   private final ProductID         productId;
+  private final AbortableOperationManager abortableOperationManager;
+  private final UUID                      uuid;
 
   public static TCSecurityManager createSecurityManager(Map<String, Object> env) {
     return AbstractClientFactory.getFactory().createClientSecurityManager(env);
@@ -52,13 +53,16 @@ public class DistributedObjectClientFactory {
 
   public DistributedObjectClientFactory(String configSpec, TCSecurityManager securityManager,
                                         SecurityInfo securityInfo, ClassLoader loader, boolean rejoin,
-                                        ProductID productId) {
+                                        ProductID productId, AbortableOperationManager abortableOperationManager,
+                                        UUID uuid) {
     this.configSpec = configSpec;
     this.securityManager = securityManager;
     this.securityInfo = securityInfo;
     this.loader = loader;
     this.rejoin = rejoin;
     this.productId = productId;
+    this.abortableOperationManager = abortableOperationManager;
+    this.uuid = uuid;
   }
 
   public DistributedObjectClient create() throws ConfigurationSetupException {
@@ -106,8 +110,6 @@ public class DistributedObjectClientFactory {
 
     final RejoinManagerInternal rejoinManager = new RejoinManagerImpl(rejoin);
     final DsoClusterInternal dsoCluster = new DsoClusterImpl(rejoinManager);
-    final UUID uuid = UUID.getUUID();
-    final AbortableOperationManager abortableOperationManager = new AbortableOperationManagerImpl();
 
     final StartupAction action = new StartupHelper.StartupAction() {
       @Override
