@@ -4,7 +4,6 @@
  */
 package com.tc.object;
 
-
 import com.tc.abortable.NullAbortableOperationManager;
 import com.tc.async.impl.MockSink;
 import com.tc.exception.ImplementMe;
@@ -13,7 +12,6 @@ import com.tc.exception.TCNotRunningException;
 import com.tc.exception.TCObjectNotFoundException;
 import com.tc.net.protocol.tcm.TestChannelIDProvider;
 import com.tc.object.bytecode.MockClassProvider;
-import com.tc.object.bytecode.TransparentAccess;
 import com.tc.object.config.DSOClientConfigHelper;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNACursor;
@@ -30,7 +28,6 @@ import com.tc.util.concurrent.ThreadUtil;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -69,8 +66,8 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
     this.objectFactory.tcObject = this.tcObject;
 
     this.mgr = new ClientObjectManagerImpl(this.remoteObjectManager, this.idProvider,
-                                           new ClientIDProviderImpl(new TestChannelIDProvider()),
-                                           this.classProvider, this.classFactory, this.objectFactory,
+                                           new ClientIDProviderImpl(new TestChannelIDProvider()), this.classProvider,
+                                           this.classFactory, this.objectFactory,
                                            new PortabilityImpl(this.clientConfiguration), this.tcObjectSelfStore,
                                            new NullAbortableOperationManager());
     this.mgr.setTransactionManager(new MockTransactionManager());
@@ -375,24 +372,11 @@ public class ClientObjectManagerTest extends BaseDSOTestCase {
     }
   }
 
-  private static class StupidTestObject implements TransparentAccess {
+  private static class StupidTestObject {
     private static final Random rndm = new Random();
 
     @SuppressWarnings("unused")
     private StupidTestObject    object;
-
-    @Override
-    public void __tc_getallfields(final Map map) {
-      throw new ImplementMe();
-
-    }
-
-    @Override
-    public void __tc_setfield(final String name, final Object value) {
-      if ("object".equals(name)) {
-        this.object = (StupidTestObject) value;
-      }
-    }
 
     @Override
     public boolean equals(final Object o) {

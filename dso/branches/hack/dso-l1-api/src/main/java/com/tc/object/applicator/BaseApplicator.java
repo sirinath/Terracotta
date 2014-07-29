@@ -11,7 +11,6 @@ import com.tc.object.LiteralValues;
 import com.tc.object.ObjectID;
 import com.tc.object.TCObject;
 import com.tc.object.TraversedReferences;
-import com.tc.object.bytecode.TransparentAccess;
 import com.tc.object.dna.api.DNA;
 import com.tc.object.dna.api.DNAEncoding;
 import com.tc.object.dna.api.DNAWriter;
@@ -111,8 +110,7 @@ public class BaseApplicator implements ChangeApplicator {
 
   @Override
   public TraversedReferences getPortableObjects(Object pojo, TraversedReferences addTo) {
-    if (!(pojo instanceof TransparentAccess)) return addTo;
-    throw new UnsupportedOperationException();
+    return addTo;
   }
 
   @Override
