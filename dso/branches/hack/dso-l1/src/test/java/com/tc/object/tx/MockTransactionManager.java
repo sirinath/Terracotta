@@ -21,7 +21,6 @@ import com.tc.object.metadata.MetaDataDescriptorInternal;
 import com.tc.object.session.SessionID;
 import com.tc.object.tx.ClientTransactionManagerImpl.ThreadTransactionLoggingStack;
 import com.tc.util.Assert;
-import com.tc.util.Counter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,16 +41,9 @@ public class MockTransactionManager implements ClientTransactionManager {
   // the class ThreadTransactionContext and thus throws a LinkageError.
   private final ThreadLocal     txnLogging     = new ThreadLocal();
 
-  // TODO: This is a test member remove otherwise.
-  private final Counter         loggingCounter = new Counter(0);
-
   @Override
   public void cleanup() {
     //
-  }
-
-  public Counter getLoggingCounter() {
-    return this.loggingCounter;
   }
 
   public void clearBegins() {
@@ -143,7 +135,6 @@ public class MockTransactionManager implements ClientTransactionManager {
       this.txnLogging.set(txnStack);
     }
     txnStack.increment();
-    this.loggingCounter.decrement();
   }
 
   @Override
@@ -153,7 +144,6 @@ public class MockTransactionManager implements ClientTransactionManager {
     final int size = txnStack.decrement();
 
     if (size < 0) { throw new AssertionError("size=" + size); }
-    this.loggingCounter.increment();
   }
 
   @Override
