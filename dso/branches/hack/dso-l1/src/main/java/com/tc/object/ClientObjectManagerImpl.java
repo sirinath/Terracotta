@@ -32,7 +32,6 @@ import com.tc.text.PrettyPrinterImpl;
 import com.tc.util.AbortedOperationUtil;
 import com.tc.util.Assert;
 import com.tc.util.BitSetObjectIDSet;
-import com.tc.util.Counter;
 import com.tc.util.ObjectIDSet;
 import com.tc.util.State;
 import com.tc.util.Util;
@@ -52,6 +51,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientObjectManagerImpl implements ClientObjectManager, ClientHandshakeCallback, PortableObjectProvider,
     PrettyPrintable {
@@ -274,7 +274,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   private void markCreateInProgress(final ObjectLookupState ols, final LocalLookupContext lookupContext) {
     Assert.assertTrue(ols.getOwner() == Thread.currentThread());
-    lookupContext.getObjectCreationCount().increment();
+    lookupContext.getObjectCreationCount().incrementAndGet();
   }
 
   private synchronized ObjectLookupState lookupDone(final ObjectLookupState lookupState) {
@@ -291,7 +291,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
       }
       return lookupState;
     } finally {
-      getLocalLookupContext().getObjectCreationCount().decrement();
+      getLocalLookupContext().getObjectCreationCount().decrementAndGet();
     }
   }
 
@@ -483,7 +483,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
     final LocalLookupContext lookupContext = getLocalLookupContext();
 
-    if (lookupContext.getCallStackCount().increment() == 1) {
+    if (lookupContext.getCallStackCount().incrementAndGet() == 1) {
       // first time
       this.clientTxManager.disableTransactionLogging();
     }
@@ -522,7 +522,7 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
         }
       }
     } finally {
-      if (lookupContext.getCallStackCount().decrement() == 0) {
+      if (lookupContext.getCallStackCount().decrementAndGet() == 0) {
         this.clientTxManager.enableTransactionLogging();
       }
     }
@@ -1006,14 +1006,14 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   }
 
   private static class LocalLookupContext {
-    private final Counter callStackCount      = new Counter(0);
-    private final Counter objectCreationCount = new Counter(0);
+    private final AtomicInteger callStackCount      = new AtomicInteger(0);
+    private final AtomicInteger objectCreationCount = new AtomicInteger(0);
 
-    public Counter getCallStackCount() {
+    public AtomicInteger getCallStackCount() {
       return this.callStackCount;
     }
 
-    public Counter getObjectCreationCount() {
+    public AtomicInteger getObjectCreationCount() {
       return this.objectCreationCount;
     }
   }
