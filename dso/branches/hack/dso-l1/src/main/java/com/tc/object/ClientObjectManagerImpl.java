@@ -9,6 +9,7 @@ import com.tc.abortable.AbortableOperationManager;
 import com.tc.abortable.AbortedOperationException;
 import com.tc.exception.PlatformRejoinException;
 import com.tc.exception.TCNonPortableObjectError;
+import com.tc.exception.TCNotRunningException;
 import com.tc.exception.TCRuntimeException;
 import com.tc.logging.ClientIDLogger;
 import com.tc.logging.TCLogger;
@@ -211,6 +212,23 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
 
   protected void changeStateToStarting() {
     this.state = STARTING;
+  }
+
+  private void waitUntilRunning() {
+    boolean isInterrupted = false;
+    try {
+      while (this.state != RUNNING) {
+        if (this.state == SHUTDOWN) { throw new TCNotRunningException(); }
+        if (this.state == REJOIN_IN_PROGRESS) { throw new PlatformRejoinException(); }
+        try {
+          wait();
+        } catch (final InterruptedException e) {
+          isInterrupted = true;
+        }
+      }
+    } finally {
+      Util.selfInterruptIfNeeded(isInterrupted);
+    }
   }
 
   private void assertPausedOrRejoinInProgress(final Object message) {
@@ -644,6 +662,20 @@ public class ClientObjectManagerImpl implements ClientObjectManager, ClientHands
   private void markRootLookupNotInProgress(final String rootName, GroupID gid) {
     final boolean removed = this.rootsHolder.unmarkRootLookupInProgress(rootName, gid);
     if (!removed) { throw new AssertionError("Attempt to unmark a root lookup that wasn't in progress."); }
+  }
+
+  @Override
+  public void replaceRootIDIfNecessary(String rootName, ObjectID newRootID) {
+    replaceRootIDIfNecessary(rootName, new GroupID(newRootID.getGroupID()), newRootID);
+  }
+
+  public synchronized void replaceRootIDIfNecessary(final String rootName, final GroupID gid, final ObjectID newRootID) {
+    waitUntilRunning();
+
+    final ObjectID oldRootID = this.rootsHolder.getRootIDForName(rootName, gid);
+    if (oldRootID == null || oldRootID.equals(newRootID)) { return; }
+
+    this.rootsHolder.addRoot(rootName, newRootID);
   }
 
   private Object lookupRootOptionallyCreateOrReplace(final String rootName, final Object rootPojo,

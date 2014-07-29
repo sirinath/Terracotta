@@ -39,6 +39,15 @@ public interface ClientObjectManager extends TCObjectSelfCallback {
       throws TCNonPortableObjectError;
 
   /**
+   * Replace root ID. Primitive roots are replaceable. Object reference roots generally are not but this can be
+   * controlled by the configuration.
+   * 
+   * @param rootName Root object name
+   * @param newRootID New root object identifier
+   */
+  public void replaceRootIDIfNecessary(String rootName, ObjectID newRootID);
+
+  /**
    * Prefetch object by ID, faulting into the JVM if necessary, Async lookup and will not cause ObjectNotFoundException
    * like lookupObject. Non-existent objects are ignored by the server.
    * 

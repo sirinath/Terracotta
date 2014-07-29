@@ -150,6 +150,11 @@ public class TestClientObjectManager implements ClientObjectManager {
   }
 
   @Override
+  public void replaceRootIDIfNecessary(final String rootName, final ObjectID newRootID) {
+    throw new ImplementMe();
+  }
+
+  @Override
   public boolean isCreationInProgress() {
     return false;
   }
