@@ -2,7 +2,7 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright
  * notice. All rights reserved.
  */
-package com.tc.object.bytecode.hook.impl;
+package com.tc.object.config;
 
 import com.tc.config.schema.L2ConfigForL1.L2Data;
 import com.tc.config.schema.setup.ConfigurationSetupException;
@@ -10,8 +10,6 @@ import com.tc.config.schema.setup.L1ConfigurationSetupManager;
 import com.tc.exception.TCRuntimeException;
 import com.tc.net.GroupID;
 import com.tc.object.DistributedObjectClient;
-import com.tc.object.config.ConfigInfoFromL2Impl;
-import com.tc.object.config.ConnectionInfoConfig;
 import com.tc.security.PwProvider;
 import com.tc.util.Assert;
 

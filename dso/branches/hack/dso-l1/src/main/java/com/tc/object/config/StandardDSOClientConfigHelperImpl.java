@@ -18,7 +18,6 @@ import com.tc.net.core.SecurityInfo;
 import com.tc.object.LiteralValues;
 import com.tc.object.Portability;
 import com.tc.object.PortabilityImpl;
-import com.tc.object.bytecode.hook.impl.PreparedComponentsFromL2Connection;
 import com.tc.properties.L1ReconnectConfigImpl;
 import com.tc.properties.ReconnectConfig;
 import com.tc.properties.TCPropertiesConsts;

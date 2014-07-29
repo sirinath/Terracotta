@@ -4,7 +4,6 @@
  */
 package com.tc.object;
 
-import com.tc.object.bytecode.NullTCObject;
 import com.tc.object.dna.api.DNA;
 import com.tc.platform.PlatformService;
 
