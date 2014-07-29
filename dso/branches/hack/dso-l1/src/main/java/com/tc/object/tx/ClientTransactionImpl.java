@@ -77,6 +77,11 @@ public class ClientTransactionImpl extends AbstractClientTransaction {
   }
 
   @Override
+  protected void basicCreate(TCObject object) {
+    getOrCreateChangeBuffer(object);
+  }
+
+  @Override
   protected void basicCreateRoot(String name, ObjectID root) {
     if (newRoots == null) {
       newRoots = new HashMap();
