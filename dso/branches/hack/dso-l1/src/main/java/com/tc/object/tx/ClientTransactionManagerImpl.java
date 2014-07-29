@@ -438,7 +438,7 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager, P
     }
   }
 
-  private void basicApply(final Collection objectChanges, final boolean force) throws DNAException {
+  private void basicApply(final Collection objectChanges, final Map newRoots, final boolean force) throws DNAException {
     final List l = new LinkedList();
 
     for (final Iterator i = objectChanges.iterator(); i.hasNext();) {
@@ -475,6 +475,13 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager, P
         }
       }
     }
+
+    for (final Iterator i = newRoots.entrySet().iterator(); i.hasNext();) {
+      final Entry entry = (Entry) i.next();
+      final String rootName = (String) entry.getKey();
+      final ObjectID newRootID = (ObjectID) entry.getValue();
+      this.clientObjectManager.replaceRootIDIfNecessary(rootName, newRootID);
+    }
   }
 
   @Override
@@ -488,10 +495,10 @@ public class ClientTransactionManagerImpl implements ClientTransactionManager, P
   }
 
   @Override
-  public void apply(final TxnType txType, final List<LockID> lockIDs, final Collection objectChanges) {
+  public void apply(final TxnType txType, final List<LockID> lockIDs, final Collection objectChanges, Map newRoots) {
     try {
       disableTransactionLogging();
-      basicApply(objectChanges, false);
+      basicApply(objectChanges, newRoots, false);
     } finally {
       enableTransactionLogging();
     }

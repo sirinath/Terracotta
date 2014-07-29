@@ -115,16 +115,12 @@ public class MockTransactionManager implements ClientTransactionManager {
   }
 
   @Override
-  public void apply(TxnType txType, List<LockID> lockIDs, Collection objectChanges) {
+  public void apply(TxnType txType, List<LockID> lockIDs, Collection objectChanges, Map newRoots) {
     throw new ImplementMe();
   }
 
   @Override
   public void receivedAcknowledgement(SessionID sessionID, TransactionID requestID, NodeID nodeID) {
-    throw new ImplementMe();
-  }
-
-  public boolean isLocked(String lockName, int lockLevel) {
     throw new ImplementMe();
   }
 
@@ -137,18 +133,6 @@ public class MockTransactionManager implements ClientTransactionManager {
     }
     callable.call();
     this.commitCount++;
-  }
-
-  public void wait(String lockName, TimerSpec call, Object object) throws UnlockedSharedObjectException {
-    throw new ImplementMe();
-  }
-
-  public int queueLength(String lockName) {
-    throw new ImplementMe();
-  }
-
-  public int waitLength(String lockName) {
-    throw new ImplementMe();
   }
 
   @Override
@@ -176,10 +160,6 @@ public class MockTransactionManager implements ClientTransactionManager {
   public boolean isTransactionLoggingDisabled() {
     Object txnStack = this.txnLogging.get();
     return (txnStack != null) && (((ThreadTransactionLoggingStack) txnStack).get() > 0);
-  }
-
-  public int localHeldCount(String lockName, int lockLevel) {
-    throw new ImplementMe();
   }
 
   @Override

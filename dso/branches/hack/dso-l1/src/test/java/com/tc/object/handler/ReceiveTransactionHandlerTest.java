@@ -3,6 +3,7 @@ package com.tc.object.handler;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -75,7 +76,8 @@ public class ReceiveTransactionHandlerTest {
     ClientConfigurationContext context = mock(ClientConfigurationContext.class);
     ClientTransactionManager clientTransactionManager = mock(ClientTransactionManager.class);
     doThrow(new TCNotRunningException()).when(clientTransactionManager).apply(any(TxnType.class),
-                                                                              anyListOf(LockID.class), anyCollection());
+                                                                              anyListOf(LockID.class), anyCollection(),
+                                                                              anyMap());
     when(context.getTransactionManager()).thenReturn(clientTransactionManager);
 
     ClientGlobalTransactionManager clientGlobalTransactionManager = mock(ClientGlobalTransactionManager.class);

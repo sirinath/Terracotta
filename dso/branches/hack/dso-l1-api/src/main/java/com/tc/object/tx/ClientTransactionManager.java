@@ -58,8 +58,9 @@ public interface ClientTransactionManager extends ClearableCallback {
    * @param txType Transaction type
    * @param lockIDs Locks involved in the transaction
    * @param objectChanges Collection of DNA indicating changes
+   * @param newRoots Map of new roots, Root name -> ObjectID
    */
-  public void apply(TxnType txType, List<LockID> lockIDs, Collection objectChanges);
+  public void apply(TxnType txType, List<LockID> lockIDs, Collection objectChanges, Map newRoots);
 
   /**
    * Add new managed object to current transaction
