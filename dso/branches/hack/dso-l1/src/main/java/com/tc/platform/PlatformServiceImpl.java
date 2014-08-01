@@ -308,7 +308,7 @@ public class PlatformServiceImpl implements PlatformService {
       throw new IllegalMonitorStateException();
     }
     try {
-      this.lockManager.wait(lock, null, timeout);
+      this.lockManager.wait(lock, null, timeUnit.toMillis(timeout));
     } finally {
       // XXX this is questionable
       this.txManager.begin(lock, LockLevel.WRITE, false);
