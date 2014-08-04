@@ -312,6 +312,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     this.uuid = uuid;
     this.taskRunner = Runners.newDefaultCachedScheduledTaskRunner(threadGroup);
     this.shutdownAction = new Thread(new ShutdownAction(), L1VMShutdownHookName);
+    Runtime.getRuntime().addShutdownHook(this.shutdownAction);
   }
 
   protected DSOClientBuilder createClientBuilder() {
