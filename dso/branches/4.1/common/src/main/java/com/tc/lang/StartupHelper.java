@@ -7,6 +7,9 @@ import com.tc.util.runtime.Vm;
 
 import java.lang.reflect.Field;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * The purpose of this class to execute a startup action (ie. "start the server", or "start the client", etc) in the
  * specified thread group. The side effect of doing this is that any more threads spawned by the startup action will
@@ -18,6 +21,18 @@ import java.lang.reflect.Field;
  * join() it, except that can introduce locking problems (see MNK-65)
  */
 public class StartupHelper {
+
+  private static final Set<String> threadClassFieldNames;
+  
+  static{
+    Class c = Thread.class;
+    Field[] fields = c.getDeclaredFields();
+    int length = fields.length;
+    threadClassFieldNames = new HashSet<String>(length);
+    for(Field field : fields){
+      threadClassFieldNames.add(field.getName());
+    }
+  }
 
   private final StartupAction action;
   private final ThreadGroup   targetThreadGroup;
@@ -48,9 +63,11 @@ public class StartupHelper {
   }
 
   private static void setThreadGroup(Thread thread, ThreadGroup group) {
-    String fieldName = Vm.isIBM() ? "threadGroup" : "group";
+    String fieldName = "group"; 
+    if(Vm.isIBM() && isFieldPresent("threadGroup",threadClassFieldNames)){
+      fieldName = "threadGroup";
+    } 
     Class c = Thread.class;
-
     try {
       Field groupField = c.getDeclaredField(fieldName);
       groupField.setAccessible(true);
@@ -60,4 +77,10 @@ public class StartupHelper {
       throw new RuntimeException(e);
     }
   }
+  
+  private static boolean isFieldPresent(String fieldName,Set fieldSet){
+    return fieldSet.contains(fieldName);
+  }
+  
+  
 }
