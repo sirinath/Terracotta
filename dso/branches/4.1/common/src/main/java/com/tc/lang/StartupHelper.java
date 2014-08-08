@@ -22,18 +22,6 @@ import java.util.Set;
  */
 public class StartupHelper {
 
-  private static final Set<String> threadClassFieldNames;
-  
-  static{
-    Class c = Thread.class;
-    Field[] fields = c.getDeclaredFields();
-    int length = fields.length;
-    threadClassFieldNames = new HashSet<String>(length);
-    for(Field field : fields){
-      threadClassFieldNames.add(field.getName());
-    }
-  }
-
   private final StartupAction action;
   private final ThreadGroup   targetThreadGroup;
 
@@ -63,11 +51,11 @@ public class StartupHelper {
   }
 
   private static void setThreadGroup(Thread thread, ThreadGroup group) {
-    String fieldName = "group"; 
-    if(Vm.isIBM() && isFieldPresent("threadGroup",threadClassFieldNames)){
-      fieldName = "threadGroup";
-    } 
+    String fieldName = "group";
     Class c = Thread.class;
+    if(Vm.isIBM() && isFieldPresent("threadGroup",c)){
+      fieldName = "threadGroup";
+    }    
     try {
       Field groupField = c.getDeclaredField(fieldName);
       groupField.setAccessible(true);
@@ -78,9 +66,15 @@ public class StartupHelper {
     }
   }
   
-  private static boolean isFieldPresent(String fieldName,Set fieldSet){
-    return fieldSet.contains(fieldName);
-  }
-  
-  
+  private static boolean isFieldPresent(String fieldName,Class targetClass){
+    boolean found = false; 
+    Field[] fields = targetClass.getDeclaredFields();
+    for(Field field : fields){
+      if(field.getName().equals(fieldName)){
+        found = true;
+        break;
+      }
+    }
+    return found;
+    }  
 }
