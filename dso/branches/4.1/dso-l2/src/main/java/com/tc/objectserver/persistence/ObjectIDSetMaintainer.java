@@ -22,7 +22,7 @@ public class ObjectIDSetMaintainer implements KeyValueStorageMutationListener<Lo
   public ObjectIDSetMaintainer() {
     String type = TCPropertiesImpl.getProperties().getProperty(TCPropertiesConsts.L2_OBJECTMANAGER_OIDSET_TYPE, true);
     if (type == null) {
-      noReferencesObjectIDSet = new ObjectIDSet(ObjectIDSet.ObjectIDSetType.BITSET_BASED_SET);
+      noReferencesObjectIDSet = new ObjectIDSet(ObjectIDSet.ObjectIDSetType.EXPANDING_BITSET_BASED_SET);
     } else {
       noReferencesObjectIDSet = new ObjectIDSet(ObjectIDSet.ObjectIDSetType.valueOf(type));
       logger.info("Using object id set of type " + type);
