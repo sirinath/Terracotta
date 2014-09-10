@@ -49,11 +49,23 @@ public class ServerStatTest {
     BindPort bindPort = mock(BindPort.class);
 
     when(server.isSetJmxPort()).thenReturn(false);
+    when(server.isSetTsaPort()).thenReturn(true);
     when(server.getTsaPort()).thenReturn(bindPort);
     when(bindPort.getIntValue()).thenReturn(tsaPort);
 
     int jmxPortResult = ServerStat.computeJMXPort(server);
     assertThat(jmxPortResult, is(tsaPort + L2DSOConfigObject.DEFAULT_JMXPORT_OFFSET_FROM_TSAPORT));
+  }
+
+  @Test
+  public void computeJMXPortUndefinedTSAPortAlsoUndefined() {
+    Server server = mock(Server.class);
+
+    when(server.isSetJmxPort()).thenReturn(false);
+    when(server.isSetTsaPort()).thenReturn(false);
+
+    int jmxPortResult = ServerStat.computeJMXPort(server);
+    assertThat(jmxPortResult, is(ServerStat.DEFAULT_TSA_PORT + L2DSOConfigObject.DEFAULT_JMXPORT_OFFSET_FROM_TSAPORT));
   }
 
 }
