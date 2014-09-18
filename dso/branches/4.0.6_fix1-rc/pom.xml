@@ -19,19 +19,6 @@
   <properties>
     <build.edition>opensource</build.edition>
     <maven-forge-plugin.version>1.2.1</maven-forge-plugin.version>
-    <skip.deploy>false</skip.deploy>
-    <terracotta-os-snapshots-url>http://nexus.terracotta.eur.ad.sag/content/repositories/terracotta-os-snapshots</terracotta-os-snapshots-url>
-    <terracotta-snapshots-url>http://nexus.terracotta.eur.ad.sag/content/repositories/terracotta-snapshots</terracotta-snapshots-url>
-    <terracotta-ee-snapshots-url>http://nexus.terracotta.eur.ad.sag/content/repositories/terracotta-ee-snapshots</terracotta-ee-snapshots-url>
-    <terracotta-staging-url>http://nexus.terracotta.eur.ad.sag/content/repositories/terracotta-staging</terracotta-staging-url>
-    <terracotta-os-releases-url>http://nexus.terracotta.eur.ad.sag/content/repositories/terracotta-os-releases</terracotta-os-releases-url>
-    <terracotta-releases-url>http://nexus.terracotta.eur.ad.sag/content/repositories/terracotta-releases</terracotta-releases-url>
-    <terracotta-ee-releases-url>http://nexus.terracotta.eur.ad.sag/content/repositories/terracotta-ee-releases</terracotta-ee-releases-url>
-    <terracotta-patches-url>http://nexus.terracotta.eur.ad.sag/content/repositories/terracotta-patches</terracotta-patches-url>
-    <terracotta-nexus-staging-url>http://nexus.terracotta.eur.ad.sag/service/local/staging/deploy/maven2</terracotta-nexus-staging-url>
-    <stagingProfile.openSource>6b2d2a23c465b</stagingProfile.openSource>
-    <stagingProfile.public>6b2f08b6e4907</stagingProfile.public>
-    <stagingProfile.private>6b2fc8d5c18d5</stagingProfile.private>
   </properties>
   
   <modules>
@@ -63,32 +50,7 @@
     <module>management</module>
     <module>management-agent</module>
   </modules>
-  <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.sonatype.plugins</groupId>
-          <artifactId>nexus-staging-maven-plugin</artifactId>
-          <version>1.6.1</version>
-          <extensions>true</extensions>
-          <configuration>
-            <!-- The Base URL of Nexus instance where we want to stage -->
-            <nexusUrl>http://nexus.terracotta.eur.ad.sag</nexusUrl>
-            <!-- The server "id" element from settings to use authentication from -->
-            <serverId>terracotta-nexus-staging</serverId>
-            <skipNexusStagingDeployMojo>${skip.deploy}</skipNexusStagingDeployMojo>
-            <stagingProfileId/>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-    <plugins>
-      <plugin>
-        <groupId>org.sonatype.plugins</groupId>
-        <artifactId>nexus-staging-maven-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
+  
   <profiles>
     <!-- Allow building kit from the top level -->
     <profile>
@@ -329,18 +291,5 @@
       <id>terracotta-releases</id>
       <url>http://www.terracotta.org/download/reflector/releases</url>
     </pluginRepository>   
-  </pluginRepositories>
-  <distributionManagement>
-    <repository>
-      <id>terracotta-ee-releases</id>
-      <name>Terracotta EE Releases Repository</name>
-      <url>${terracotta-ee-releases-url}</url>
-    </repository>
-    <snapshotRepository>
-      <id>terracotta-ee-snapshots</id>
-      <uniqueVersion>false</uniqueVersion>
-      <name>Terracotta EE Snapshots Repository</name>
-      <url>${terracotta-ee-snapshots-url}</url>
-    </snapshotRepository>
-  </distributionManagement>
+  </pluginRepositories>  
 </project>
