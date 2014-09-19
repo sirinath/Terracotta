@@ -1021,8 +1021,15 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
   }
 
   private void invokeLogicalExpire(final Object key, final Object value) {
-    logicalInvoke(SerializationUtil.EXPIRE_IF_VALUE_EQUAL, SerializationUtil.EXPIRE_IF_VALUE_EQUAL_SIGNATURE,
-                  new Object[] { key, value });
+    logicalInvoke(SerializationUtil.EXPIRE_IF_VALUE_EQUAL, SerializationUtil.EXPIRE_IF_VALUE_EQUAL_SIGNATURE, new Object[] { key, valueOrObjectID(value) });
+  }
+
+  private static Object valueOrObjectID(Object value) {
+    if (value instanceof TCObjectSelf) {
+      return ((TCObjectSelf) value).getObjectID();
+    } else {
+      return value;
+    }
   }
 
   @Override
@@ -1095,8 +1102,7 @@ public class TCObjectServerMapImpl<L> extends TCObjectLogical implements TCObjec
 
   @Override
   public void doLogicalSetLastAccessedTime(final Object key, final Object value, final long lastAccessedTime) {
-    logicalInvoke(SerializationUtil.SET_LAST_ACCESSED_TIME, SerializationUtil.SET_LAST_ACCESSED_TIME_SIGNATURE,
-                  new Object[] { key, value, lastAccessedTime });
+    logicalInvoke(SerializationUtil.SET_LAST_ACCESSED_TIME, SerializationUtil.EXPIRE_IF_VALUE_EQUAL_SIGNATURE, new Object[] { key, valueOrObjectID(value), lastAccessedTime });
   }
 
   private void lockAll() {
