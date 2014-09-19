@@ -23,6 +23,14 @@ import java.util.Set;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.mockito.Matchers;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 /**
  * @author steve
  */
@@ -200,5 +208,19 @@ public class ClientStateManagerTest extends TestCase {
     for (int i = 201; i <= 300; i++) {
       oidSetInvalidated.contains(new ObjectID(i));
     }
+  }
+  
+  public void testAddReference() throws Exception {
+    ClientStateManager clientStateManager = new ClientStateManagerImpl(TCLogging.getLogger(ClientStateManager.class));
+    ClientID clientID = new ClientID(1);
+    ObjectID oid = new ObjectID(1);
+    clientStateManager.startupNode(clientID);
+    ObjectReferenceAddListener listener = mock(ObjectReferenceAddListener.class);
+    clientStateManager.registerObjectReferenceAddListener(listener);
+    assertTrue(clientStateManager.addReference(clientID, oid));
+    assertFalse(clientStateManager.addReference(clientID, oid));
+    verify(listener).objectReferenceAdded(Matchers.eq(oid));
+    ClientID client2 = new ClientID(2);
+    assertFalse(clientStateManager.addReference(client2, oid));
   }
 }

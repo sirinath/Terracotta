@@ -369,7 +369,9 @@ public class ServerTransactionManagerImpl implements ServerTransactionManager, S
       }
       if (active && !change.isDelta() && isClient) {
         // Only New objects reference are added here
-        this.stateManager.addReference(sourceID, mo.getID());
+        if ( !this.stateManager.addReference(sourceID, mo.getID()) ) {
+          logger.debug("resent object creation " + mo.getID());
+        }
       }
     }
 

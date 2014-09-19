@@ -769,8 +769,8 @@ public class BroadcastChangeHandlerTest extends TCTestCase {
     }
 
     @Override
-    public void addReference(final NodeID nodeID, final ObjectID objectID) {
-      throw new ImplementMe();
+    public boolean addReference(NodeID nodeID, ObjectID objectID) {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
