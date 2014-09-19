@@ -3,7 +3,14 @@
  */
 package com.tc.objectserver.impl;
 
-import org.hamcrest.Matcher;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.atMost;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 
@@ -207,8 +214,7 @@ public class ServerMapRequestManagerTest extends TestCase {
     final ObjectID mapID = new ObjectID(1);
     final Object portableKey1 = "key1";
     final ObjectID portableValue1ObjID = new ObjectID(1001);
-    when(clientStateManager.addReferences(eq(clientID), (Set<ObjectID>)argThat(hasItem(portableValue1ObjID)))).thenReturn(Collections
-        .singleton(portableValue1ObjID));
+    when(clientStateManager.addReference(eq(clientID), any(ObjectID.class))).thenReturn(true);
 
     ServerMapGetValueRequest mapGetValueRequest = new ServerMapGetValueRequest(requestID1,
                                                                                Collections.singleton(portableKey1));
@@ -219,5 +225,7 @@ public class ServerMapRequestManagerTest extends TestCase {
     ManagedObject managedObject = mock(ManagedObject.class);
     when(managedObject.getManagedObjectState()).thenReturn(managedObjectState);
     serverMapRequestManager.sendResponseFor(mapID, managedObject);
+    
+    verify(objectManager).lookupObjectsFor(eq(clientID), any(ServerMapRequestPrefetchObjectsContext.class));
   }
 }
