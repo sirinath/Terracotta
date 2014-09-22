@@ -32,6 +32,7 @@ public class ServerStat {
   private static final String   UNKNOWN          = "unknown";
   private static final String   NEWLINE          = System.getProperty("line.separator");
   private static final int      DEFAULT_JMX_PORT = 9520;
+  private static final String   DEFAULT_HOST = "localhost";
 
   private final String          host;
   private final String          hostName;
@@ -215,13 +216,27 @@ public class ServerStat {
     TcConfig tcConfig = tcConfigDocument.getTcConfig();
     Server[] servers = L2DSOConfigObject.getServers(tcConfig.getServers());
     for (Server server : servers) {
-      String host = server.getHost();
+      String host = computeTargetHost(server);
       String hostName = server.getName();
       int jmxPort = server.getJmxPort().getIntValue() == 0 ? DEFAULT_JMX_PORT : server.getJmxPort().getIntValue();
       ServerStat stat = new ServerStat(username, password, secured, host, hostName, jmxPort);
       System.out.println(stat.toString());
       stat.dispose();
     }
+  }
+
+  static String computeTargetHost(Server server) {
+    String host = null;
+    if(server.getJmxPort() != null) {
+      host = server.getJmxPort().getBind();
+    }
+    if (host == null || host.equals("0.0.0.0") || host.equals("::")) {
+      host = server.getHost();
+    }
+    if (host == null) {
+      host = DEFAULT_HOST;
+    }
+    return host;
   }
 
   private static void handleList(String username, String password, boolean secured, String hostList) {
