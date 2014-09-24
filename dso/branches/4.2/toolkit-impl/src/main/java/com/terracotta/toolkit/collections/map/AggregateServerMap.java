@@ -1051,6 +1051,8 @@ public class AggregateServerMap<K, V> implements DistributedToolkitType<Internal
           default:
             throw new IllegalStateException("unexpected ServerEvent in doHandleEvictions " + event.getType());
         }
+      } catch (TCNotRunningException e) {
+        //Exception Ignored
       } catch (Throwable t) {
         // Catch throwable here since the eviction listener will ultimately call user code.
         // That way we do not cause an unhandled exception to be thrown in a stage thread, bringing
