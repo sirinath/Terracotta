@@ -4,6 +4,7 @@
  */
 package com.tc.admin;
 
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang.ArrayUtils;
 
@@ -34,6 +35,7 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.management.MBeanServerConnection;
 import javax.management.remote.JMXConnector;
@@ -84,9 +86,9 @@ public class TCStop {
     boolean passwordSpecified = commandLineBuilder.hasOption('w');
     boolean forceSpecified = commandLineBuilder.hasOption("force");
     boolean securedSpecified = commandLineBuilder.hasOption("s");
-    ArrayList tmpArgs = new ArrayList(Arrays.asList(args));
-    tmpArgs.remove("-force");
-    tmpArgs.remove("--force");
+    // We use tmpArgs for passing command line arguments to StandardConfigurationSetupManagerFactory, copy only required arguments
+    // to avoid parse exceptions due to non-option arguments [TAB-4427]
+    List<String> tmpArgs = filterStandardOptions(commandLineBuilder, options);
 
     String userName = null;
     final String password;
@@ -208,6 +210,8 @@ public class TCStop {
       if (root instanceof ConnectException) {
         consoleLogger.error("Unable to connect to host '" + host + "', port " + port
                             + ". Are you sure there is a Terracotta server instance running there?");
+      } else {
+        consoleLogger.error("Unexpected error while stopping server: " + root.getMessage());
       }
       System.exit(1);
     }
@@ -322,5 +326,24 @@ public class TCStop {
     }
 
     return isPassiveStandByAvailable;
+  }
+
+  public static List<String> filterStandardOptions(CommandLineBuilder commandLineBuilder, Options standardOptions) {
+    List<String> tmpArgs = new ArrayList<String>();
+    for(Object o : standardOptions.getOptions()) {
+      if(o instanceof Option) {
+        Option stdOption = (Option) o;
+        String stdArg = stdOption.getOpt();
+        if(commandLineBuilder.hasOption(stdArg)) {
+          tmpArgs.add("-" + stdArg);
+          if(stdOption.hasArg()) {
+            String optionValue = commandLineBuilder.getOptionValue(stdArg);
+            if(optionValue != null)
+              tmpArgs.add(optionValue);
+          }
+        }
+      }
+    }
+    return tmpArgs;
   }
 }
