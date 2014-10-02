@@ -89,7 +89,7 @@
         <dependency>
             <groupId>com.terracottatech</groupId>
             <artifactId>fast-restartable-store</artifactId>
-            <version>1.0.7</version>
+            <version>1.0.8-SNAPSHOT</version>
         </dependency>
       <dependency>
         <groupId>org.apache.shiro</groupId>
