@@ -114,13 +114,13 @@ public class TerracottaOperatorEventFactory {
    * zap events
    */
   public static TerracottaOperatorEvent createZapRequestReceivedEvent(Object[] arguments) {
-    return new TerracottaOperatorEventImpl(EventType.CRITICAL, EventSubsystem.CLUSTER_TOPOLOGY,
+    return new TerracottaOperatorEventImpl(EventType.WARN, EventSubsystem.CLUSTER_TOPOLOGY,
                                            MessageFormat.format(TerracottaOperatorEventResources
                                                .getZapRequestReceivedMessage(), arguments), "");
   }
 
   public static TerracottaOperatorEvent createZapRequestAcceptedEvent(Object[] arguments) {
-    return new TerracottaOperatorEventImpl(EventType.CRITICAL, EventSubsystem.CLUSTER_TOPOLOGY,
+    return new TerracottaOperatorEventImpl(EventType.WARN, EventSubsystem.CLUSTER_TOPOLOGY,
                                            MessageFormat.format(TerracottaOperatorEventResources
                                                .getZapRequestAcceptedMessage(), arguments), "");
   }
