@@ -88,7 +88,8 @@ public class TCStop {
     boolean securedSpecified = commandLineBuilder.hasOption("s");
     // We use tmpArgs for passing command line arguments to StandardConfigurationSetupManagerFactory, copy only required arguments
     // to avoid parse exceptions due to non-option arguments [TAB-4427]
-    List<String> tmpArgs = filterStandardOptions(commandLineBuilder, options);
+    List<String> tmpArgs = filterStandardOptions(commandLineBuilder,  StandardConfigurationSetupManagerFactory
+            .createOptions(StandardConfigurationSetupManagerFactory.ConfigMode.L2));
 
     String userName = null;
     final String password;
