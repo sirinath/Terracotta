@@ -13,16 +13,20 @@ import org.terracotta.management.resource.SubGenericType;
 import com.terracotta.management.security.impl.DfltSecurityContextService;
 import com.terracotta.management.service.impl.TimeoutServiceImpl;
 
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.AsyncInvoker;
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.InvocationCallback;
@@ -46,6 +50,35 @@ import static org.mockito.Mockito.when;
  * @author Ludovic Orban
  */
 public class RemoteManagementSourceTest {
+
+  @Test
+  public void testCleanup() throws Exception {
+    Client client = ClientBuilder.newClient();
+    try {
+      for (int i = 0; i < 100; i++) {
+        WebTarget target = client.target(new URI("http://localhost"));
+        target.property("bla", "bli");
+        AtomicBoolean flag = new AtomicBoolean(false);
+        target.property("___CLEAN_ME___", flag);
+        try {
+          target.request().get();
+        } catch (Exception e) {
+          // ignore
+        }
+
+        flag.set(true);
+        RemoteManagementSource.cleanup(client, "___CLEAN_ME___");
+      }
+
+      Field listenersField = client.getClass().getDeclaredField("listeners");
+      listenersField.setAccessible(true);
+      LinkedBlockingDeque<?> lbdq = (LinkedBlockingDeque<?>)listenersField.get(client);
+
+      assertThat(lbdq.size(), is(0));
+    } finally {
+      client.close();
+    }
+  }
 
   @Test
   public void testGetFromRemoteL2_works() throws Exception {
