@@ -4,6 +4,7 @@ import org.glassfish.jersey.media.sse.EventInput;
 import org.glassfish.jersey.media.sse.InboundEvent;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Matchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -38,9 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -57,12 +56,11 @@ public class RemoteManagementSourceTest {
     try {
       for (int i = 0; i < 100; i++) {
         WebTarget target = client.target(new URI("http://localhost"));
-        Invocation.Builder request = target.request();
-        request.property("bla", "bli");
+        target.property("bla", "bli");
         AtomicBoolean flag = new AtomicBoolean(false);
         target.property("___CLEAN_ME___", flag);
         try {
-          request.get();
+          target.request().get();
         } catch (Exception e) {
           // ignore
         }
@@ -101,7 +99,7 @@ public class RemoteManagementSourceTest {
     remoteManagementSource.getFromRemoteL2("server1", new URI("/xyz"), Collection.class, String.class);
 
     verify(client).target(eq(new URI("http://server-host1:9540/xyz")));
-    verify(client).property(eq("___CLEAN_ME___"), eq(new AtomicBoolean(true)));
+    verify(client).property(eq("___CLEAN_ME___"),  argThat(Is.atomicTrue()));
 
     verify(builder).get(eq(new SubGenericType<Collection, String>(Collection.class, String.class)));
   }
@@ -495,6 +493,18 @@ public class RemoteManagementSourceTest {
     @Override
     public void setAgentId(String agentId) {
       this.agentId = agentId;
+    }
+  }
+
+
+  static class Is extends ArgumentMatcher<AtomicBoolean> {
+    @Override
+    public boolean matches(Object atomicBoolean) {
+      return ((AtomicBoolean) atomicBoolean).get() == true;
+    }
+
+    public static Is atomicTrue() {
+      return new Is();
     }
   }
 
