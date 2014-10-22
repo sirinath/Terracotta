@@ -154,7 +154,7 @@ public class RemoteManagementSource {
     URI fullUri = UriBuilder.fromUri(serverUrl).uri(uri).build();
     Builder resource = resource(fullUri);
     AtomicBoolean flag = new AtomicBoolean(false);
-    resource.property(CLEAN_ME_MARKER, flag);
+    client.property(CLEAN_ME_MARKER, flag);
     try {
       return (R) resource.get(new SubGenericType<T, S>(type, subType));
     } catch (WebApplicationException wae) {
@@ -175,7 +175,7 @@ public class RemoteManagementSource {
     URI fullUri = UriBuilder.fromUri(serverUrl).uri(uri).build();
     Builder resource = resource(fullUri);
     AtomicBoolean flag = new AtomicBoolean(false);
-    resource.property(CLEAN_ME_MARKER, flag);
+    client.property(CLEAN_ME_MARKER, flag);
     try {
       resource.post(null);
     } catch (WebApplicationException wae) {
@@ -196,7 +196,7 @@ public class RemoteManagementSource {
     URI fullUri = UriBuilder.fromUri(serverUrl).uri(uri).build();
     Builder resource = resource(fullUri);
     AtomicBoolean flag = new AtomicBoolean(false);
-    resource.property(CLEAN_ME_MARKER, flag);
+    client.property(CLEAN_ME_MARKER, flag);
     try {
       return resource.post(Entity.entity(entities, MediaType.APPLICATION_JSON_TYPE), returnType);
     } catch (WebApplicationException wae) {
@@ -217,7 +217,7 @@ public class RemoteManagementSource {
     URI fullUri = UriBuilder.fromUri(serverUrl).uri(uri).build();
     Builder resource = resource(fullUri);
     AtomicBoolean flag = new AtomicBoolean(false);
-    resource.property(CLEAN_ME_MARKER, flag);
+    client.property(CLEAN_ME_MARKER, flag);
     try {
       return (R) resource.post(null, new SubGenericType<T, S>(returnType, returnSubType));
     } catch (WebApplicationException wae) {

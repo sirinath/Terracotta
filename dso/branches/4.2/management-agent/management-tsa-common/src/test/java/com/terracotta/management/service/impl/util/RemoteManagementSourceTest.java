@@ -57,11 +57,12 @@ public class RemoteManagementSourceTest {
     try {
       for (int i = 0; i < 100; i++) {
         WebTarget target = client.target(new URI("http://localhost"));
-        target.property("bla", "bli");
+        Invocation.Builder request = target.request();
+        request.property("bla", "bli");
         AtomicBoolean flag = new AtomicBoolean(false);
         target.property("___CLEAN_ME___", flag);
         try {
-          target.request().get();
+          request.get();
         } catch (Exception e) {
           // ignore
         }
@@ -100,6 +101,8 @@ public class RemoteManagementSourceTest {
     remoteManagementSource.getFromRemoteL2("server1", new URI("/xyz"), Collection.class, String.class);
 
     verify(client).target(eq(new URI("http://server-host1:9540/xyz")));
+    verify(client).property(eq("___CLEAN_ME___"), eq(new AtomicBoolean(true)));
+
     verify(builder).get(eq(new SubGenericType<Collection, String>(Collection.class, String.class)));
   }
 
