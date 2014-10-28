@@ -596,10 +596,12 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     }
   }
 
-  private StatisticsEntity getServerStatistics(String[] mbeanAttributeNames, String sourceId, int jmxPort, String jmxHost) throws IOException, InterruptedException, MalformedObjectNameException {JMXConnector jmxConnector = jmxConnectorPool.getConnector(jmxHost, jmxPort);
-    MBeanServerConnection mBeanServerConnection = jmxConnector.getMBeanServerConnection();
-
+  private StatisticsEntity getServerStatistics(String[] mbeanAttributeNames, String sourceId, int jmxPort, String jmxHost) throws IOException, InterruptedException, MalformedObjectNameException {
+    JMXConnector jmxConnector = null;
     try {
+      jmxConnector = jmxConnectorPool.getConnector(jmxHost, jmxPort);
+      MBeanServerConnection mBeanServerConnection = jmxConnector.getMBeanServerConnection();
+
       StatisticsEntity statisticsEntity = new StatisticsEntity();
       statisticsEntity.setSourceId(sourceId);
       statisticsEntity.setVersion(this.getClass().getPackage().getImplementationVersion());
@@ -1236,7 +1238,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
       MBeanServerConnection mBeanServerConnection = jmxConnector.getMBeanServerConnection();
 
       TCLoggingBroadcasterMBean tcLoggingBroadcaster = JMX.newMBeanProxy(mBeanServerConnection,
-          new ObjectName("org.terracotta.internal:type=Terracotta Server,name=Logger"), TCLoggingBroadcasterMBean.class);
+        new ObjectName("org.terracotta.internal:type=Terracotta Server,name=Logger"), TCLoggingBroadcasterMBean.class);
 
       List<Notification> logNotifications;
       if (sinceWhen == null) {
@@ -1441,7 +1443,7 @@ public class TsaManagementClientServiceImpl implements TsaManagementClientServic
     }
     try {
       DSOMBean dsoMBean = JMX.newMBeanProxy(jmxConnector.getMBeanServerConnection(),
-          new ObjectName("org.terracotta:type=Terracotta Server,name=DSO"), DSOMBean.class);
+        new ObjectName("org.terracotta:type=Terracotta Server,name=DSO"), DSOMBean.class);
 
       return dsoMBean.getUnreadOperatorEventCount();
     } catch (Exception e) {
