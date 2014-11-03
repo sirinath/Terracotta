@@ -179,5 +179,5 @@ public interface DSOClientBuilder {
   RemoteResourceManager createRemoteResourceManager(RemoteTransactionManager mgr, DSOClientMessageChannel dsoChannel,
                                                     AbortableOperationManager abortableOperationManager);
 
-  ServerEventListenerManager createServerEventListenerManager(DSOClientMessageChannel dsoChannel);
+  ServerEventListenerManager createServerEventListenerManager(DSOClientMessageChannel dsoChannel, TaskRunner runner);
 }
