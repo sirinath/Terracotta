@@ -22,12 +22,7 @@ import com.tc.io.TCByteBufferOutputStream;
 import com.tc.lang.TCThreadGroup;
 import com.tc.license.LicenseManager;
 import com.tc.license.ProductID;
-import com.tc.logging.ClientIDLogger;
-import com.tc.logging.ClientIDLoggerProvider;
-import com.tc.logging.CustomerLogging;
-import com.tc.logging.TCLogger;
-import com.tc.logging.TCLogging;
-import com.tc.logging.ThreadDumpHandler;
+import com.tc.logging.*;
 import com.tc.management.L1Management;
 import com.tc.management.TCClient;
 import com.tc.management.remote.protocol.terracotta.JmxRemoteTunnelMessage;
@@ -411,6 +406,12 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final SessionProvider sessionProvider = sessionManager;
 
     this.threadGroup.addCallbackOnExitDefaultHandler(new ThreadDumpHandler(this));
+    this.threadGroup.addCallbackOnExitDefaultHandler(new CallbackOnExitHandler() {
+      @Override
+      public void callbackOnExit(CallbackOnExitState state) {
+        dsoCluster.fireNodeError();
+      }
+    });
     final StageManager stageManager = getStageManager();
     this.dumpHandler.registerForDump(new CallbackDumpAdapter(stageManager));
 
@@ -630,7 +631,7 @@ public class DistributedObjectClient extends SEDA implements TCClient {
     final Stage receiveObject = stageManager.createStage(ClientConfigurationContext.RECEIVE_OBJECT_STAGE,
                                                          new ReceiveObjectHandler(), 1, maxSize);
 
-    serverEventListenerManager = dsoClientBuilder.createServerEventListenerManager(channel);
+    serverEventListenerManager = dsoClientBuilder.createServerEventListenerManager(channel, taskRunner);
 
     final Stage serverEventDeliveryStage = createServerEventDeliveryStage(stageManager);
 
