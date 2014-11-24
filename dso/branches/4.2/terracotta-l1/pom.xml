@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.terracotta</groupId>
     <artifactId>terracotta-l1-parent</artifactId>
-    <version>4.2.1-SNAPSHOT</version>
+    <version>4.2.2-SNAPSHOT</version>
     <relativePath>../terracotta-l1-parent</relativePath>
   </parent>
 
