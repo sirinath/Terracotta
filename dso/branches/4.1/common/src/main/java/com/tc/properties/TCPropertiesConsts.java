@@ -910,4 +910,11 @@ public interface TCPropertiesConsts {
   public static final String TOOLKIT_LOCAL_BUFFER_PUTS_BATCH_TIME_MILLIS                    = "toolkit.bulkload.throttle.timeInmillis";
   public static final String TOOLKIT_LOCAL_BUFFER_PUTS_THROTTLE_BYTE_SIZE                   = "toolkit.bulkload.throttle.threshold";
 
+  /*********************************************************************************************************************
+   * <code>
+   * Section :  Secure Communication protocol for TCServer
+   * disabled.secure.protocols - List of comma separated protocols which needs to be disabled from comunication usage.
+   * </code>
+   ********************************************************************************************************************/
+  public static final String DISABLED_SECURE_PROTOCOLS                                      = "disabled.secure.protocols";
 }
