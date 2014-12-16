@@ -1,9 +1,4 @@
-# trunk: https://svn.terracotta.org/repo/internal/enterprise/trunk
-svn co https://svn.terracotta.org/repo/internal/search/trunk search
-svn co https://svn.terracotta.org/repo/forge/enterprise/management-apps/trunk management-apps
-svn co https://svn.terracotta.org/repo/ehcache/trunk/ehcache ehcache
-svn co https://svn.terracotta.org/repo/internal/ehcache-enterprise/ehcache-core-ee/trunk ehcache-ee
-svn co https://svn.terracotta.org/repo/quartz/trunk quartz
-svn co https://svn.terracotta.org/repo/forge/enterprise/quartz-ee/trunk quartz-ee
-svn co https://svn.terracotta.org/repo/forge/projects/management-core/trunk management-core
-svn co https://svn.terracotta.org/repo/forge/projects/management-common/trunk management-common
+# 4.2: https://svn.terracotta.org/repo/internal/enterprise/branches/4.2
+svn co https://svn.terracotta.org/repo/forge/enterprise/management-apps/branches/tc-4.2 management-apps
+svn co https://svn.terracotta.org/repo/ehcache/branches/ehcache-2.9.x ehcache
+svn co https://svn.terracotta.org/repo/internal/ehcache-enterprise/ehcache-core-ee/branches/ehcache-core-ee-2.9.x ehcache-ee
