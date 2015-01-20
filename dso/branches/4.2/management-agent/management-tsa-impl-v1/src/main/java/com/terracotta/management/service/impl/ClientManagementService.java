@@ -3,6 +3,8 @@
  */
 package com.terracotta.management.service.impl;
 
+import com.terracotta.management.resource.services.utils.ClientEntityV1Bridge;
+import com.terracotta.management.service.ClientManagementServiceV1Adapter;
 import org.terracotta.management.ServiceExecutionException;
 import org.terracotta.management.resource.VersionedEntity;
 
@@ -38,7 +40,7 @@ import static com.terracotta.management.service.impl.util.RemoteManagementSource
 /**
  * @author Ludovic Orban
  */
-public class ClientManagementService {
+public class ClientManagementService implements ClientManagementServiceV1Adapter {
 
   private static final String[]  CLIENT_STATS_MBEAN_ATTRIBUTE_NAMES = new String[] { "ReadRate", "WriteRate" };
 
@@ -57,7 +59,6 @@ public class ClientManagementService {
     this.remoteManagementSource = remoteManagementSource;
     this.securityContextService = securityContextService;
   }
-
 
   public Collection<ThreadDumpEntity> clientsThreadDump(Set<String> clientIds, Set<ProductID> clientProductIds) throws ServiceExecutionException {
     return forEachClient(clientProductIds, clientIds, "clientsThreadDump", new ForEachClient<ThreadDumpEntity>() {
@@ -120,6 +121,23 @@ public class ClientManagementService {
       }
     });
   }
+
+
+  public Collection<ClientEntityV1Bridge> getClientsV1(Set<String> clientIds, Set<ProductID> clientProductIds) throws ServiceExecutionException{
+     Collection<ClientEntity> clientEntities = this.getClients(clientIds, clientProductIds);
+     Collection<ClientEntityV1Bridge> clientEntityV1Bridges = new ArrayList<ClientEntityV1Bridge>();
+     if(clientEntities != null){
+       for(ClientEntity clientEntity : clientEntities){
+         if(clientEntity != null) {
+           ClientEntityV1Bridge clientEntityV1Bridge = new ClientEntityV1Bridge();
+           clientEntityV1Bridge.getAttributes().putAll(clientEntity.getAttributes());
+           clientEntityV1Bridges.add(clientEntityV1Bridge);
+         }
+       }
+     }
+    return clientEntityV1Bridges;
+  }
+
 
   public Collection<StatisticsEntity> getClientsStatistics(Set<String> clientIds, Set<ProductID> clientProductIds, final Set<String> attributesToShow) throws ServiceExecutionException {
     final String[] attributeNames = (attributesToShow == null) ?
@@ -187,7 +205,6 @@ public class ClientManagementService {
       }
     });
   }
-
 
   interface ForEachClient<T extends VersionedEntity> {
     T queryClient(ObjectName clientObjectName, String clientId);

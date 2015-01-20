@@ -3,9 +3,15 @@
  */
 package com.terracotta.management.l1bridge;
 
+import com.terracotta.management.l1bridge.util.RemoteCallerUtility;
+import com.terracotta.management.resource.ClientEntityV2;
+import com.terracotta.management.resource.TopologyEntityV2;
+import com.terracotta.management.service.TopologyServiceV2;
+import com.terracotta.management.service.impl.ClientManagementServiceV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terracotta.management.ServiceExecutionException;
+import org.terracotta.management.ServiceLocator;
 import org.terracotta.management.l1bridge.RemoteCallDescriptor;
 import org.terracotta.management.resource.AbstractEntityV2;
 import org.terracotta.management.resource.ExceptionEntityV2;
@@ -20,9 +26,11 @@ import com.terracotta.management.user.UserInfo;
 import com.terracotta.management.web.utils.TSAConfig;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -38,6 +46,10 @@ public class RemoteCallerV2 extends RemoteCaller {
 
   public RemoteCallerV2(RemoteAgentBridgeService remoteAgentBridgeService, ContextService contextService, ExecutorService executorService, RequestTicketMonitor ticketMonitor, UserService userService, TimeoutService timeoutService) {
     super(remoteAgentBridgeService, contextService, executorService, ticketMonitor, userService, timeoutService);
+  }
+
+  public RemoteCallerV2(RemoteAgentBridgeService remoteAgentBridgeService, ContextService contextService, ExecutorService executorService, RequestTicketMonitor ticketMonitor, UserService userService, TimeoutService timeoutService,RemoteCallerUtility remoteCallerUtility) {
+    super(remoteAgentBridgeService, contextService, executorService, ticketMonitor, userService, timeoutService,remoteCallerUtility);
   }
 
   public <T extends AbstractEntityV2> ResponseEntityV2<T> fanOutResponseCall(final String serviceAgency, Set<String> nodes, final String serviceName, final Method method, final Object[] args) throws ServiceExecutionException {
@@ -60,9 +72,8 @@ public class RemoteCallerV2 extends RemoteCaller {
                 return new ResponseEntityV2<T>();
               }
             }
-
             RemoteCallDescriptor remoteCallDescriptor = new RemoteCallDescriptor(ticket, token, TSAConfig.getSecurityCallbackUrl(),
-                serviceName, method.getName(), method.getParameterTypes(), args);
+                      serviceName, method.getName(), method.getParameterTypes(), args, fetchClientUUIDs());
             byte[] bytes = remoteAgentBridgeService.invokeRemoteMethod(node, remoteCallDescriptor);
             return deserializeAndRewriteAgentId(bytes, node);
           }
@@ -105,6 +116,18 @@ public class RemoteCallerV2 extends RemoteCaller {
     }
     return globalResult;
   }
+
+
+  protected Set<String> fetchClientUUIDs(){
+    Set<String> clientUUIDs = null;
+    try {
+      clientUUIDs = this.remoteCallerUtility.fetchClientUUIDs();
+    } catch (ServiceExecutionException e) {
+      LOG.error("Failed to fetch client UUIDS ", e);
+    }
+    return clientUUIDs;
+  }
+
 
   @Override
   protected void rewriteAgentId(Object obj, String agentId) {
