@@ -4,6 +4,7 @@
 package com.terracotta.management.l1bridge;
 
 import com.terracotta.management.l1bridge.util.RemoteCallerUtility;
+import com.terracotta.management.l1bridge.util.RemoteCallerV2Util;
 import com.terracotta.management.resource.ClientEntityV2;
 import com.terracotta.management.resource.TopologyEntityV2;
 import com.terracotta.management.service.TopologyServiceV2;
@@ -46,8 +47,10 @@ public class RemoteCallerV2 extends RemoteCaller {
 
   public RemoteCallerV2(RemoteAgentBridgeService remoteAgentBridgeService, ContextService contextService, ExecutorService executorService, RequestTicketMonitor ticketMonitor, UserService userService, TimeoutService timeoutService) {
     super(remoteAgentBridgeService, contextService, executorService, ticketMonitor, userService, timeoutService);
+    this.remoteCallerUtility = new RemoteCallerV2Util();
   }
 
+  //For testing
   public RemoteCallerV2(RemoteAgentBridgeService remoteAgentBridgeService, ContextService contextService, ExecutorService executorService, RequestTicketMonitor ticketMonitor, UserService userService, TimeoutService timeoutService,RemoteCallerUtility remoteCallerUtility) {
     super(remoteAgentBridgeService, contextService, executorService, ticketMonitor, userService, timeoutService,remoteCallerUtility);
   }
