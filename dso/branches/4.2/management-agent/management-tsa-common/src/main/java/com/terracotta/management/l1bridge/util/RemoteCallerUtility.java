@@ -20,13 +20,15 @@ public class RemoteCallerUtility {
     public Set<String> fetchClientUUIDs() throws ServiceExecutionException{
         Set<String> clientUUIDs = new HashSet<String>();
         ClientManagementServiceV1Adapter clientManagementServiceV1Adapter = ServiceLocator.locate(ClientManagementServiceV1Adapter.class);
-        Collection<ClientEntityV1Bridge> clientEntities = clientManagementServiceV1Adapter.getClientsV1(null, null);
-        if(clientEntities != null){
-            for(ClientEntityV1Bridge clientEntity : clientEntities){
-                if(clientEntity != null) {
-                    Map<String,Object> attributes = clientEntity.getAttributes();
-                    if(attributes != null && attributes.containsKey(CLIENT_UUID_KEY)){
-                        clientUUIDs.add((String) attributes.get(CLIENT_UUID_KEY));
+        if(clientManagementServiceV1Adapter != null) {
+            Collection<ClientEntityV1Bridge> clientEntities = clientManagementServiceV1Adapter.getClientsV1(null, null);
+            if (clientEntities != null) {
+                for (ClientEntityV1Bridge clientEntity : clientEntities) {
+                    if (clientEntity != null) {
+                        Map<String, Object> attributes = clientEntity.getAttributes();
+                        if (attributes != null && attributes.containsKey(CLIENT_UUID_KEY)) {
+                            clientUUIDs.add((String) attributes.get(CLIENT_UUID_KEY));
+                        }
                     }
                 }
             }
