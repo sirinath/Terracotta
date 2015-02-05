@@ -110,14 +110,8 @@ public class TCStop {
     boolean secured = false;
     if (configSpecified || System.getProperty("tc.config") != null || configFile.exists()) {
       if (!configSpecified && System.getProperty("tc.config") == null) {
-
         tmpArgs.add("-f");
-        final String absolutePath = configFile.getAbsolutePath();
-        if (securedSpecified && absolutePath.indexOf('@') == -1 && userNameSpecified) {
-          tmpArgs.add(userName + "@" + absolutePath);
-        } else {
-          tmpArgs.add(absolutePath);
-        }
+        tmpArgs.add(configFile.getAbsolutePath());
       }
 
       args = (String[]) tmpArgs.toArray(new String[tmpArgs.size()]);
