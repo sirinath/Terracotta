@@ -16,11 +16,16 @@ import com.tc.stats.Stats;
 import com.tc.util.concurrent.ThreadPreferenceExecutor;
 import com.tc.util.concurrent.ThreadUtil;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import javax.management.ObjectName;
+import javax.management.remote.message.MBeanServerRequestMessage;
 import javax.management.remote.message.Message;
 
 public class RemoteJMXProcessor implements Sink {
@@ -29,7 +34,22 @@ public class RemoteJMXProcessor implements Sink {
 
   private final Executor        executor;
 
-  {
+  private static final Map<Integer, String> MESSAGE_METHOD_ID_TO_NAME = new HashMap<Integer, String>();
+
+  static {
+    try {
+      Field[] fields = MBeanServerRequestMessage.class.getFields();
+      for (Field field : fields) {
+        if (field.getType() == int.class) {
+          MESSAGE_METHOD_ID_TO_NAME.put((Integer) field.get(MBeanServerRequestMessage.class), field.getName());
+        }
+      }
+    } catch (IllegalAccessException iae) {
+      logger.warn("cannot translate MBeanServerRequestMessage method IDs to names", iae);
+    }
+  }
+
+  public RemoteJMXProcessor() {
     TCProperties props = TCPropertiesImpl.getProperties();
     int maxThreads = props.getInt(TCPropertiesConsts.L2_REMOTEJMX_MAXTHREADS);
     int idleTime = props.getInt(TCPropertiesConsts.L2_REMOTEJMX_IDLETIME);
@@ -37,13 +57,16 @@ public class RemoteJMXProcessor implements Sink {
     // we're not using a standard thread pool executor here since it seems that some jmx tasks are inter-dependent (such
     // that if they are queued, things will lock up)
     executor = new ThreadPreferenceExecutor(getClass().getSimpleName(), maxThreads, idleTime, TimeUnit.SECONDS,
-                                            TCLogging.getLogger(RemoteJMXProcessor.class));
+        TCLogging.getLogger(RemoteJMXProcessor.class));
   }
 
   @Override
   public void add(final EventContext context) {
     final CallbackExecuteContext callbackContext = (CallbackExecuteContext) context;
+    String callDescription = buildJmxRequestDescription(callbackContext.getRequest());
+    final String threadName = getClass().getSimpleName() + " " + callDescription;
 
+    long before = System.nanoTime();
     try {
       int retries = 0;
       while (true) {
@@ -53,7 +76,9 @@ public class RemoteJMXProcessor implements Sink {
             public void run() {
               Thread currentThread = Thread.currentThread();
               ClassLoader prevLoader = currentThread.getContextClassLoader();
+              String prevName = currentThread.getName();
               currentThread.setContextClassLoader(callbackContext.getThreadContextLoader());
+              currentThread.setName(threadName);
 
               try {
                 Message result = callbackContext.getCallback().execute(callbackContext.getRequest());
@@ -62,6 +87,7 @@ public class RemoteJMXProcessor implements Sink {
                 callbackContext.getFuture().setException(t);
               } finally {
                 currentThread.setContextClassLoader(prevLoader);
+                currentThread.setName(prevName);
               }
             }
           });
@@ -71,11 +97,56 @@ public class RemoteJMXProcessor implements Sink {
           retries++;
         }
         if (retries % 100 == 0) {
-          logger.warn("JMX Processor is saturated. Retried processing a request " + retries + " times.");
+          logger.warn("JMX Processor is saturated. Retried processing [" + callDescription + "] " + retries + " times.");
         }
       }
     } catch (Throwable t) {
       callbackContext.getFuture().setException(t);
+    } finally {
+      long delay = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - before);
+      if (delay > 5000) {
+        logger.warn("Slow JMX Processor request: " + callDescription + ", took " + delay + " ms");
+      }
+    }
+  }
+
+  private static String buildJmxRequestDescription(Message message) {
+    if (message instanceof MBeanServerRequestMessage) {
+      MBeanServerRequestMessage request = (MBeanServerRequestMessage) message;
+      String methodName = methodIdToName(request.getMethodId());
+      request.getParams();
+
+      StringBuilder sb = new StringBuilder(methodName).append("(");
+      for (Object o : request.getParams()) {
+        String param = null;
+        if (o != null) {
+          if (o instanceof ObjectName || o instanceof String) {
+            param = "'" + o.toString() + "'";
+          } else {
+            param = o.getClass().getSimpleName();
+          }
+        }
+
+        sb.append(param);
+        sb.append(", ");
+      }
+      if (request.getParams().length > 0) {
+        sb.deleteCharAt(sb.length() - 1);
+        sb.deleteCharAt(sb.length() - 1);
+      }
+      sb.append(")");
+
+      return sb.toString();
+    }
+    return message == null ? null : message.getClass().getSimpleName();
+  }
+
+  private static String methodIdToName(int methodId) {
+    String methodName = MESSAGE_METHOD_ID_TO_NAME.get(methodId);
+    if (methodName != null) {
+      return methodName;
+    } else {
+      return "?" + methodId + "?";
     }
   }
 
