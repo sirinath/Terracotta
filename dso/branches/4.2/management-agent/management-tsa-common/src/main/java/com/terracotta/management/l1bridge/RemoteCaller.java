@@ -3,13 +3,9 @@
  */
 package com.terracotta.management.l1bridge;
 
-import com.terracotta.management.l1bridge.util.RemoteCallerUtility;
-import com.terracotta.management.resource.services.utils.ClientEntityV1Bridge;
-import com.terracotta.management.service.ClientManagementServiceV1Adapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terracotta.management.ServiceExecutionException;
-import org.terracotta.management.ServiceLocator;
 import org.terracotta.management.l1bridge.RemoteCallDescriptor;
 import org.terracotta.management.resource.Representable;
 
@@ -25,7 +21,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -39,20 +40,12 @@ public class RemoteCaller {
 
   private static final Logger LOG = LoggerFactory.getLogger(RemoteCaller.class);
 
-  private final static String CLIENT_UUID_KEY = "ClientUUID";
-
   protected final RemoteAgentBridgeService remoteAgentBridgeService;
   protected final ContextService contextService;
   protected final ExecutorService executorService;
   protected final RequestTicketMonitor requestTicketMonitor;
   protected final UserService userService;
   protected final TimeoutService timeoutService;
-
-  public RemoteCallerUtility getRemoteCallerUtility() {
-    return remoteCallerUtility;
-  }
-
-  protected RemoteCallerUtility remoteCallerUtility;
 
   public RemoteCaller(RemoteAgentBridgeService remoteAgentBridgeService, ContextService contextService,
                       ExecutorService executorService, RequestTicketMonitor ticketMonitor,
@@ -63,15 +56,6 @@ public class RemoteCaller {
     this.requestTicketMonitor = ticketMonitor;
     this.userService = userService;
     this.timeoutService = timeoutService;
-    this.remoteCallerUtility = new RemoteCallerUtility();
-  }
-
-  //Added for testability
-  public RemoteCaller(RemoteAgentBridgeService remoteAgentBridgeService, ContextService contextService,
-                      ExecutorService executorService, RequestTicketMonitor ticketMonitor,
-                      UserService userService, TimeoutService timeoutService,RemoteCallerUtility remoteCallerUtility) {
-    this(remoteAgentBridgeService,contextService,executorService,ticketMonitor,userService,timeoutService);
-    this.remoteCallerUtility = remoteCallerUtility;
   }
 
   public Set<String> getRemoteAgentNodeNames() throws ServiceExecutionException {
@@ -130,7 +114,7 @@ public class RemoteCaller {
     String token = userService.putUserInfo(contextService.getUserInfo());
 
     final RemoteCallDescriptor remoteCallDescriptor = new RemoteCallDescriptor(ticket, token, TSAConfig.getSecurityCallbackUrl(),
-        serviceName, method.getName(), method.getParameterTypes(), args,fetchClientUUIDs());
+        serviceName, method.getName(), method.getParameterTypes(), args);
 
     byte[] bytes = remoteAgentBridgeService.invokeRemoteMethod(node, remoteCallDescriptor);
 
@@ -164,7 +148,7 @@ public class RemoteCaller {
             }
 
             RemoteCallDescriptor remoteCallDescriptor = new RemoteCallDescriptor(ticket, token, TSAConfig.getSecurityCallbackUrl(),
-                serviceName, method.getName(), method.getParameterTypes(), args,fetchClientUUIDs());
+                serviceName, method.getName(), method.getParameterTypes(), args);
             byte[] bytes = remoteAgentBridgeService.invokeRemoteMethod(node, remoteCallDescriptor);
             return deserializeAndRewriteAgentId(bytes, node);
           }
@@ -234,18 +218,5 @@ public class RemoteCaller {
       LOG.warn("Entity not of Representable type nor Collection of Representable types - cannot rewrite agent ID");
     }
   }
-
-  protected Set<String> fetchClientUUIDs(){
-    Set<String> clientUUIDs = null;
-    try {
-      clientUUIDs = getRemoteCallerUtility().fetchClientUUIDs();
-    } catch (ServiceExecutionException e) {
-      LOG.error("Failed to fetch client UUIDS ", e);
-    }
-    return clientUUIDs;
-  }
-
-
-
 
 }

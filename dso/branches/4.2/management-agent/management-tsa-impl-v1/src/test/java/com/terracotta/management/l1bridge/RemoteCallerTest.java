@@ -1,6 +1,5 @@
 package com.terracotta.management.l1bridge;
 
-import com.terracotta.management.l1bridge.util.RemoteCallerUtility;
 import org.junit.Test;
 import org.mockito.Matchers;
 import org.mockito.invocation.InvocationOnMock;
@@ -114,9 +113,7 @@ public class RemoteCallerTest {
     ExecutorService executorService = Executors.newCachedThreadPool();
     RequestTicketMonitor requestTicketMonitor = mock(RequestTicketMonitor.class);
     UserService userService = mock(UserService.class);
-    RemoteCallerUtility remoteCallerUtility = mock(RemoteCallerUtility.class);
-    when(remoteCallerUtility.fetchClientUUIDs()).thenReturn(new HashSet<String>());
-    RemoteCaller remoteCaller = new RemoteCaller(remoteAgentBridgeService, contextService, executorService, requestTicketMonitor, userService, timeoutService,remoteCallerUtility);
+    RemoteCaller remoteCaller = new RemoteCaller(remoteAgentBridgeService, contextService, executorService, requestTicketMonitor, userService, timeoutService);
 
     when(requestTicketMonitor.issueRequestTicket()).thenReturn("test-ticket");
     DfltUserInfo userInfo = new DfltUserInfo("testUser", "testPwHash", Collections.singleton(UserRole.TERRACOTTA));
@@ -137,9 +134,7 @@ public class RemoteCallerTest {
     ExecutorService executorService = Executors.newCachedThreadPool();
     RequestTicketMonitor requestTicketMonitor = mock(RequestTicketMonitor.class);
     UserService userService = mock(UserService.class);
-    RemoteCallerUtility remoteCallerUtility = mock(RemoteCallerUtility.class);
-    when(remoteCallerUtility.fetchClientUUIDs()).thenReturn(new HashSet<String>());
-    RemoteCaller remoteCaller = new RemoteCaller(remoteAgentBridgeService, contextService, executorService, requestTicketMonitor, userService, timeoutService,remoteCallerUtility);
+    RemoteCaller remoteCaller = new RemoteCaller(remoteAgentBridgeService, contextService, executorService, requestTicketMonitor, userService, timeoutService);
 
     when(requestTicketMonitor.issueRequestTicket()).thenReturn("test-ticket");
     DfltUserInfo userInfo = new DfltUserInfo("testUser", "testPwHash", Collections.singleton(UserRole.TERRACOTTA));
@@ -163,9 +158,7 @@ public class RemoteCallerTest {
     ExecutorService executorService = Executors.newCachedThreadPool();
     RequestTicketMonitor requestTicketMonitor = mock(RequestTicketMonitor.class);
     UserService userService = mock(UserService.class);
-    RemoteCallerUtility remoteCallerUtility = mock(RemoteCallerUtility.class);
-    when(remoteCallerUtility.fetchClientUUIDs()).thenReturn(new HashSet<String>());
-    RemoteCaller remoteCaller = new RemoteCaller(remoteAgentBridgeService, contextService, executorService, requestTicketMonitor, userService, timeoutService,remoteCallerUtility);
+    RemoteCaller remoteCaller = new RemoteCaller(remoteAgentBridgeService, contextService, executorService, requestTicketMonitor, userService, timeoutService);
 
     when(remoteAgentBridgeService.getRemoteAgentNodeDetails("test-nodename-1")).thenReturn(new HashMap<String, String>() {{
       put("Version", "123");
@@ -212,9 +205,7 @@ public class RemoteCallerTest {
     ExecutorService executorService = Executors.newCachedThreadPool();
     RequestTicketMonitor requestTicketMonitor = mock(RequestTicketMonitor.class);
     UserService userService = mock(UserService.class);
-    RemoteCallerUtility remoteCallerUtility = mock(RemoteCallerUtility.class);
-    when(remoteCallerUtility.fetchClientUUIDs()).thenReturn(new HashSet<String>());
-    RemoteCaller remoteCaller = new RemoteCaller(remoteAgentBridgeService, contextService, executorService, requestTicketMonitor, userService, timeoutService,remoteCallerUtility);
+    RemoteCaller remoteCaller = new RemoteCaller(remoteAgentBridgeService, contextService, executorService, requestTicketMonitor, userService, timeoutService);
 
     Set<String> remoteAgentNodeNames = new HashSet<String>(){{add("test-nodename-1");add("test-nodename-2");add("test-nodename-3");}};
     when(remoteAgentBridgeService.getRemoteAgentNodeNames()).thenReturn(remoteAgentNodeNames);
@@ -264,9 +255,7 @@ public class RemoteCallerTest {
     ExecutorService executorService = Executors.newCachedThreadPool();
     RequestTicketMonitor requestTicketMonitor = mock(RequestTicketMonitor.class);
     UserService userService = mock(UserService.class);
-    RemoteCallerUtility remoteCallerUtility = mock(RemoteCallerUtility.class);
-    when(remoteCallerUtility.fetchClientUUIDs()).thenReturn(new HashSet<String>());
-    RemoteCaller remoteCaller = new RemoteCaller(remoteAgentBridgeService, contextService, executorService, requestTicketMonitor, userService, timeoutService,remoteCallerUtility);
+    RemoteCaller remoteCaller = new RemoteCaller(remoteAgentBridgeService, contextService, executorService, requestTicketMonitor, userService, timeoutService);
 
     Set<String> remoteAgentNodeNames = new HashSet<String>(){{add("test-nodename-1");add("test-nodename-2");add("test-nodename-3");add("test-nodename-4");}};
     when(remoteAgentBridgeService.getRemoteAgentNodeNames()).thenReturn(remoteAgentNodeNames);
@@ -322,9 +311,7 @@ public class RemoteCallerTest {
     ExecutorService executorService = Executors.newCachedThreadPool();
     RequestTicketMonitor requestTicketMonitor = mock(RequestTicketMonitor.class);
     UserService userService = mock(UserService.class);
-    RemoteCallerUtility remoteCallerUtility = mock(RemoteCallerUtility.class);
-    when(remoteCallerUtility.fetchClientUUIDs()).thenReturn(new HashSet<String>());
-    RemoteCaller remoteCaller = new RemoteCaller(remoteAgentBridgeService, contextService, executorService, requestTicketMonitor, userService, timeoutService,remoteCallerUtility);
+    RemoteCaller remoteCaller = new RemoteCaller(remoteAgentBridgeService, contextService, executorService, requestTicketMonitor, userService, timeoutService);
 
     Set<String> remoteAgentNodeNames = new HashSet<String>(){{add("test-nodename-1");add("test-nodename-2");add("test-nodename-3");add("test-nodename-4");}};
     when(remoteAgentBridgeService.getRemoteAgentNodeNames()).thenReturn(remoteAgentNodeNames);
