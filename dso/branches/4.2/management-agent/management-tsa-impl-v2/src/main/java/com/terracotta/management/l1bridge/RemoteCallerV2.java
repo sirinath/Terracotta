@@ -3,21 +3,15 @@
  */
 package com.terracotta.management.l1bridge;
 
-import com.terracotta.management.l1bridge.util.RemoteCallerUtility;
-import com.terracotta.management.l1bridge.util.RemoteCallerV2Util;
-import com.terracotta.management.resource.ClientEntityV2;
-import com.terracotta.management.resource.TopologyEntityV2;
-import com.terracotta.management.service.TopologyServiceV2;
-import com.terracotta.management.service.impl.ClientManagementServiceV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terracotta.management.ServiceExecutionException;
-import org.terracotta.management.ServiceLocator;
 import org.terracotta.management.l1bridge.RemoteCallDescriptor;
 import org.terracotta.management.resource.AbstractEntityV2;
 import org.terracotta.management.resource.ExceptionEntityV2;
 import org.terracotta.management.resource.ResponseEntityV2;
 
+import com.terracotta.management.l1bridge.util.RemoteCallerUtility;
 import com.terracotta.management.security.ContextService;
 import com.terracotta.management.security.RequestTicketMonitor;
 import com.terracotta.management.security.UserService;
@@ -27,11 +21,9 @@ import com.terracotta.management.user.UserInfo;
 import com.terracotta.management.web.utils.TSAConfig;
 
 import java.lang.reflect.Method;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -47,10 +39,8 @@ public class RemoteCallerV2 extends RemoteCaller {
 
   public RemoteCallerV2(RemoteAgentBridgeService remoteAgentBridgeService, ContextService contextService, ExecutorService executorService, RequestTicketMonitor ticketMonitor, UserService userService, TimeoutService timeoutService) {
     super(remoteAgentBridgeService, contextService, executorService, ticketMonitor, userService, timeoutService);
-    this.remoteCallerUtility = new RemoteCallerV2Util();
   }
 
-  //For testing
   public RemoteCallerV2(RemoteAgentBridgeService remoteAgentBridgeService, ContextService contextService, ExecutorService executorService, RequestTicketMonitor ticketMonitor, UserService userService, TimeoutService timeoutService,RemoteCallerUtility remoteCallerUtility) {
     super(remoteAgentBridgeService, contextService, executorService, ticketMonitor, userService, timeoutService,remoteCallerUtility);
   }
