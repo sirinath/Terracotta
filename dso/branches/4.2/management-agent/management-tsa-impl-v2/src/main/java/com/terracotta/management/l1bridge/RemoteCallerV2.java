@@ -11,7 +11,6 @@ import org.terracotta.management.resource.AbstractEntityV2;
 import org.terracotta.management.resource.ExceptionEntityV2;
 import org.terracotta.management.resource.ResponseEntityV2;
 
-import com.terracotta.management.l1bridge.util.RemoteCallerUtility;
 import com.terracotta.management.security.ContextService;
 import com.terracotta.management.security.RequestTicketMonitor;
 import com.terracotta.management.security.UserService;
@@ -41,10 +40,6 @@ public class RemoteCallerV2 extends RemoteCaller {
     super(remoteAgentBridgeService, contextService, executorService, ticketMonitor, userService, timeoutService);
   }
 
-  public RemoteCallerV2(RemoteAgentBridgeService remoteAgentBridgeService, ContextService contextService, ExecutorService executorService, RequestTicketMonitor ticketMonitor, UserService userService, TimeoutService timeoutService,RemoteCallerUtility remoteCallerUtility) {
-    super(remoteAgentBridgeService, contextService, executorService, ticketMonitor, userService, timeoutService,remoteCallerUtility);
-  }
-
   public <T extends AbstractEntityV2> ResponseEntityV2<T> fanOutResponseCall(final String serviceAgency, Set<String> nodes, final String serviceName, final Method method, final Object[] args) throws ServiceExecutionException {
     final UserInfo userInfo = contextService.getUserInfo();
     Map<String, Future<ResponseEntityV2<T>>> futures = new HashMap<String, Future<ResponseEntityV2<T>>>();
@@ -65,8 +60,9 @@ public class RemoteCallerV2 extends RemoteCaller {
                 return new ResponseEntityV2<T>();
               }
             }
+
             RemoteCallDescriptor remoteCallDescriptor = new RemoteCallDescriptor(ticket, token, TSAConfig.getSecurityCallbackUrl(),
-                      serviceName, method.getName(), method.getParameterTypes(), args, fetchClientUUIDs());
+                serviceName, method.getName(), method.getParameterTypes(), args);
             byte[] bytes = remoteAgentBridgeService.invokeRemoteMethod(node, remoteCallDescriptor);
             return deserializeAndRewriteAgentId(bytes, node);
           }
@@ -109,18 +105,6 @@ public class RemoteCallerV2 extends RemoteCaller {
     }
     return globalResult;
   }
-
-
-  protected Set<String> fetchClientUUIDs(){
-    Set<String> clientUUIDs = null;
-    try {
-      clientUUIDs = this.remoteCallerUtility.fetchClientUUIDs();
-    } catch (ServiceExecutionException e) {
-      LOG.error("Failed to fetch client UUIDS ", e);
-    }
-    return clientUUIDs;
-  }
-
 
   @Override
   protected void rewriteAgentId(Object obj, String agentId) {

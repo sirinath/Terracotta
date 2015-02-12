@@ -1,6 +1,5 @@
 package com.terracotta.management.l1bridge;
 
-import com.terracotta.management.l1bridge.util.RemoteCallerUtility;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -19,7 +18,12 @@ import com.terracotta.management.service.impl.TimeoutServiceImpl;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,7 +31,9 @@ import java.util.concurrent.Executors;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Ludovic Orban
@@ -75,9 +81,7 @@ public class RemoteServiceStubGeneratorTest {
     RemoteRequestValidator remoteRequestValidator = mock(RemoteRequestValidator.class);
     RemoteAgentBridgeService remoteAgentBridgeService = mock(RemoteAgentBridgeService.class);
     L1MBeansSource l1MBeansSource = mock(L1MBeansSource.class);
-    RemoteCallerUtility remoteCallerUtility = mock(RemoteCallerUtility.class);
-    when(remoteCallerUtility.fetchClientUUIDs()).thenReturn(new HashSet<String>());
-    RemoteServiceStubGenerator remoteServiceStubGenerator = new RemoteServiceStubGenerator(new NullRequestTicketMonitor(), new NullUserService(), new NullContextService(), remoteRequestValidator, remoteAgentBridgeService, executorService, new TimeoutServiceImpl(1000), l1MBeansSource,remoteCallerUtility);
+    RemoteServiceStubGenerator remoteServiceStubGenerator = new RemoteServiceStubGenerator(new NullRequestTicketMonitor(), new NullUserService(), new NullContextService(), remoteRequestValidator, remoteAgentBridgeService, executorService, new TimeoutServiceImpl(1000), l1MBeansSource);
 
     when(l1MBeansSource.containsJmxMBeans()).thenReturn(true);
     when(remoteRequestValidator.getValidatedNodes()).thenReturn(new HashSet<String>(Arrays.asList("node_cache", "node1_session", "node2_session")));
@@ -110,12 +114,12 @@ public class RemoteServiceStubGeneratorTest {
   public void testAgencyFilteringWithSingleNode() throws Exception {
     List<CacheRepresentable> caches = Arrays.asList(new CacheRepresentable("cache-1"), new CacheRepresentable("cache-2"), new CacheRepresentable("cache-3"));
     final byte[] serializedCaches = serialize(caches);
+
     RemoteRequestValidator remoteRequestValidator = mock(RemoteRequestValidator.class);
     RemoteAgentBridgeService remoteAgentBridgeService = mock(RemoteAgentBridgeService.class);
     L1MBeansSource l1MBeansSource = mock(L1MBeansSource.class);
-    RemoteCallerUtility remoteCallerUtility = mock(RemoteCallerUtility.class);
-    when(remoteCallerUtility.fetchClientUUIDs()).thenReturn(new HashSet<String>());
-    RemoteServiceStubGenerator remoteServiceStubGenerator = new RemoteServiceStubGenerator(new NullRequestTicketMonitor(), new NullUserService(), new NullContextService(), remoteRequestValidator, remoteAgentBridgeService, executorService, new TimeoutServiceImpl(1000), l1MBeansSource,remoteCallerUtility);
+    RemoteServiceStubGenerator remoteServiceStubGenerator = new RemoteServiceStubGenerator(new NullRequestTicketMonitor(), new NullUserService(), new NullContextService(), remoteRequestValidator, remoteAgentBridgeService, executorService, new TimeoutServiceImpl(1000), l1MBeansSource);
+
     when(l1MBeansSource.containsJmxMBeans()).thenReturn(true);
     when(remoteRequestValidator.getValidatedNodes()).thenReturn(new HashSet<String>(Arrays.asList("node_cache")));
     when(remoteRequestValidator.getSingleValidatedNode()).thenReturn("node_cache");
