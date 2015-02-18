@@ -27,7 +27,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <core-storage-api.version>1.3</core-storage-api.version>
     <heap-core-storage.version>1.1.2</heap-core-storage.version>
-    <bigmemory-core-storage.version>1.1.11</bigmemory-core-storage.version>
+    <bigmemory-core-storage.version>2.0.0-SNAPSHOT</bigmemory-core-storage.version>
+    <bigmemory-restartable-core-storage.version>1.1.12-SNAPSHOT</bigmemory-restartable-core-storage.version>
     <jetty.version>8.1.15.v20140411</jetty.version>
     <javax.servlet.version>3.0.0.v201112011016</javax.servlet.version>
     <slf4j.version>1.7.7</slf4j.version>
@@ -108,6 +109,11 @@
         <groupId>com.terracottatech.internal</groupId>
         <artifactId>bigmemory-core-storage</artifactId>
         <version>${bigmemory-core-storage.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.terracottatech.internal</groupId>
+        <artifactId>bigmemory-restartable-core-storage</artifactId>
+        <version>${bigmemory-restartable-core-storage.version}</version>
       </dependency>
       <dependency>
         <groupId>org.terracotta</groupId>

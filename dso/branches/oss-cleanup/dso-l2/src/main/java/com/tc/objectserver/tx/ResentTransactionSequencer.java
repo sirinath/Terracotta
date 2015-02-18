@@ -24,10 +24,10 @@ import com.tc.objectserver.gtx.ServerGlobalTransactionManager;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +70,8 @@ public class ResentTransactionSequencer extends AbstractServerTransactionListene
   private ReplicatedObjectManager              replicatedObjectManager;
 
   private final SortedSet<TransactionDesc>     resentTxns        = new TreeSet<TransactionDesc>();
-  private final Map<ServerTransactionID, TransactionBatchRecord> pendingBatches    = new LinkedHashMap<ServerTransactionID, TransactionBatchRecord>();
+  private final Map<ServerTransactionID, TransactionBatchRecord> transactionBatchIndex = new HashMap<ServerTransactionID, TransactionBatchRecord>();
+  private final SortedSet<TransactionBatchRecord> pendingBatches = new TreeSet<TransactionBatchRecord>();
   private final List<TxnsInSystemCompletionListener>             pendingCallBacks  = Collections.synchronizedList(new LinkedList<TxnsInSystemCompletionListener>());
   private volatile State                                         state             = State.PASS_THRU_PASSIVE;
 
@@ -127,10 +128,12 @@ public class ResentTransactionSequencer extends AbstractServerTransactionListene
   private boolean processResent() {
     for (Iterator<TransactionDesc> i = this.resentTxns.iterator(); i.hasNext();) {
       TransactionDesc desc = i.next();
-      TransactionBatchRecord batchRecord = pendingBatches.remove(desc.getServerTransactionID());
+      TransactionBatchRecord batchRecord = transactionBatchIndex.remove(desc.getServerTransactionID());
       if (batchRecord != null) {
         if (batchRecord.receivedTransaction(desc.getServerTransactionID())) {
-          batchRecord.process();
+          // we need to also process any batches that are before the just completed batch. Those batches may have
+          // been left by a client disconnecting.
+          processBatchesTo(batchRecord);
         }
         i.remove();
       } else {
@@ -140,6 +143,16 @@ public class ResentTransactionSequencer extends AbstractServerTransactionListene
     return moveToPassThruActiveIfPossible();
   }
 
+  private void processBatchesTo(TransactionBatchRecord batchRecord) {
+    for(Iterator<TransactionBatchRecord> i = pendingBatches.headSet(batchRecord).iterator(); i.hasNext();) {
+      TransactionBatchRecord recordToProcess = i.next();
+      recordToProcess.process();
+      i.remove();
+    }
+    batchRecord.process();
+    pendingBatches.remove(batchRecord);
+  }
+  
   private List<TransactionBatchRecord> createResentBatchRecords(TransactionBatchContext context) {
     List<TransactionBatchRecord> records = Lists.newArrayList();
 
@@ -186,8 +199,9 @@ public class ResentTransactionSequencer extends AbstractServerTransactionListene
 
   private void addToPending(TransactionBatchRecord record) {
     for (ServerTransactionID serverTransactionID : record.getServerTransactionIDs()) {
-      pendingBatches.put(serverTransactionID, record);
+      transactionBatchIndex.put(serverTransactionID, record);
     }
+    pendingBatches.add(record);
   }
 
   public synchronized void goToActiveMode() {
@@ -231,9 +245,10 @@ public class ResentTransactionSequencer extends AbstractServerTransactionListene
   }
 
   private void clearPending() {
-    for (TransactionBatchRecord record : new LinkedHashSet<TransactionBatchRecord>(pendingBatches.values())) {
+    for (TransactionBatchRecord record : pendingBatches) {
       record.process();
     }
+    transactionBatchIndex.clear();
     pendingBatches.clear();
   }
 
@@ -330,15 +345,17 @@ public class ResentTransactionSequencer extends AbstractServerTransactionListene
     }
   }
 
-  private class TransactionBatchRecord {
+  private class TransactionBatchRecord implements Comparable<TransactionBatchRecord> {
     private final Set<ServerTransactionID> serverTransactionIDs = new HashSet<ServerTransactionID>();
     private final TransactionBatchContext batchContext;
     private final boolean                  isResent;
+    private final GlobalTransactionID      firstGlobalTransactionID;
 
     TransactionBatchRecord(TransactionBatchContext batchContext, boolean isResent) {
       this.batchContext = batchContext;
       this.isResent = isResent;
       serverTransactionIDs.addAll(batchContext.getTransactionIDs());
+      firstGlobalTransactionID = batchContext.getTransactions().get(0).getGlobalTransactionID();
     }
 
     Set<ServerTransactionID> getServerTransactionIDs() {
@@ -359,6 +376,31 @@ public class ResentTransactionSequencer extends AbstractServerTransactionListene
         throw new IllegalArgumentException("Transaction " + serverTransactionID + " is not part of this batch. " + serverTransactionIDs);
       }
       return serverTransactionIDs.isEmpty();
+    }
+
+    @Override
+    public int compareTo(TransactionBatchRecord o) {
+      return firstGlobalTransactionID.compareTo(o.firstGlobalTransactionID);
+    }
+
+    // The GlobalTransactionID is uniquely assigned per-transaction. Because of that we can just use it for
+    // simple batch equality checking.
+    
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      final TransactionBatchRecord that = (TransactionBatchRecord) o;
+
+      if (!firstGlobalTransactionID.equals(that.firstGlobalTransactionID)) return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return firstGlobalTransactionID.hashCode();
     }
   }
 }

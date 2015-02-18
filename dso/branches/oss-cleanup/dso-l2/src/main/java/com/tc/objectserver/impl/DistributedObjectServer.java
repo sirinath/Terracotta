@@ -404,7 +404,7 @@ public class DistributedObjectServer implements TCDumper, LockInfoDumpHandler, S
   protected DSOServerBuilder createServerBuilder(final HaConfig config, final TCLogger tcLogger, final TCServer server,
                                                  L2DSOConfig l2dsoConfig) {
     Assert.assertEquals(config.isActiveActive(), false);
-    return new StandardDSOServerBuilder(config, tcLogger, tcSecurityManager);
+    return new StandardDSOServerBuilder(config, tcLogger, tcSecurityManager, l2dsoConfig);
   }
 
   protected DSOServerBuilder getServerBuilder() {

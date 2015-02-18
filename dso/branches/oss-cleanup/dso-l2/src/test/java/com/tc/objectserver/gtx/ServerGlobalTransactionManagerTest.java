@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import com.tc.async.api.EventContext;
 import com.tc.async.api.Sink;
+import com.tc.net.ClientID;
 import com.tc.net.ServerID;
 import com.tc.object.gtx.GlobalTransactionID;
 import com.tc.object.tx.ServerTransactionID;
@@ -15,6 +16,9 @@ import com.tc.objectserver.persistence.PersistenceTransactionProvider;
 import com.tc.util.SequenceValidator;
 import com.tc.util.sequence.Sequence;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -69,5 +73,18 @@ public class ServerGlobalTransactionManagerTest {
     when(transactionStore.getLeastGlobalTransactionID()).thenReturn(GlobalTransactionID.NULL_ID);
     serverGlobalTransactionManager.clearCommittedTransaction(stxID2);
     verify(callbackSink).add(any(EventContext.class));
+  }
+
+  @Test
+  public void testShutdownClientWithLiveTransactions() throws Exception {
+    ClientID clientID = new ClientID(0);
+    ServerTransactionID sid = new ServerTransactionID(clientID, new TransactionID(1));
+    GlobalTransactionID gid = serverGlobalTransactionManager.getOrCreateGlobalTransactionID(sid);
+    serverGlobalTransactionManager.shutdownNode(clientID);
+    assertTrue(serverGlobalTransactionManager.initiateApply(sid));
+    assertEquals(gid, serverGlobalTransactionManager.getGlobalTransactionID(sid));
+    serverGlobalTransactionManager.commit(sid);
+    serverGlobalTransactionManager.clearCommitedTransactionsBelowLowWaterMark(sid);
+    assertNull(serverGlobalTransactionManager.getGlobalTransactionID(sid));
   }
 }
