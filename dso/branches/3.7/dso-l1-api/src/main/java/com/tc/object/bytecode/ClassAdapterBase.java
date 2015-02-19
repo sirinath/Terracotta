@@ -4,7 +4,6 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.FieldVisitor;
 import com.tc.asm.Label;
@@ -32,7 +31,7 @@ import java.util.Set;
 /**
  * Common base class for Terracotta class adapters
  */
-public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
+public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
   public static final String          MANAGED_FIELD_NAME                      = ByteCodeUtil.TC_FIELD_PREFIX
                                                                                 + "MANAGED";
   public static final String          MANAGED_FIELD_TYPE                      = "Lcom/tc/object/TCObject;";
@@ -96,11 +95,12 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
 
   public ClassAdapterBase(ClassInfo classInfo, TransparencyClassSpec spec2, ClassVisitor delegate, ClassLoader caller,
                           Portability p) {
-    super(delegate);
+    super(Opcodes.ASM4, delegate);
     this.portability = p;
     this.spec = new InstrumentationSpec(classInfo, spec2, caller);
   }
 
+  @Override
   public final void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     spec.initialize(version, access, name, signature, superName, interfaces, portability);
 
@@ -139,6 +139,7 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
     return (String[]) ifaces.toArray(interfaces);
   }
 
+  @Override
   public final FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
     spec.handleSubclassOfLogicalClassWithFieldsIfNecessary(access, name);
     if (spec.needDelegateField()) {
@@ -158,6 +159,7 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
     return basicVisitField(access, name, desc, signature, value);
   }
 
+  @Override
   public final MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     spec.shouldProceedInstrumentation(access, name, desc);
 
@@ -193,6 +195,7 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
                spec.getSuperClassNameSlashes(), interfaces);
   }
 
+  @Override
   public final void visitEnd() {
     if (spec.isClassNotAdaptable()) {
       super.visitEnd();
@@ -604,8 +607,7 @@ public abstract class ClassAdapterBase extends ClassAdapter implements Opcodes {
   private static Collection getInterfaceMethodDescriptions(Class iface) {
     Set rv = new HashSet();
     Method[] methods = iface.getMethods();
-    for (int i = 0; i < methods.length; i++) {
-      Method method = methods[i];
+    for (Method method : methods) {
       rv.add(method.getName() + Type.getMethodDescriptor(method));
     }
 

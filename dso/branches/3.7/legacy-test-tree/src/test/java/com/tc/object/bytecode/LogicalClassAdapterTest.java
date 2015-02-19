@@ -41,6 +41,7 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
     //
   }
 
+  @Override
   public void setUp() throws Exception {
     objManager = new TestClientObjectManager();
     objManager.setIsManaged(true);
@@ -56,6 +57,7 @@ public class LogicalClassAdapterTest extends ClassAdapterTestBase {
     ClassProcessorHelper.setContext(Thread.currentThread().getContextClassLoader(), context);
   }
 
+  @Override
   protected void tearDown() throws Exception {
     super.tearDown();
     objManager.setIsManaged(false);

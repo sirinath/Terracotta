@@ -6,7 +6,6 @@ package com.tc.object.bytecode;
 
 import org.apache.commons.io.IOUtils;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassReader;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
@@ -73,10 +72,10 @@ public class MutableFinalFieldTest extends TCTestCase {
     if (!result.getStdout().trim().equals("(null) (mutated)")) { throw new AssertionError(result.toString()); }
   }
 
-  private static class Adapter extends ClassAdapter implements Opcodes {
+  private static class Adapter extends ClassVisitor implements Opcodes {
 
     public Adapter(ClassVisitor cv) {
-      super(cv);
+      super(Opcodes.ASM4, cv);
     }
 
     @Override

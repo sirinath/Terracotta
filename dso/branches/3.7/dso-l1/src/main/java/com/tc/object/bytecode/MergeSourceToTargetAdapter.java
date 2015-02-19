@@ -5,10 +5,8 @@ package com.tc.object.bytecode;
 
 import org.apache.commons.io.IOUtils;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassReader;
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.tree.ClassNode;
@@ -18,13 +16,12 @@ import com.tc.exception.TCRuntimeException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Iterator;
 
 /**
  * Merges the source class into the target class. All interfaces implemented by source is added to target; also fields,
  * methods are also added to target. This adapter should be added to transform the target class
  */
-public class MergeSourceToTargetAdapter extends ClassAdapter implements ClassAdapterFactory {
+public class MergeSourceToTargetAdapter extends ClassVisitor implements ClassAdapterFactory {
   private static final String DOT   = ".";
   private static final String SLASH = "/";
   private final ClassNode     sourceClassNode;
@@ -36,20 +33,21 @@ public class MergeSourceToTargetAdapter extends ClassAdapter implements ClassAda
    * When created for use as factory, the {@link ClassVisitor} parameter is ignored
    */
   public MergeSourceToTargetAdapter(ClassVisitor cv, String targetClassNameDots, String sourceClassNameDots) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     actualVisitor = cv;
     this.sourceClassNameDots = sourceClassNameDots;
     this.targetClassNameDots = targetClassNameDots;
     sourceClassNode = createSourceClassNode();
   }
 
-  public ClassAdapter create(ClassVisitor visitor, ClassLoader loaderParam) {
+  @Override
+  public ClassVisitor create(ClassVisitor visitor, ClassLoader loaderParam) {
     return new MergeSourceToTargetAdapter(visitor, targetClassNameDots, sourceClassNameDots);
   }
 
   @Override
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-    interfaces = ByteCodeUtil.addInterfaces(interfaces, (String[]) sourceClassNode.interfaces.toArray(new String[0]));
+    interfaces = ByteCodeUtil.addInterfaces(interfaces, sourceClassNode.interfaces.toArray(new String[0]));
     super.visit(version, access, name, signature, superName, interfaces);
   }
 
@@ -61,15 +59,15 @@ public class MergeSourceToTargetAdapter extends ClassAdapter implements ClassAda
   }
 
   public void addSourceFields() {
-    for (Iterator iter = sourceClassNode.fields.iterator(); iter.hasNext();) {
-      FieldNode fn = (FieldNode) iter.next();
+    for (Object element : sourceClassNode.fields) {
+      FieldNode fn = (FieldNode) element;
       fn.accept(actualVisitor);
     }
   }
 
   public void addSourceMethods() {
-    for (Iterator iter = sourceClassNode.methods.iterator(); iter.hasNext();) {
-      MethodNode m = (MethodNode) iter.next();
+    for (Object element : sourceClassNode.methods) {
+      MethodNode m = (MethodNode) element;
       if (m.name.equals("<init>")) {
         // all constructors are skipped
         continue;
@@ -94,9 +92,9 @@ public class MergeSourceToTargetAdapter extends ClassAdapter implements ClassAda
 
   }
 
-  private class SourceToTargetRenameClassAdapter extends ClassAdapter implements Opcodes {
+  private class SourceToTargetRenameClassAdapter extends ClassVisitor implements Opcodes {
     public SourceToTargetRenameClassAdapter(ClassVisitor cv) {
-      super(cv);
+      super(Opcodes.ASM4, cv);
     }
 
     @Override
@@ -118,9 +116,9 @@ public class MergeSourceToTargetAdapter extends ClassAdapter implements ClassAda
       super.visitInnerClass(replaceClassName(name), replaceClassName(outerName), replaceClassName(innerName), access);
     }
 
-    private class SourceToTargetRenameMethodAdapter extends MethodAdapter implements Opcodes {
+    private class SourceToTargetRenameMethodAdapter extends MethodVisitor implements Opcodes {
       public SourceToTargetRenameMethodAdapter(MethodVisitor mv) {
-        super(mv);
+        super(Opcodes.ASM4, mv);
       }
 
       @Override

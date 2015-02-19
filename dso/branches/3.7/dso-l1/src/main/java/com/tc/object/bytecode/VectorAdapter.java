@@ -4,31 +4,33 @@
 package com.tc.object.bytecode;
 
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
 public class VectorAdapter {
 
   public static class ElementsAdapter extends AbstractMethodAdapter {
+    @Override
     public MethodVisitor adapt(ClassVisitor classVisitor) {
       MethodVisitor mv = visitOriginal(classVisitor);
       return new Adapter(mv);
     }
 
+    @Override
     public boolean doesOriginalNeedAdapting() {
       return false;
     }
 
-    private static class Adapter extends MethodAdapter implements Opcodes {
+    private static class Adapter extends MethodVisitor implements Opcodes {
 
       public Adapter(MethodVisitor mv) {
-        super(mv);
+        super(Opcodes.ASM4, mv);
         mv.visitTypeInsn(NEW, "com/tc/util/EnumerationWrapper");
         mv.visitInsn(DUP);
         mv.visitVarInsn(ALOAD, 0);
       }
 
+      @Override
       public void visitInsn(int opcode) {
         if (ARETURN == opcode) {
           mv.visitMethodInsn(INVOKESPECIAL, "com/tc/util/EnumerationWrapper", "<init>", "(Ljava/util/Vector;Ljava/util/Enumeration;)V");

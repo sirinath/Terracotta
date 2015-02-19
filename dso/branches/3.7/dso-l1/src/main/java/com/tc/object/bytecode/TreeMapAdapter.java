@@ -5,7 +5,6 @@
 package com.tc.object.bytecode;
 
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
@@ -26,9 +25,9 @@ public class TreeMapAdapter {
       return false;
     }
 
-    private static class Adapter extends MethodAdapter implements Opcodes {
+    private static class Adapter extends MethodVisitor implements Opcodes {
       public Adapter(MethodVisitor mv) {
-        super(mv);
+        super(Opcodes.ASM4, mv);
       }
 
       @Override
@@ -61,9 +60,9 @@ public class TreeMapAdapter {
       return false;
     }
 
-    private static class Adapter extends MethodAdapter implements Opcodes {
+    private static class Adapter extends MethodVisitor implements Opcodes {
       public Adapter(MethodVisitor mv) {
-        super(mv);
+        super(Opcodes.ASM4, mv);
 
         mv.visitVarInsn(ALOAD, 0);
         mv.visitLdcInsn(SerializationUtil.REMOVE_KEY_SIGNATURE);
@@ -101,10 +100,10 @@ public class TreeMapAdapter {
       return false;
     }
 
-    private class Adapter extends MethodAdapter implements Opcodes {
+    private class Adapter extends MethodVisitor implements Opcodes {
 
       public Adapter(MethodVisitor mv) {
-        super(mv);
+        super(Opcodes.ASM4, mv);
       }
 
       @Override

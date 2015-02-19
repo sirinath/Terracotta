@@ -12,12 +12,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Label;
-
+import com.tc.asm.Opcodes;
 import com.tc.aspectwerkz.definition.SystemDefinition;
 import com.tc.aspectwerkz.joinpoint.management.JoinPointType;
 import com.tc.aspectwerkz.reflect.impl.asm.AsmClassInfo;
@@ -50,7 +48,7 @@ import com.tc.aspectwerkz.expression.PointcutType;
  *
  * @author <a href="mailto:alex AT gnilux DOT com">Alexandre Vasseur</a>
  */
-public class ConstructorCallVisitor extends ClassAdapter implements TransformationConstants {
+public class ConstructorCallVisitor extends ClassVisitor implements TransformationConstants {
 
   private final static Map EMPTY_INTHASHMAP = Collections.EMPTY_MAP;
 
@@ -80,7 +78,7 @@ public class ConstructorCallVisitor extends ClassAdapter implements Transformati
                                 final ClassInfo classInfo,
                                 final InstrumentationContext ctx,
                                 final Map newInvocationsByCallerMemberHash) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     m_loader = loader;
     m_callerClassInfo = classInfo;
     m_ctx = ctx;
@@ -132,7 +130,7 @@ public class ConstructorCallVisitor extends ClassAdapter implements Transformati
    *
    * @author <a href="mailto:alex AT gnilux DOT com">Alexandre Vasseur</a>
    */
-  public class ReplaceNewInstructionCodeAdapter extends MethodAdapter {
+  public class ReplaceNewInstructionCodeAdapter extends MethodVisitor {
 
     private final ClassLoader m_loader;
     private final ClassInfo m_callerClassInfo;
@@ -181,7 +179,7 @@ public class ConstructorCallVisitor extends ClassAdapter implements Transformati
                                             final String callerMethodName,
                                             final String callerMethodDesc,
                                             final Map newInvocations) {
-      super(ca);
+      super(Opcodes.ASM4, ca);
       m_loader = loader;
       m_callerClassInfo = callerClassInfo;
       m_callerClassName = callerClassName;

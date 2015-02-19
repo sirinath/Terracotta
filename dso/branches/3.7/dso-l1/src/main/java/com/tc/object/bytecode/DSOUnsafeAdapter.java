@@ -4,36 +4,35 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
 import com.tc.asm.commons.LocalVariablesSorter;
-import com.tc.object.bytecode.ByteCodeUtil;
-import com.tc.object.bytecode.ClassAdapterFactory;
-import com.tc.object.bytecode.Manager;
 
-public class DSOUnsafeAdapter extends ClassAdapter implements Opcodes, ClassAdapterFactory {
+public class DSOUnsafeAdapter extends ClassVisitor implements Opcodes, ClassAdapterFactory {
 
   public DSOUnsafeAdapter() {
-    super(null);
+    super(Opcodes.ASM4);
   }
 
   private DSOUnsafeAdapter(ClassVisitor cv, ClassLoader loader) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
-  public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+  @Override
+  public ClassVisitor create(ClassVisitor visitor, ClassLoader loader) {
     return new DSOUnsafeAdapter(visitor, loader);
   }
 
+  @Override
   public final void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     superName = "sun/misc/Unsafe";
     super.visit(version, access, name, signature, superName, interfaces);
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
 
@@ -50,6 +49,7 @@ public class DSOUnsafeAdapter extends ClassAdapter implements Opcodes, ClassAdap
     return mv;
   }
 
+  @Override
   public void visitEnd() {
     MethodVisitor mv = super.visitMethod(ACC_PUBLIC, "compareAndSwapInt", "(Ljava/lang/Object;JII)Z", null, null);
     addUnsafeWrapperMethodCode(mv, ACC_PUBLIC, "compareAndSwapInt", "(Ljava/lang/Object;JII)Z");
@@ -198,16 +198,16 @@ public class DSOUnsafeAdapter extends ClassAdapter implements Opcodes, ClassAdap
   private void invokeSuperMethod(MethodVisitor mv, String methodName, String description, Type[] params) {
     ByteCodeUtil.pushThis(mv);
     int pos = 0;
-    for (int i = 0; i < params.length; i++) {
-      mv.visitVarInsn(params[i].getOpcode(ILOAD), pos + 1);
-      pos += params[i].getSize();
+    for (Type param : params) {
+      mv.visitVarInsn(param.getOpcode(ILOAD), pos + 1);
+      pos += param.getSize();
     }
     mv.visitMethodInsn(INVOKESPECIAL, "sun/misc/Unsafe", methodName, description);
   }
 
   private static class FieldMethodAdapter extends LocalVariablesSorter implements Opcodes {
     public FieldMethodAdapter(int access, String desc, MethodVisitor mv) {
-      super(access, desc, mv);
+      super(Opcodes.ASM4, access, desc, mv);
     }
   }
 

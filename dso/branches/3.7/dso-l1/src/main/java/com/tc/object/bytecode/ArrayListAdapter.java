@@ -6,7 +6,6 @@ package com.tc.object.bytecode;
 
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.object.SerializationUtil;
@@ -18,6 +17,7 @@ public class ArrayListAdapter {
 
   public static class FastRemoveMethodCreator implements MethodCreator, Opcodes {
 
+    @Override
     public void createMethods(ClassVisitor cv) {
       MethodVisitor mv = cv.visitMethod(ACC_PRIVATE | ACC_SYNTHETIC, FAST_REMOVE_RENAMED, FAST_REMOVE_RENAMED_SIG,
                                         null, null);
@@ -57,21 +57,24 @@ public class ArrayListAdapter {
 
   public static class RemoveAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor classVisitor) {
       MethodVisitor mv = visitOriginal(classVisitor);
       return new Adapter(mv);
     }
 
+    @Override
     public boolean doesOriginalNeedAdapting() {
       return false;
     }
 
-    private static class Adapter extends MethodAdapter implements Opcodes {
+    private static class Adapter extends MethodVisitor implements Opcodes {
 
       public Adapter(MethodVisitor mv) {
-        super(mv);
+        super(Opcodes.ASM4, mv);
       }
 
+      @Override
       public void visitCode() {
         super.visitCode();
 
@@ -88,6 +91,7 @@ public class ArrayListAdapter {
         super.visitLabel(notShared);
       }
 
+      @Override
       public void visitMethodInsn(int opcode, String owner, String name, String desc) {
 
         if (opcode == INVOKESPECIAL && "fastRemove".equals(name) && "java/util/ArrayList".equals(owner)

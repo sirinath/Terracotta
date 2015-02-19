@@ -3,11 +3,10 @@
  */
 package com.tc.aspectwerkz.transform.inlining.weaver;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
-
 import com.tc.aspectwerkz.joinpoint.management.JoinPointType;
 import com.tc.aspectwerkz.transform.InstrumentationContext;
 import com.tc.aspectwerkz.transform.TransformationConstants;
@@ -25,7 +24,7 @@ import java.util.Set;
  *
  * @author <a href="mailto:the_mindstorm@evolva.ro">Alex Popescu</a>
  */
-public class StaticInitializationVisitor extends ClassAdapter implements TransformationConstants {
+public class StaticInitializationVisitor extends ClassVisitor implements TransformationConstants {
 
   private final InstrumentationContext m_ctx;
   private String m_declaringTypeName;
@@ -41,7 +40,7 @@ public class StaticInitializationVisitor extends ClassAdapter implements Transfo
   public StaticInitializationVisitor(final ClassVisitor cv,
                                      final InstrumentationContext ctx,
                                      final Set addedMethods) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     m_ctx = (InstrumentationContext) ctx;
     m_addedMethods = addedMethods;
   }

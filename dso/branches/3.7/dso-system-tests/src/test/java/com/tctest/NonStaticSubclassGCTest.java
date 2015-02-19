@@ -6,7 +6,6 @@ package com.tctest;
 
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.config.schema.setup.TestConfigurationSetupManagerFactory;
@@ -143,10 +142,10 @@ public class NonStaticSubclassGCTest extends GCTestBase {
       //
     }
 
-    private static class AddFieldAdapter extends ClassAdapter implements Opcodes {
+    private static class AddFieldAdapter extends ClassVisitor implements Opcodes {
 
       public AddFieldAdapter(ClassVisitor cv) {
-        super(cv);
+        super(Opcodes.ASM4, cv);
       }
 
       @Override

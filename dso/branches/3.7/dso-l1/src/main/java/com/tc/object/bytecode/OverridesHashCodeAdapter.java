@@ -4,14 +4,14 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 
 import java.util.HashSet;
 import java.util.Set;
 
-public class OverridesHashCodeAdapter extends ClassAdapter {
+public class OverridesHashCodeAdapter extends ClassVisitor {
 
   private static final Set EXCLUDED          = new HashSet();
   static {
@@ -23,14 +23,16 @@ public class OverridesHashCodeAdapter extends ClassAdapter {
   private VisitCall        originalVisitCall;
 
   public OverridesHashCodeAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
+  @Override
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     this.originalVisitCall = new VisitCall(version, access, name, signature, superName, interfaces);
     super.visit(version, access, name, signature, superName, interfaces);
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     if ("hashCode".equals(name) && "()I".equals(desc)) {
       this.overridesHashCode = true;
@@ -38,6 +40,7 @@ public class OverridesHashCodeAdapter extends ClassAdapter {
     return super.visitMethod(access, name, desc, signature, exceptions);
   }
 
+  @Override
   public void visitEnd() {
     if (overridesHashCode && !EXCLUDED.contains(originalVisitCall.name)) {
       super.visit(originalVisitCall.getVersion(), originalVisitCall.getAccess(), originalVisitCall.getName(),

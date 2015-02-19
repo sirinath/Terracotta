@@ -6,7 +6,6 @@ package com.tctest;
 
 import EDU.oswego.cs.dl.util.concurrent.CyclicBarrier;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
@@ -30,14 +29,15 @@ import java.util.Map;
  * @author hhuynh
  */
 public class CustomClassAdapterTestApp extends AbstractErrorCatchingTransparentApp {
-  private Map           root = new HashMap();
-  private CyclicBarrier barrier;
+  private final Map           root = new HashMap();
+  private final CyclicBarrier barrier;
 
   public CustomClassAdapterTestApp(String appId, ApplicationConfig cfg, ListenerProvider listenerProvider) {
     super(appId, cfg, listenerProvider);
     barrier = new CyclicBarrier(getParticipantCount());
   }
 
+  @Override
   protected void runTest() throws Throwable {
     Foo foo = new Foo();
     Assert.assertEquals(-1, foo.getVal());
@@ -134,20 +134,21 @@ class FooKid extends Foo {
   }
 }
 
-class GetValAdapter extends ClassAdapter implements Opcodes, ClassAdapterFactory {
+class GetValAdapter extends ClassVisitor implements Opcodes, ClassAdapterFactory {
 
   public GetValAdapter() {
-    super(null);
+    super(Opcodes.ASM4);
   }
 
   public GetValAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
   public GetValAdapter(ClassVisitor visitor, ClassLoader loader) {
-    super(visitor);
+    super(Opcodes.ASM4, visitor);
   }
 
+  @Override
   public MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature,
                                    final String[] exceptions) {
     if ("getVal".equals(name)) {
@@ -162,7 +163,8 @@ class GetValAdapter extends ClassAdapter implements Opcodes, ClassAdapterFactory
     return cv.visitMethod(access, name, desc, signature, exceptions);
   }
 
-  public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+  @Override
+  public ClassVisitor create(ClassVisitor visitor, ClassLoader loader) {
     return new GetValAdapter(visitor, loader);
   }
 }

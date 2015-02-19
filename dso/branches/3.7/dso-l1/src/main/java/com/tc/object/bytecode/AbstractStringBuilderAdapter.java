@@ -3,22 +3,21 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.object.bytecode.hook.impl.JavaLangArrayHelpers;
 
-public class AbstractStringBuilderAdapter extends ClassAdapter {
-  private String stringBuilderInternalName;
+public class AbstractStringBuilderAdapter extends ClassVisitor {
+  private final String stringBuilderInternalName;
   
   public AbstractStringBuilderAdapter(ClassVisitor cv, String stringBuilderClassName) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     
     this.stringBuilderInternalName = stringBuilderClassName.replace('.', '/');
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     if ((DuplicateMethodAdapter.MANAGED_PREFIX + "append").equals(name)) {
@@ -30,14 +29,14 @@ public class AbstractStringBuilderAdapter extends ClassAdapter {
     return mv;
   }
 
-  private class AppendAdapter extends MethodAdapter implements Opcodes {
+  private class AppendAdapter extends MethodVisitor implements Opcodes {
 
     private final int spaceNeededSlot;
     private final int countSlot;
     private boolean   hasVisitedOnce = false;
 
     public AppendAdapter(MethodVisitor mv, String type) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
 
       if (!"J".equals(type) && !"I".equals(type)) { throw new AssertionError("bad type: " + type); }
 
@@ -45,6 +44,7 @@ public class AbstractStringBuilderAdapter extends ClassAdapter {
       this.countSlot = type.equals("I") ? 3 : 4;
     }
 
+    @Override
     public void visitInsn(int opcode) {
       if (opcode == ARETURN) {
 

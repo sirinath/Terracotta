@@ -4,7 +4,6 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
@@ -14,15 +13,16 @@ import com.tc.object.applicator.TCURL;
 
 import java.net.URL;
 
-public class JavaNetURLAdapter extends ClassAdapter implements Opcodes {
+public class JavaNetURLAdapter extends ClassVisitor implements Opcodes {
 
   public final static String TCSET_METHOD_NAME = "__tc_set";
   public final static String TCSET_LOGICAL_METHOD_NAME = "__tc_set_logical";
   
   public JavaNetURLAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
+  @Override
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     String[] interfacesNew = new String[interfaces.length + 1];
     System.arraycopy(interfaces, 0, interfacesNew, 0, interfaces.length);
@@ -30,13 +30,14 @@ public class JavaNetURLAdapter extends ClassAdapter implements Opcodes {
     super.visit(version, access, name, signature, superName, interfacesNew);
   }
 
+  @Override
   public void visitEnd() {
     createTCSetLogicalMethod();
     super.visitEnd();
   }
 
   /*
-   * Creates a method like this: 
+   * Creates a method like this:
    * 
    *  public void __tc_set_logical(String protocol, String host, int port,
    *                               String authority, String userInfo, String path,

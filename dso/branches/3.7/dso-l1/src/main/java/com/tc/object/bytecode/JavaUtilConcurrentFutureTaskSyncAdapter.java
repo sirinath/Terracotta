@@ -3,16 +3,14 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.FieldVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
 public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
-  public static class JavaUtilConcurrentFutureTaskSyncClassAdapter extends ClassAdapter implements Opcodes {
+  public static class JavaUtilConcurrentFutureTaskSyncClassAdapter extends ClassVisitor implements Opcodes {
     private final static String MANAGED_OBJECT_LOCK_FIELD_NAME              = "managedLock";
     private final static String PROXY_RUNNER_FIELD_NAME                     = "proxyRunner";
     private final static String MAANGED_INNER_CANCEL_METHOD_NAME            = "managedInnerCancel";
@@ -21,9 +19,10 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
     //private final static String MANAGED_RELEASE_SHARED                      = "managedReleaseShared";
 
     public JavaUtilConcurrentFutureTaskSyncClassAdapter(ClassVisitor cv) {
-      super(cv);
+      super(Opcodes.ASM4, cv);
     }
 
+    @Override
     public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
       if ("runner".equals(name) && "Ljava/lang/Thread;".equals(desc)) {
         access += ACC_TRANSIENT;
@@ -31,6 +30,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       return super.visitField(access, name, desc, signature, value);
     }
 
+    @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
       MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
       if ("<init>".equals(name)) {
@@ -56,6 +56,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       return mv;
     }
 
+    @Override
     public void visitEnd() {
       addManagedLockField();
       addProxyRunnerField();
@@ -1079,11 +1080,12 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitEnd();
     }
 
-    private static class Constructor extends MethodAdapter implements Opcodes {
+    private static class Constructor extends MethodVisitor implements Opcodes {
       public Constructor(MethodVisitor mv) {
-        super(mv);
+        super(Opcodes.ASM4, mv);
       }
 
+      @Override
       public void visitFieldInsn(int opcode, String owner, String name, String desc) {
         super.visitFieldInsn(opcode, owner, name, desc);
         if (PUTFIELD == opcode && "java/util/concurrent/FutureTask$Sync".equals(owner) && "callable".equals(name)

@@ -6,7 +6,6 @@ package com.tc.object.bytecode;
 
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.util.runtime.Vm;
@@ -19,6 +18,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class Jdk16LockAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = visitOriginal(cv);
       return new LockAdapter(mv);
@@ -30,10 +30,10 @@ public class CopyOnWriteArrayListAdapter {
     }
   }
 
-  private static class LockAdapter extends MethodAdapter implements Opcodes {
+  private static class LockAdapter extends MethodVisitor implements Opcodes {
 
     public LockAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -54,6 +54,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class AddAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = visitOriginal(cv);
       return new AddMethodAdapter(mv);
@@ -65,10 +66,10 @@ public class CopyOnWriteArrayListAdapter {
     }
   }
 
-  private static class AddMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class AddMethodAdapter extends MethodVisitor implements Opcodes {
 
     public AddMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -107,6 +108,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class AddAtAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = visitOriginal(cv);
       return new AddAtMethodAdapter(mv);
@@ -118,10 +120,10 @@ public class CopyOnWriteArrayListAdapter {
     }
   }
 
-  private static class AddAtMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class AddAtMethodAdapter extends MethodVisitor implements Opcodes {
 
     public AddAtMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -167,6 +169,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class SetAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = visitOriginal(cv);
       return new SetMethodAdapter(mv);
@@ -178,10 +181,10 @@ public class CopyOnWriteArrayListAdapter {
     }
   }
 
-  private static class SetMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class SetMethodAdapter extends MethodVisitor implements Opcodes {
 
     public SetMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -227,6 +230,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class AddAllAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = visitOriginal(cv);
       return new AddAllMethodAdapter(mv);
@@ -238,10 +242,10 @@ public class CopyOnWriteArrayListAdapter {
     }
   }
 
-  private static class AddAllMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class AddAllMethodAdapter extends MethodVisitor implements Opcodes {
 
     public AddAllMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -280,6 +284,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class AddAllAtAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = visitOriginal(cv);
       return new AddAllAtMethodAdapter(mv);
@@ -291,10 +296,10 @@ public class CopyOnWriteArrayListAdapter {
     }
   }
 
-  private static class AddAllAtMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class AddAllAtMethodAdapter extends MethodVisitor implements Opcodes {
 
     public AddAllAtMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -340,6 +345,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class AddIfAbsentAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = visitOriginal(cv);
       return new AddIfAbsentMethodAdapter(mv);
@@ -351,10 +357,10 @@ public class CopyOnWriteArrayListAdapter {
     }
   }
 
-  private static class AddIfAbsentMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class AddIfAbsentMethodAdapter extends MethodVisitor implements Opcodes {
 
     public AddIfAbsentMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -394,6 +400,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class AddAllAbsentAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = visitOriginal(cv);
       return new AddAllAbsentMethodAdapter(mv);
@@ -405,10 +412,10 @@ public class CopyOnWriteArrayListAdapter {
     }
   }
 
-  private static class AddAllAbsentMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class AddAllAbsentMethodAdapter extends MethodVisitor implements Opcodes {
 
     public AddAllAbsentMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -482,6 +489,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class RemoveAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = visitOriginal(cv);
       return new RemoveMethodAdapter(mv);
@@ -493,10 +501,10 @@ public class CopyOnWriteArrayListAdapter {
     }
   }
 
-  private static class RemoveMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class RemoveMethodAdapter extends MethodVisitor implements Opcodes {
 
     public RemoveMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -546,6 +554,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class RemoveAtAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = visitOriginal(cv);
       return new RemoveAtMethodAdapter(mv);
@@ -557,10 +566,10 @@ public class CopyOnWriteArrayListAdapter {
     }
   }
 
-  private static class RemoveAtMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class RemoveAtMethodAdapter extends MethodVisitor implements Opcodes {
 
     public RemoveAtMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -602,6 +611,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class RemoveRangeAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = visitOriginal(cv);
       return new RemoveRangeMethodAdapter(mv);
@@ -613,10 +623,10 @@ public class CopyOnWriteArrayListAdapter {
     }
   }
 
-  private static class RemoveRangeMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class RemoveRangeMethodAdapter extends MethodVisitor implements Opcodes {
 
     public RemoveRangeMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -665,6 +675,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class ClearAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = visitOriginal(cv);
       return new ClearMethodAdapter(mv);
@@ -676,10 +687,10 @@ public class CopyOnWriteArrayListAdapter {
     }
   }
 
-  private static class ClearMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class ClearMethodAdapter extends MethodVisitor implements Opcodes {
 
     public ClearMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -714,6 +725,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class RemoveAllAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = cv
           .visitMethod(this.access, this.methodName, this.description, this.signature, this.exceptions);
@@ -1076,6 +1088,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class RetainAllAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = cv
           .visitMethod(this.access, this.methodName, this.description, this.signature, this.exceptions);
@@ -1433,6 +1446,7 @@ public class CopyOnWriteArrayListAdapter {
 
   public static class ResetLockAdaptor extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor cv) {
       MethodVisitor mv = cv
           .visitMethod(this.access, this.methodName, this.description, this.signature, this.exceptions);

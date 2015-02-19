@@ -4,7 +4,6 @@
  */
 package com.tctest;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
@@ -17,6 +16,7 @@ public class RootClassChangeTest extends TransparentTestBase {
   public static final int MUTATOR_NODE_COUNT    = 2;
   public static final int ADAPTED_MUTATOR_COUNT = 1;
 
+  @Override
   public void doSetUp(TransparentTestIface t) throws Exception {
     TransparentAppConfig tac = t.getTransparentAppConfig();
     tac.setClientCount(MUTATOR_NODE_COUNT).setIntensity(1).setAdaptedMutatorCount(ADAPTED_MUTATOR_COUNT);
@@ -28,28 +28,32 @@ public class RootClassChangeTest extends TransparentTestBase {
     t.initializeTestRunner();
   }
 
+  @Override
   protected Class getApplicationClass() {
     return RootClassChangeTestApp.class;
   }
 
-  public static class DeepLargeObjectAdapter extends ClassAdapter {
+  public static class DeepLargeObjectAdapter extends ClassVisitor {
 
     private String owner;
 
     public DeepLargeObjectAdapter(ClassVisitor cv) {
-      super(cv);
+      super(Opcodes.ASM4, cv);
     }
 
+    @Override
     public void visitEnd() {
       super.visitField(Opcodes.ACC_PRIVATE, "foo", "Lcom/tctest/RootClassChangeTestApp$FooObject;", null, null);
       super.visitEnd();
     }
 
+    @Override
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
       super.visit(version, access, name, signature, superName, interfaces);
       owner = name;
     }
 
+    @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
       MethodVisitor visitor = super.visitMethod(access, name, desc, signature, exceptions);
       if (name.equals("setFooObject")) {

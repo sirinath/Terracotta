@@ -7,6 +7,7 @@ import com.tc.asm.AnnotationVisitor;
 import com.tc.asm.Attribute;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,166 +18,191 @@ import java.util.Map;
  * and a simple mapping is maintained to be able to retrieve which label
  * belongs to which visitor.
  */
-public class MulticastMethodVisitor implements MethodVisitor {
+public class MulticastMethodVisitor extends MethodVisitor {
 
   private final MethodVisitor[] visitors;
   
   private final Map labelsMapping = new HashMap();
   
   public MulticastMethodVisitor(MethodVisitor[] visitors) {
+    super(Opcodes.ASM4);
     this.visitors = visitors;
   }
 
+  @Override
   public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
     AnnotationVisitor[] annotationVisitors = new AnnotationVisitor[visitors.length];
     for (int i = 0; i < visitors.length; i++) {
-      annotationVisitors[i] = visitors[i].visitAnnotation(desc, visible);      
+      annotationVisitors[i] = visitors[i].visitAnnotation(desc, visible);
     }
     
     return new MulticastAnnotationVisitor(annotationVisitors);
   }
 
+  @Override
   public AnnotationVisitor visitAnnotationDefault() {
     AnnotationVisitor[] annotationVisitors = new AnnotationVisitor[visitors.length];
     for (int i = 0; i < visitors.length; i++) {
-      annotationVisitors[i] = visitors[i].visitAnnotationDefault();      
+      annotationVisitors[i] = visitors[i].visitAnnotationDefault();
     }
     
     return new MulticastAnnotationVisitor(annotationVisitors);
   }
 
+  @Override
   public void visitAttribute(Attribute attr) {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitAttribute(attr);
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitAttribute(attr);
     }
   }
 
+  @Override
   public void visitCode() {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitCode();
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitCode();
     }
   }
 
+  @Override
   public void visitEnd() {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitEnd();
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitEnd();
     }
   }
 
+  @Override
   public void visitFieldInsn(int opcode, String owner, String name, String desc) {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitFieldInsn(opcode, owner, name, desc);
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitFieldInsn(opcode, owner, name, desc);
     }
   }
 
+  @Override
   public void visitFrame(int type, int local, Object[] local2, int stack, Object[] stack2) {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitFrame(type, local, local2, stack, stack2);
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitFrame(type, local, local2, stack, stack2);
     }
   }
 
+  @Override
   public void visitIincInsn(int var, int increment) {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitIincInsn(var, increment);
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitIincInsn(var, increment);
     }
   }
 
+  @Override
   public void visitInsn(int opcode) {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitInsn(opcode);
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitInsn(opcode);
     }
   }
 
+  @Override
   public void visitIntInsn(int opcode, int operand) {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitIntInsn(opcode, operand);
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitIntInsn(opcode, operand);
     }
   }
 
+  @Override
   public void visitJumpInsn(int opcode, Label label) {
     for (int i = 0; i < visitors.length; i++) {
       visitors[i].visitJumpInsn(opcode, getMappedLabel(label, i));
     }
   }
 
+  @Override
   public void visitLabel(Label label) {
     for (int i = 0; i < visitors.length; i++) {
       visitors[i].visitLabel(getMappedLabel(label, i));
     }
   }
 
+  @Override
   public void visitLdcInsn(Object cst) {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitLdcInsn(cst);
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitLdcInsn(cst);
     }
   }
 
+  @Override
   public void visitLineNumber(int line, Label start) {
     for (int i = 0; i < visitors.length; i++) {
       visitors[i].visitLineNumber(line, getMappedLabel(start, i));
     }
   }
 
+  @Override
   public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
     for (int i = 0; i < visitors.length; i++) {
       visitors[i].visitLocalVariable(name, desc, signature, getMappedLabel(start, i), getMappedLabel(end, i), index);
     }
   }
 
+  @Override
   public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
     for (int i = 0; i < visitors.length; i++) {
       visitors[i].visitLookupSwitchInsn(getMappedLabel(dflt, i), keys, getMappedLabels(labels, i));
     }
   }
 
+  @Override
   public void visitMaxs(int maxStack, int maxLocals) {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitMaxs(maxStack, maxLocals);
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitMaxs(maxStack, maxLocals);
     }
   }
 
+  @Override
   public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitMethodInsn(opcode, owner, name, desc);
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitMethodInsn(opcode, owner, name, desc);
     }
   }
 
+  @Override
   public void visitMultiANewArrayInsn(String desc, int dims) {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitMultiANewArrayInsn(desc, dims);
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitMultiANewArrayInsn(desc, dims);
     }
   }
 
+  @Override
   public AnnotationVisitor visitParameterAnnotation(int parameter, String desc, boolean visible) {
     AnnotationVisitor[] annotationVisitors = new AnnotationVisitor[visitors.length];
     for (int i = 0; i < visitors.length; i++) {
-      annotationVisitors[i] = visitors[i].visitParameterAnnotation(parameter, desc, visible);      
+      annotationVisitors[i] = visitors[i].visitParameterAnnotation(parameter, desc, visible);
     }
     
     return new MulticastAnnotationVisitor(annotationVisitors);
   }
 
+  @Override
   public void visitTableSwitchInsn(int min, int max, Label dflt, Label[] labels) {
     for (int i = 0; i < visitors.length; i++) {
       visitors[i].visitTableSwitchInsn(min, max, getMappedLabel(dflt, i), getMappedLabels(labels, i));
     }
   }
 
+  @Override
   public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
     for (int i = 0; i < visitors.length; i++) {
       visitors[i].visitTryCatchBlock(getMappedLabel(start, i), getMappedLabel(end, i), getMappedLabel(handler, i), type);
     }
   }
 
+  @Override
   public void visitTypeInsn(int opcode, String desc) {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitTypeInsn(opcode, desc);
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitTypeInsn(opcode, desc);
     }
   }
 
+  @Override
   public void visitVarInsn(int opcode, int var) {
-    for (int i = 0; i < visitors.length; i++) {
-      visitors[i].visitVarInsn(opcode, var);
+    for (MethodVisitor visitor : visitors) {
+      visitor.visitVarInsn(opcode, var);
     }
   }
   

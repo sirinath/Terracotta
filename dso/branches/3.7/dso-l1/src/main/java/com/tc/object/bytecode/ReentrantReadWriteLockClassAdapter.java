@@ -4,19 +4,18 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
 
-public class ReentrantReadWriteLockClassAdapter extends ClassAdapter implements Opcodes {
+public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements Opcodes {
   public ReentrantReadWriteLockClassAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
+  @Override
   public final MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     if ("hasQueuedThreads".equals(name) || "hasQueuedThread".equals(name) || "getQueueLength".equals(name)) {
       name = getNewName(name);
@@ -33,6 +32,7 @@ public class ReentrantReadWriteLockClassAdapter extends ClassAdapter implements 
     return ByteCodeUtil.TC_METHOD_PREFIX + methodName;
   }
   
+  @Override
   public void visitEnd() {
     createHasQueuedThreadsMethod("hasQueuedThreads", "()Z");
     createHasQueuedThreadMethod("hasQueuedThread", "(Ljava/lang/Thread;)Z");
@@ -145,11 +145,12 @@ public class ReentrantReadWriteLockClassAdapter extends ClassAdapter implements 
     mv.visitEnd();
   }
   
-  private final static class InitMethodAdapter extends MethodAdapter implements Opcodes {
+  private final static class InitMethodAdapter extends MethodVisitor implements Opcodes {
     public InitMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
     
+    @Override
     public void visitTypeInsn(int opcode, String desc) {
       if (NEW == opcode) {
         if ("java/util/concurrent/locks/ReentrantReadWriteLock$NonfairSync".equals(desc)) {
@@ -159,10 +160,11 @@ public class ReentrantReadWriteLockClassAdapter extends ClassAdapter implements 
         } else if ("java/util/concurrent/locks/ReentrantReadWriteLock$WriteLock".equals(desc)) {
           desc = "java/util/concurrent/locks/ReentrantReadWriteLock$WriteLock";
         }
-      } 
+      }
       super.visitTypeInsn(opcode, desc);
     }
     
+    @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       if (opcode == INVOKESPECIAL) {
         if ("java/util/concurrent/locks/ReentrantReadWriteLock$NonfairSync".equals(owner) &&

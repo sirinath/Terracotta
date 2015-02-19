@@ -6,7 +6,6 @@ package com.tc.object.config;
 
 import org.osgi.framework.Bundle;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
 import com.tc.aspectwerkz.reflect.ClassInfo;
@@ -69,10 +68,10 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig, DSOMBeanCon
                                                     InstrumentationLogger lgr, ClassLoader caller,
                                                     final boolean forcePortable, boolean honorTransient);
 
-  ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
+  ClassVisitor createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
                                      ClassLoader caller);
 
-  ClassAdapter createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
+  ClassVisitor createClassAdapterFor(ClassWriter writer, ClassInfo classInfo, InstrumentationLogger lgr,
                                      ClassLoader caller, boolean disableSuperClassTypeChecking);
 
   boolean isCallConstructorOnLoad(ClassInfo classInfo);
@@ -159,6 +158,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig, DSOMBeanCon
 
   int getFaultCount();
 
+  @Override
   void addWriteAutolock(String methodPattern);
 
   void addWriteAutolock(String methodPattern, String lockContextInfo);
@@ -167,6 +167,7 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig, DSOMBeanCon
 
   void addLock(String methodPattern, LockDefinition lockDefinition);
 
+  @Override
   void addReadAutolock(String methodPattern);
 
   void addAutolock(String methodPattern, ConfigLockLevel type);
@@ -204,11 +205,13 @@ public interface DSOClientConfigHelper extends DSOApplicationConfig, DSOMBeanCon
   boolean isUseNonDefaultConstructor(Class clazz);
 
   // HACK: is also in IStandardDSOClientConfigHelper
+  @Override
   void addIncludePattern(String expression);
 
   CommonL1Config getNewCommonL1Config();
 
   // Used for testing
+  @Override
   void addIncludePattern(String expression, boolean honorTransient);
 
   void addIncludePattern(String expression, boolean honorTransient, boolean oldStyleCallConstructorOnLoad,

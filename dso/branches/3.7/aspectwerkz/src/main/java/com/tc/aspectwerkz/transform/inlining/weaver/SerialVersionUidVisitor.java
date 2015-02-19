@@ -4,7 +4,6 @@
 package com.tc.aspectwerkz.transform.inlining.weaver;
 
 import com.tc.asm.*;
-
 import com.tc.aspectwerkz.transform.InstrumentationContext;
 import com.tc.aspectwerkz.transform.inlining.AsmHelper;
 import com.tc.aspectwerkz.reflect.ClassInfo;
@@ -29,7 +28,7 @@ import java.security.MessageDigest;
  *
  * @author <a href="mailto:alex AT gnilux DOT com">Alexandre Vasseur</a>
  */
-public class SerialVersionUidVisitor extends ClassAdapter implements Opcodes {
+public class SerialVersionUidVisitor extends ClassVisitor implements Opcodes {
 
   public static final String CLINIT = "<clinit>";
   public static final String INIT = "<init>";
@@ -105,7 +104,7 @@ public class SerialVersionUidVisitor extends ClassAdapter implements Opcodes {
   }
 
   SerialVersionUidVisitor(final ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
   /**
@@ -423,13 +422,13 @@ public class SerialVersionUidVisitor extends ClassAdapter implements Opcodes {
   /**
    * Add the serial version uid to the class if not already present
    */
-  public static class Add extends ClassAdapter {
+  public static class Add extends ClassVisitor {
 
     private InstrumentationContext m_ctx;
     private ClassInfo m_classInfo;
 
     public Add(ClassVisitor classVisitor, InstrumentationContext ctx, ClassInfo classInfo) {
-      super(classVisitor);
+      super(Opcodes.ASM4, classVisitor);
       m_ctx = ctx;
       m_classInfo = classInfo;
     }

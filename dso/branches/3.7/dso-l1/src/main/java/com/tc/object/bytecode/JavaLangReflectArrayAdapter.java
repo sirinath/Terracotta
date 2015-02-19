@@ -3,7 +3,6 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
@@ -14,7 +13,7 @@ import com.tc.util.runtime.Vm;
 import java.util.HashSet;
 import java.util.Set;
 
-public class JavaLangReflectArrayAdapter extends ClassAdapter implements Opcodes, ClassAdapterFactory {
+public class JavaLangReflectArrayAdapter extends ClassVisitor implements Opcodes, ClassAdapterFactory {
   private final static Set nonNativeMethods         = new HashSet(2);
   private final static Set excludeMethods           = new HashSet(9);
   private final static Set includedPrivateMethods   = new HashSet(1);
@@ -40,14 +39,15 @@ public class JavaLangReflectArrayAdapter extends ClassAdapter implements Opcodes
   }
 
   public JavaLangReflectArrayAdapter() {
-    super(null);
+    super(Opcodes.ASM4, null);
   }
   
   private JavaLangReflectArrayAdapter(ClassVisitor cv, ClassLoader caller) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
-  public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+  @Override
+  public ClassVisitor create(ClassVisitor visitor, ClassLoader loader) {
     return new JavaLangReflectArrayAdapter(visitor, loader);
   }
   
@@ -59,6 +59,7 @@ public class JavaLangReflectArrayAdapter extends ClassAdapter implements Opcodes
     return (access & Opcodes.ACC_PRIVATE) == Opcodes.ACC_PRIVATE;
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String description, String signature, String[] exceptions) {
     if (!isNative(access)) {
       if (!nonNativeMethods.contains(name)) {

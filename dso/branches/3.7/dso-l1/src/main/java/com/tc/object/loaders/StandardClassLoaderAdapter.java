@@ -4,7 +4,6 @@
  */
 package com.tc.object.loaders;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
@@ -17,7 +16,7 @@ import com.tc.object.tools.BootJarTool;
  * The hard coded name can be overrided by specifying a property name in the constructor and
  * giving a value to the property when starting the VM
  */
-public class StandardClassLoaderAdapter extends ClassAdapter implements Opcodes {
+public class StandardClassLoaderAdapter extends ClassVisitor implements Opcodes {
 
   private static final String LOADER_NAME = ByteCodeUtil.TC_METHOD_PREFIX + "loaderName";
 
@@ -27,17 +26,19 @@ public class StandardClassLoaderAdapter extends ClassAdapter implements Opcodes 
   private String              className;
 
   public StandardClassLoaderAdapter(ClassVisitor cv, String loaderName, String sysProp) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     this.loaderName = loaderName;
     this.sysProp = sysProp;
   }
 
+  @Override
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     this.className = name;
     interfaces = ByteCodeUtil.addInterfaces(interfaces, new String[] { ByteCodeUtil.NAMEDCLASSLOADER_CLASS });
     super.visit(version, access, name, signature, superName, interfaces);
   }
 
+  @Override
   public void visitEnd() {
     addNamedClassLoaderMethods();
 
@@ -56,6 +57,7 @@ public class StandardClassLoaderAdapter extends ClassAdapter implements Opcodes 
     super.visitEnd();
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
 
@@ -102,13 +104,15 @@ public class StandardClassLoaderAdapter extends ClassAdapter implements Opcodes 
   private class StaticInitAdapter extends AdviceAdapter {
 
     public StaticInitAdapter(MethodVisitor mv, int access, String name, String desc) {
-      super(mv, access, name, desc);
+      super(Opcodes.ASM4, mv, access, name, desc);
     }
 
+    @Override
     protected void onMethodEnter() {
       //
     }
 
+    @Override
     protected void onMethodExit(int opcode) {
       if (RETURN == opcode) {
         setupLoaderName(this);

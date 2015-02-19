@@ -4,7 +4,6 @@
  */
 package com.tctest;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.object.config.ConfigVisitor;
@@ -122,10 +121,10 @@ public class ManyFieldsTest extends TransparentTestBase {
     }
   }
 
-  private static class Adapter extends ClassAdapter {
+  private static class Adapter extends ClassVisitor {
 
     public Adapter(ClassVisitor cv) {
-      super(cv);
+      super(Opcodes.ASM4, cv);
     }
 
     @Override

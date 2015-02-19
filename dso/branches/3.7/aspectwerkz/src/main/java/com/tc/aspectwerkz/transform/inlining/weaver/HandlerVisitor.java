@@ -3,13 +3,11 @@
  */
 package com.tc.aspectwerkz.transform.inlining.weaver;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.Label;
+import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
-
 import com.tc.aspectwerkz.definition.SystemDefinition;
 import com.tc.aspectwerkz.joinpoint.management.JoinPointType;
 import com.tc.aspectwerkz.reflect.impl.asm.AsmClassInfo;
@@ -38,13 +36,13 @@ import java.lang.reflect.Modifier;
  * 
  * TODO in ASM 2.x and later try/catch blocks are visited before method code, so this adapter is not needed
  */
-public class HandlerVisitor extends ClassAdapter implements TransformationConstants {
+public class HandlerVisitor extends ClassVisitor implements TransformationConstants {
 
   /**
    * A visitor that looks for all catch clause and keep track of them
    * providing that they match
    */
-  public static class LookaheadCatchLabelsClassAdapter extends ClassAdapter {
+  public static class LookaheadCatchLabelsClassAdapter extends ClassVisitor {
 
     /**
      * list of CatchLabelStruct that matches
@@ -76,7 +74,7 @@ public class HandlerVisitor extends ClassAdapter implements TransformationConsta
      */
     public LookaheadCatchLabelsClassAdapter(ClassVisitor cv, ClassLoader loader, ClassInfo callerClassInfo,
                                             InstrumentationContext ctx, List catchLabels) {
-      super(cv);
+      super(Opcodes.ASM4, cv);
       m_catchLabels = catchLabels;
       m_loader = loader;
       m_callerClassInfo = callerClassInfo;
@@ -134,12 +132,12 @@ public class HandlerVisitor extends ClassAdapter implements TransformationConsta
    * Visit the method, and keep track of all labels so that when visittryCatch is reached
    * we can remember the index
    */
-  static final class LookaheadCatchLabelsMethodAdapter extends MethodAdapter {
+  static final class LookaheadCatchLabelsMethodAdapter extends MethodVisitor {
     private final MemberInfo info;
     private final LookaheadCatchLabelsClassAdapter classAdapter;
 
     LookaheadCatchLabelsMethodAdapter(MethodVisitor mv, MemberInfo info, LookaheadCatchLabelsClassAdapter classAdapter) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
       this.info = info;
       this.classAdapter = classAdapter;
     }
@@ -204,7 +202,7 @@ public class HandlerVisitor extends ClassAdapter implements TransformationConsta
   public HandlerVisitor(final ClassVisitor cv,
                         final InstrumentationContext ctx,
                         final List catchLabels) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     m_ctx = ctx;
     m_catchLabels = catchLabels;
   }
@@ -237,7 +235,7 @@ public class HandlerVisitor extends ClassAdapter implements TransformationConsta
    *
    * @author <a href="mailto:alex AT gnilux DOT com">Alexandre Vasseur</a>
    */
-  public class CatchClauseCodeAdapter extends MethodAdapter {
+  public class CatchClauseCodeAdapter extends MethodVisitor {
 
     /**
      * Creates a new instance.
@@ -245,7 +243,7 @@ public class HandlerVisitor extends ClassAdapter implements TransformationConsta
      * @param ca
      */
     public CatchClauseCodeAdapter(final MethodVisitor ca) {
-      super(ca);
+      super(Opcodes.ASM4, ca);
     }
 
     public void visitLabel(Label label) {

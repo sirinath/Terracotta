@@ -3,9 +3,8 @@
  */
 package com.tc.aspectwerkz.transform.inlining.weaver;
 
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
-
+import com.tc.asm.Opcodes;
 import com.tc.aspectwerkz.transform.TransformationConstants;
 
 /**
@@ -16,7 +15,7 @@ import com.tc.aspectwerkz.transform.TransformationConstants;
  *
  * @author <a href="mailto:alex AT gnilux DOT com">Alexandre Vasseur</a>
  */
-public class AfterObjectInitializationCodeAdapter extends MethodAdapter implements TransformationConstants {
+public class AfterObjectInitializationCodeAdapter extends MethodVisitor implements TransformationConstants {
 
   private String m_callerMemberName;
   private int m_newCount = 0;
@@ -24,7 +23,7 @@ public class AfterObjectInitializationCodeAdapter extends MethodAdapter implemen
   protected boolean m_isObjectInitialized = false;
 
   public AfterObjectInitializationCodeAdapter(MethodVisitor cv, String callerMemberName) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     m_callerMemberName = callerMemberName;
     // object initialization matters within constructors only
     if (!m_callerMemberName.equals(INIT_METHOD_NAME)) {

@@ -4,11 +4,9 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.FieldVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.object.bytecode.hook.impl.JavaLangArrayHelpers;
@@ -16,7 +14,7 @@ import com.tc.util.Assert;
 import com.tc.util.runtime.Vm;
 import com.tc.util.runtime.VmVersion;
 
-public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
+public class JavaLangStringAdapter extends ClassVisitor implements Opcodes {
 
   private static final String GET_VALUE_METHOD      = ByteCodeUtil.fieldGetterMethod("value");
   private static final String INTERN_FIELD_NAME     = ByteCodeUtil.TC_FIELD_PREFIX + "interned";
@@ -29,18 +27,20 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
 
   public JavaLangStringAdapter(ClassVisitor cv, VmVersion vmVersion, boolean portableStringBuffer, boolean isAzul,
                                boolean isIBM) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     this.vmVersion = vmVersion;
     this.portableStringBuffer = portableStringBuffer;
     this.isAzul = isAzul;
     this.isIBM = isIBM;
   }
 
+  @Override
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     interfaces = ByteCodeUtil.addInterfaces(interfaces, new String[] { "com/tc/object/bytecode/JavaLangStringTC" });
     super.visit(version, access, name, signature, superName, interfaces);
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
 
@@ -67,6 +67,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     return mv;
   }
 
+  @Override
   public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
     if ("value".equals(name)) {
       // Remove final modifier and add volatile on char[] value. We will need to modify
@@ -77,6 +78,7 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     }
   }
 
+  @Override
   public void visitEnd() {
     addCompressionField();
     addCompressedConstructor();
@@ -217,20 +219,20 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
   }
 
   /**
-   * private char[] __tc_getvalue() { 
-   *    if ($__tc_compressed){ 
-   *      byte[] uncompressed = StringCompressionUtil.unpackAndDecompress(value); 
-   *      if (uncompressed != null) { 
-   *        try { 
-   *            value =  StringCoding.decode("UTF-8", uncompressed, 0, uncompressed.length); 
+   * private char[] __tc_getvalue() {
+   *    if ($__tc_compressed){
+   *      byte[] uncompressed = StringCompressionUtil.unpackAndDecompress(value);
+   *      if (uncompressed != null) {
+   *        try {
+   *            value =  StringCoding.decode("UTF-8", uncompressed, 0, uncompressed.length);
    *        } catch (UnsupportedEncodingException e) {
    *            //NOTE: Java 1.4 AssertionError does not have a constructor taking a (Throwable)
-   *            throw new AssertionError(e.getMessage()); 
-   *        } 
-   *      $__tc_compressed=false; 
-   *      } 
-   *    } 
-   *    return value; 
+   *            throw new AssertionError(e.getMessage());
+   *        }
+   *      $__tc_compressed=false;
+   *      }
+   *    }
+   *    return value;
    * }
    */
   private void addGetValueMethod() {
@@ -411,12 +413,13 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
     return null;
   }
 
-  private static class RewriteGetCharsCallsAdapter extends MethodAdapter {
+  private static class RewriteGetCharsCallsAdapter extends MethodVisitor {
 
     public RewriteGetCharsCallsAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
+    @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       if ((INVOKEVIRTUAL == opcode) && ("java/lang/String".equals(owner) && "getChars".equals(name))) {
         super.visitMethodInsn(opcode, owner, "getCharsFast", desc);
@@ -427,12 +430,13 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
 
   }
 
-  private static class GetCharsAdapter extends MethodAdapter {
+  private static class GetCharsAdapter extends MethodVisitor {
 
     public GetCharsAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
+    @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       if ((opcode == INVOKESTATIC) && "java/lang/System".equals(owner) && "arraycopy".equals(name)) {
         super.visitMethodInsn(INVOKESTATIC, JavaLangArrayHelpers.CLASS, "charArrayCopy", "([CI[CII)V");
@@ -443,11 +447,12 @@ public class JavaLangStringAdapter extends ClassAdapter implements Opcodes {
 
   }
 
-  private static class DecompressCharsAdapter extends MethodAdapter {
+  private static class DecompressCharsAdapter extends MethodVisitor {
     public DecompressCharsAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
+    @Override
     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
       if (opcode == GETFIELD && "java/lang/String".equals(owner) && "value".equals(name)) {
         String gDesc = "()" + desc;

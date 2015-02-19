@@ -6,6 +6,7 @@ package com.tc.aspectwerkz.transform.inlining;
 import com.tc.asm.AnnotationVisitor;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Attribute;
+import com.tc.asm.Opcodes;
 
 /**
  * Adapters to handle annotation copy
@@ -18,13 +19,14 @@ public class AsmCopyAdapter {
   /**
    * Copy annotation from one to another place
    */
-  public static class CopyAnnotationAdapter implements AnnotationVisitor {
+  public static class CopyAnnotationAdapter extends AnnotationVisitor {
 
     private final AnnotationVisitor m_from;
 
     private final AnnotationVisitor m_to;
 
     public CopyAnnotationAdapter(AnnotationVisitor from, AnnotationVisitor copyTo) {
+      super(Opcodes.ASM4);
       m_from = from;
       m_to = copyTo;
     }

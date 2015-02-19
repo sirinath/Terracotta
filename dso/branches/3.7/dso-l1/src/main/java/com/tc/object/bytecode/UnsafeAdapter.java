@@ -4,28 +4,27 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tcclient.util.DSOUnsafe;
 
 import java.lang.reflect.Modifier;
 
-public class UnsafeAdapter extends ClassAdapter implements Opcodes, ClassAdapterFactory {
+public class UnsafeAdapter extends ClassVisitor implements Opcodes, ClassAdapterFactory {
   private final static String UNSAFE_CLASS_SLASH   = "sun/misc/Unsafe";
   public final static String  TC_UNSAFE_FIELD_NAME = ByteCodeUtil.TC_FIELD_PREFIX + "theUnsafe";
 
   public UnsafeAdapter() {
-    super(null);
+    super(Opcodes.ASM4);
   }
 
   private UnsafeAdapter(ClassVisitor cv, ClassLoader caller) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
-  public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+  @Override
+  public ClassVisitor create(ClassVisitor visitor, ClassLoader loader) {
     return new UnsafeAdapter(visitor, loader);
   }
 
@@ -55,9 +54,9 @@ public class UnsafeAdapter extends ClassAdapter implements Opcodes, ClassAdapter
     }
   }
 
-  private static class UnsafeMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class UnsafeMethodAdapter extends MethodVisitor implements Opcodes {
     public UnsafeMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override

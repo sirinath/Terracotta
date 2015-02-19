@@ -13,7 +13,7 @@ class JavaUtilConcurrentHashMapLazyValuesMethodAdapter extends LocalVariablesSor
 
   public JavaUtilConcurrentHashMapLazyValuesMethodAdapter(final int access, final String desc, final MethodVisitor mv,
                                                           final boolean storeOnlyNonNull) {
-    super(access, desc, mv);
+    super(Opcodes.ASM4, access, desc, mv);
 
     this.storeOnlyNonNull = storeOnlyNonNull;
   }

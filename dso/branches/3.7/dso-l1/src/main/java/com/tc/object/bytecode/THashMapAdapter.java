@@ -6,7 +6,6 @@ package com.tc.object.bytecode;
 
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
@@ -15,6 +14,7 @@ public class THashMapAdapter {
   public static class TransformValuesAdapter extends AbstractMethodAdapter {
     private final static String STATIC_EXECUTE_DESC = "(Lgnu/trove/TObjectFunction;Ljava/lang/Object;Lgnu/trove/THashMap;Ljava/lang/Object;)Ljava/lang/Object;";
     
+    @Override
     public MethodVisitor adapt(ClassVisitor classVisitor) {
       addStaticExecuteMethod(classVisitor);
       MethodVisitor mv = visitOriginal(classVisitor);
@@ -65,16 +65,18 @@ public class THashMapAdapter {
       mv.visitEnd();
     }
 
+    @Override
     public boolean doesOriginalNeedAdapting() {
       return false;
     }
 
-    private static class Adapter extends MethodAdapter implements Opcodes {
+    private static class Adapter extends MethodVisitor implements Opcodes {
 
       public Adapter(MethodVisitor mv) {
-        super(mv);
+        super(Opcodes.ASM4, mv);
       }
       
+      @Override
       public void visitCode() {
         super.visitCode();
         ByteCodeUtil.pushThis(mv);
@@ -86,6 +88,7 @@ public class THashMapAdapter {
         mv.visitLabel(l1);
       }
 
+      @Override
       public void visitMethodInsn(int opcode, String owner, String name, String desc) {
         if ((opcode == INVOKEINTERFACE) && "gnu/trove/TObjectFunction".equals(owner) && "execute".equals(name) &&
             "(Ljava/lang/Object;)Ljava/lang/Object;".equals(desc)) {
@@ -95,7 +98,7 @@ public class THashMapAdapter {
           mv.visitInsn(AALOAD);
           opcode = INVOKESTATIC;
           owner = "gnu/trove/THashMap";
-          desc = STATIC_EXECUTE_DESC; 
+          desc = STATIC_EXECUTE_DESC;
         }
         super.visitMethodInsn(opcode, owner, name, desc);
       }

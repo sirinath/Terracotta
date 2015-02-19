@@ -4,17 +4,17 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
-public class JavaUtilConcurrentHashMapWriteThroughEntryAdapter extends ClassAdapter implements Opcodes {
+public class JavaUtilConcurrentHashMapWriteThroughEntryAdapter extends ClassVisitor implements Opcodes {
   public JavaUtilConcurrentHashMapWriteThroughEntryAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
+  @Override
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     String[] interfacesNew = new String[interfaces.length + 1];
     System.arraycopy(interfaces, 0, interfacesNew, 0, interfaces.length);
@@ -22,6 +22,7 @@ public class JavaUtilConcurrentHashMapWriteThroughEntryAdapter extends ClassAdap
     super.visit(version, access, name, signature, superName, interfacesNew);
   }
   
+  @Override
   public void visitEnd() {
     createGetValueMethod();
     createTCRawSetValueMethod();

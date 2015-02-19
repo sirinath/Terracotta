@@ -3,8 +3,6 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.MethodAdapter;
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
@@ -15,7 +13,7 @@ import com.tc.util.FieldUtils;
 import java.util.HashSet;
 import java.util.Set;
 
-public class JavaLangReflectFieldAdapter extends ClassAdapter implements Opcodes, ClassAdapterFactory {
+public class JavaLangReflectFieldAdapter extends ClassVisitor implements Opcodes, ClassAdapterFactory {
 
   private static final Set setters = new HashSet();
   private static final Set getters = new HashSet();
@@ -35,17 +33,19 @@ public class JavaLangReflectFieldAdapter extends ClassAdapter implements Opcodes
   }
 
   public JavaLangReflectFieldAdapter() {
-    super(null);
+    super(Opcodes.ASM4);
   }
   
   private JavaLangReflectFieldAdapter(ClassVisitor cv, ClassLoader caller) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
-  public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+  @Override
+  public ClassVisitor create(ClassVisitor visitor, ClassLoader loader) {
     return new JavaLangReflectFieldAdapter(visitor, loader);
   }
   
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
 
@@ -84,16 +84,17 @@ public class JavaLangReflectFieldAdapter extends ClassAdapter implements Opcodes
     mv.visitEnd();
   }
 
-  private class FieldSetterMethodAdapter extends MethodAdapter implements Opcodes {
+  private class FieldSetterMethodAdapter extends MethodVisitor implements Opcodes {
     private final String name;
     private final String desc;
     
     public FieldSetterMethodAdapter(MethodVisitor mv, String name, String desc) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
       this.name = name;
       this.desc = desc;
     }
     
+    @Override
     public void visitCode() {
       super.visitCode();
       Type type = Type.getArgumentTypes(desc)[1];

@@ -5,13 +5,10 @@ package com.tctest;
 
 import org.apache.commons.io.IOUtils;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassReader;
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
-import com.tc.asm.commons.EmptyVisitor;
 import com.tc.object.bytecode.hook.impl.JavaLangArrayHelpers;
 import com.tc.test.TCTestCase;
 
@@ -73,7 +70,7 @@ public class InstrumentedJavaLangStringTest extends TCTestCase {
 
   public void testStringIsInstrumented() throws IOException {
     ClassReader reader = new ClassReader(getStringBytes());
-    StringVisitor visitor = new StringVisitor(new EmptyVisitor());
+    StringVisitor visitor = new StringVisitor(new ClassVisitor(Opcodes.ASM4) {});
     reader.accept(visitor, ClassReader.SKIP_FRAMES);
 
     assertEquals(visitor.verified.toString(), 2, visitor.verified.size());
@@ -88,14 +85,15 @@ public class InstrumentedJavaLangStringTest extends TCTestCase {
     return IOUtils.toByteArray(is);
   }
 
-  private static class StringVisitor extends ClassAdapter {
+  private static class StringVisitor extends ClassVisitor {
 
     private final Set verified = new HashSet();
 
     public StringVisitor(ClassVisitor cv) {
-      super(cv);
+      super(Opcodes.ASM4, cv);
     }
 
+    @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
       if ((name.equals("getChars") && "(II[CI)V".equals(desc)) || (name.equals("getBytes") && desc.equals("(II[BI)V"))) {
         // make formatter sane
@@ -104,15 +102,16 @@ public class InstrumentedJavaLangStringTest extends TCTestCase {
       return null;
     }
 
-    private class VerifyArrayManagerAccess extends MethodAdapter {
+    private class VerifyArrayManagerAccess extends MethodVisitor {
 
       private final String method;
 
       public VerifyArrayManagerAccess(MethodVisitor mv, String method) {
-        super(mv);
+        super(Opcodes.ASM4, mv);
         this.method = method;
       }
 
+      @Override
       public void visitMethodInsn(int opcode, String owner, String name, String desc) {
         if ((opcode == Opcodes.INVOKESTATIC) && JavaLangArrayHelpers.CLASS.equals(owner)) {
           verified.add(method);

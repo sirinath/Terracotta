@@ -9,6 +9,7 @@ import com.tc.asm.ClassVisitor;
 import com.tc.asm.FieldVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 
 /**
  * Visitors that are not writing any bytecode and using a Null ClassVisitor / Code Visitor as a target instead.
@@ -22,9 +23,13 @@ public class AsmNullAdapter {
    * Can be used to speed up ASM and avoid unecessary bytecode writing thru a regular ClassWriter when this is not
    * needed (read only purpose).
    */
-  public static class NullClassAdapter implements ClassVisitor {
+  public static class NullClassAdapter extends ClassVisitor {
 
     public final static ClassVisitor NULL_CLASS_ADAPTER = new NullClassAdapter();
+
+    public NullClassAdapter() {
+      super(Opcodes.ASM4);
+    }
 
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     }
@@ -62,10 +67,14 @@ public class AsmNullAdapter {
    * Can be used to speed up ASM and avoid unecessary bytecode writing thru a regular CodeWriter when this is not
    * needed (read only purpose)
    */
-  public static class NullMethodAdapter implements MethodVisitor {
+  public static class NullMethodAdapter extends MethodVisitor {
 
     public final static MethodVisitor NULL_METHOD_ADAPTER = new NullMethodAdapter();
 
+    public NullMethodAdapter() {
+      super(Opcodes.ASM4);
+    }
+    
     public void visitInsn(int opcode) {
     }
 
@@ -145,10 +154,14 @@ public class AsmNullAdapter {
   /**
    * A NullFieldAdapter
    */
-  public static class NullFieldAdapter implements FieldVisitor {
+  public static class NullFieldAdapter extends FieldVisitor {
 
     public final static FieldVisitor NULL_FIELD_ADAPTER = new NullFieldAdapter();
 
+    public NullFieldAdapter() {
+      super(Opcodes.ASM4);
+    }
+    
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
       return NullAnnotationVisitor.NULL_ANNOTATION_ADAPTER;
     }
@@ -163,10 +176,14 @@ public class AsmNullAdapter {
   /**
    * A NullAnnotationVisitor
    */
-  public static class NullAnnotationVisitor implements AnnotationVisitor {
+  public static class NullAnnotationVisitor extends AnnotationVisitor {
 
     public final static AnnotationVisitor NULL_ANNOTATION_ADAPTER = new NullAnnotationVisitor();
 
+    public NullAnnotationVisitor() {
+      super(Opcodes.ASM4);
+    }
+    
     public void visit(String name, Object value) {
     }
 

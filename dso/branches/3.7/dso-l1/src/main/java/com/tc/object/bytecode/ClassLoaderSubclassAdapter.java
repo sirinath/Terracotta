@@ -3,18 +3,18 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
-
+import com.tc.asm.Opcodes;
 import com.tc.object.bytecode.hook.ClassLoaderPreProcessorImpl.LoadClassAdapter;
 
-public class ClassLoaderSubclassAdapter extends ClassAdapter {
+public class ClassLoaderSubclassAdapter extends ClassVisitor {
 
   public ClassLoaderSubclassAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     if ("loadClass".equals(name) && "(Ljava/lang/String;)Ljava/lang/Class;".equals(desc)) {

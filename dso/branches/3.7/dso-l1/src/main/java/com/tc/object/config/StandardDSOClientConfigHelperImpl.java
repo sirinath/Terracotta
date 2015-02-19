@@ -11,7 +11,6 @@ import org.terracotta.groupConfigForL1.ServerGroupsDocument.ServerGroups;
 import org.terracotta.groupConfigForL1.ServerInfo;
 import org.terracotta.license.LicenseException;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
 import com.tc.aspectwerkz.expression.ExpressionContext;
@@ -1501,13 +1500,13 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
   }
 
   @Override
-  public ClassAdapter createClassAdapterFor(final ClassWriter writer, final ClassInfo classInfo,
+  public ClassVisitor createClassAdapterFor(final ClassWriter writer, final ClassInfo classInfo,
                                             final InstrumentationLogger lgr, final ClassLoader caller) {
     return this.createClassAdapterFor(writer, classInfo, lgr, caller, false);
   }
 
   @Override
-  public ClassAdapter createClassAdapterFor(final ClassWriter writer, final ClassInfo classInfo,
+  public ClassVisitor createClassAdapterFor(final ClassWriter writer, final ClassInfo classInfo,
                                             final InstrumentationLogger lgr, final ClassLoader caller,
                                             final boolean forcePortable) {
     TransparencyClassSpec spec = getOrCreateSpec(classInfo.getName());
@@ -1520,7 +1519,7 @@ public class StandardDSOClientConfigHelperImpl implements StandardDSOClientConfi
       }
     }
 
-    ClassAdapter dsoAdapter = new TransparencyClassAdapter(classInfo, spec, writer, lgr, caller, portability);
+    ClassVisitor dsoAdapter = new TransparencyClassAdapter(classInfo, spec, writer, lgr, caller, portability);
     List<ClassAdapterFactory> factories = spec.getCustomClassAdapters();
     ClassVisitor cv = dsoAdapter;
     if (factories != null && !factories.isEmpty()) {

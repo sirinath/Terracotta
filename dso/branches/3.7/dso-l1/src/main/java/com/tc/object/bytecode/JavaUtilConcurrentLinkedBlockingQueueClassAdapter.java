@@ -3,21 +3,20 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
 
-public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassAdapter implements Opcodes {
+public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassVisitor implements Opcodes {
   private static final String GET_ITEM_METHOD_NAME   = "getItem";
   private static final String GET_ITEM_METHOD_DESC   = "()Ljava/lang/Object;";
 
   public JavaUtilConcurrentLinkedBlockingQueueClassAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     if (mv == null) {
@@ -45,18 +44,19 @@ public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassAdap
     
     mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/LinkedBlockingQueue", to, desc);
 
-    Type ret = Type.getReturnType(desc);    
+    Type ret = Type.getReturnType(desc);
     mv.visitInsn(ret.getOpcode(IRETURN));
     
     mv.visitMaxs(0, 0);
-    mv.visitEnd();    
+    mv.visitEnd();
   }
   
-  static class NodeMethodAdapter extends MethodAdapter implements Opcodes {
+  static class NodeMethodAdapter extends MethodVisitor implements Opcodes {
     public NodeMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
+    @Override
     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
       if (GETFIELD == opcode && "java/util/concurrent/LinkedBlockingQueue$Node".equals(owner) && "item".equals(name)
           && "Ljava/lang/Object;".equals(desc)) {

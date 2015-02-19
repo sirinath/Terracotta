@@ -7,7 +7,6 @@ package com.tc.object.bytecode;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.FieldVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
@@ -147,9 +146,9 @@ public class ChangeClassNameRootAdapter extends ChangeClassNameHierarchyAdapter 
     return new ChangeClassNameMethodAdapter(super.visitMethod(access, name, convertedDesc, convertedSign, exceptions));
   }
 
-  private class ChangeClassNameMethodAdapter extends MethodAdapter implements Opcodes {
+  private class ChangeClassNameMethodAdapter extends MethodVisitor implements Opcodes {
     public ChangeClassNameMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override

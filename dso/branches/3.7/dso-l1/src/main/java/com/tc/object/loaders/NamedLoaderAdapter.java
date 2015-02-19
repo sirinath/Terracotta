@@ -4,7 +4,6 @@
  */
 package com.tc.object.loaders;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
@@ -15,62 +14,65 @@ import com.tc.object.bytecode.ClassAdapterFactory;
 /**
  * Adds the NamedClassLoader interface (and required impl) to a loader implementation
  */
-public class NamedLoaderAdapter extends ClassAdapter implements Opcodes, ClassAdapterFactory {
+public class NamedLoaderAdapter extends ClassVisitor implements Opcodes, ClassAdapterFactory {
 
-  private static final String CLASSLOADER_NAME_NOT_SET_PREFIX = 
+  private static final String CLASSLOADER_NAME_NOT_SET_PREFIX =
     "This classloader instance has not been registered (loader class:";
   private static final String CLASSLOADER_NAME_NOT_SET_SUFFIX =
     ").\n" +
-    "\n" + 
-    "The correct Terracotta Integration Module (TIM) may be missing from this\n" + 
-    "installation of Terracotta, or an unsupported platform is being used.\n" + 
-    "See the current list of supported platforms at\n" + 
-    "http://www.terracotta.org/web/display/docs/Platform+Support.\n" + 
-    "\n" + 
-    "TIMs are required to integrate Terracotta with\n" + 
-    "web containers, frameworks, and other technologies.\n" + 
-    "\n" + 
-    "For example, to integrate Apache Tomcat 5.5 with Terracotta on UNIX/Linux,\n" + 
-    "install the correct TIM by entering the following command from the Terracotta\n" + 
-    "installation root directory:\n" + 
-    "\n" + 
-    "[PROMPT] bin/tim-get.sh install tim-tomcat-5.5\n" + 
-    "\n" + 
-    "On Microsoft Windows, enter:\n" + 
-    "\n" + 
-    "[PROMPT] bin/tim-get.bat install tim-tomcat-5.5\n" + 
-    "\n" + 
-    "You must also add the TIM to the Terracotta configuration file (tc-config.xml\n" + 
-    "by default) by adding its name and version number using a <module> element:\n" + 
-    "\n" + 
-    "<modules>\n" + 
-    "  <module name=\"tim-tomcat-5.5\" version=\"1.0.0-SNAPSHOT\" />\n" + 
-    "  <module name=\"tim-another-one\" version=\"1.2.3\" />\n" + 
-    "  ...\n" + 
-    "</modules>\n" + 
-    "\n" + 
+    "\n" +
+    "The correct Terracotta Integration Module (TIM) may be missing from this\n" +
+    "installation of Terracotta, or an unsupported platform is being used.\n" +
+    "See the current list of supported platforms at\n" +
+    "http://www.terracotta.org/web/display/docs/Platform+Support.\n" +
+    "\n" +
+    "TIMs are required to integrate Terracotta with\n" +
+    "web containers, frameworks, and other technologies.\n" +
+    "\n" +
+    "For example, to integrate Apache Tomcat 5.5 with Terracotta on UNIX/Linux,\n" +
+    "install the correct TIM by entering the following command from the Terracotta\n" +
+    "installation root directory:\n" +
+    "\n" +
+    "[PROMPT] bin/tim-get.sh install tim-tomcat-5.5\n" +
+    "\n" +
+    "On Microsoft Windows, enter:\n" +
+    "\n" +
+    "[PROMPT] bin/tim-get.bat install tim-tomcat-5.5\n" +
+    "\n" +
+    "You must also add the TIM to the Terracotta configuration file (tc-config.xml\n" +
+    "by default) by adding its name and version number using a <module> element:\n" +
+    "\n" +
+    "<modules>\n" +
+    "  <module name=\"tim-tomcat-5.5\" version=\"1.0.0-SNAPSHOT\" />\n" +
+    "  <module name=\"tim-another-one\" version=\"1.2.3\" />\n" +
+    "  ...\n" +
+    "</modules>\n" +
+    "\n" +
     "For more information, see http://www.terracotta.org/tim-error.";
   private static final String LOADER_NAME_FIELD = ByteCodeUtil.TC_FIELD_PREFIX + "loaderName";
   private String              owner;
 
   public NamedLoaderAdapter() {
-    super(null);
+    super(Opcodes.ASM4);
   }
 
   private NamedLoaderAdapter(ClassVisitor cv, ClassLoader caller) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
-  public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+  @Override
+  public ClassVisitor create(ClassVisitor visitor, ClassLoader loader) {
     return new NamedLoaderAdapter(visitor, loader);
   }
 
+  @Override
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     interfaces = ByteCodeUtil.addInterfaces(interfaces, new String[] { ByteCodeUtil.NAMEDCLASSLOADER_CLASS });
     super.visit(version, access, name, signature, superName, interfaces);
     this.owner = name;
   }
 
+  @Override
   public void visitEnd() {
     super.visitField(ACC_SYNTHETIC | ACC_VOLATILE | ACC_TRANSIENT | ACC_PRIVATE, LOADER_NAME_FIELD,
                      "Ljava/lang/String;", null, null);
