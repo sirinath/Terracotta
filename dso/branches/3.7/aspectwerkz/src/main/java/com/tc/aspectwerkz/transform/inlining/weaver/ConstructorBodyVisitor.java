@@ -3,12 +3,10 @@
  */
 package com.tc.aspectwerkz.transform.inlining.weaver;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
-import com.tc.asm.MethodAdapter;
-
 import com.tc.aspectwerkz.definition.SystemDefinition;
 import com.tc.aspectwerkz.joinpoint.management.JoinPointType;
 import com.tc.aspectwerkz.transform.InstrumentationContext;
@@ -34,7 +32,7 @@ import java.util.Set;
  *
  * @author <a href="mailto:alex@gnilux.com">Alexandre Vasseur</a>
  */
-public class ConstructorBodyVisitor extends ClassAdapter implements TransformationConstants {
+public class ConstructorBodyVisitor extends ClassVisitor implements TransformationConstants {
 
   private final InstrumentationContext m_ctx;
   private final ClassInfo m_calleeClassInfo;
@@ -53,7 +51,7 @@ public class ConstructorBodyVisitor extends ClassAdapter implements Transformati
                                 final ClassInfo classInfo,
                                 final InstrumentationContext ctx,
                                 final Set addedMethods) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     m_calleeClassInfo = classInfo;
     m_ctx = (InstrumentationContext) ctx;
     m_addedMethods = addedMethods;
@@ -223,7 +221,7 @@ public class ConstructorBodyVisitor extends ClassAdapter implements Transformati
    * f.e. CGlib proxy ctor are like that..
    * Don't know if some other info can be left on the stack (f.e. ILOAD 1, DUP ...)
    */
-  private class DispatchCtorBodyCodeAdapter extends MethodAdapter {
+  private class DispatchCtorBodyCodeAdapter extends MethodVisitor {
     private MethodVisitor m_ctorBodyMethodMethodVisitor;
     private MethodVisitor m_proxyCtorMethodVisitor;
     private final int m_constructorAccess;
@@ -237,7 +235,7 @@ public class ConstructorBodyVisitor extends ClassAdapter implements Transformati
 
     public DispatchCtorBodyCodeAdapter(MethodVisitor proxyCtor, MethodVisitor ctorBodyMethod, final int access,
                                        final String desc) {
-      super(proxyCtor);
+      super(Opcodes.ASM4, proxyCtor);
       m_proxyCtorMethodVisitor = proxyCtor;
       m_ctorBodyMethodMethodVisitor = ctorBodyMethod;
       m_constructorAccess = access;

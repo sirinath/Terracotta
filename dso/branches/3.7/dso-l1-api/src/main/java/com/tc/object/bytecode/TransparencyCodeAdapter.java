@@ -41,8 +41,8 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
   // MemberInfo memberInfo, String originalName) {
   public TransparencyCodeAdapter(InstrumentationSpec spec, LockDefinition autoLockDefinition, MethodVisitor mv,
                                  MemberInfo memberInfo, String originalName) {
-    super(new ExceptionTableOrderingMethodAdapter(mv), memberInfo.getModifiers(), originalName, memberInfo
-        .getSignature());
+    super(Opcodes.ASM4, new ExceptionTableOrderingMethodAdapter(mv), memberInfo.getModifiers(), originalName,
+          memberInfo.getSignature());
     this.spec = spec;
     this.isAutolock = autoLockDefinition != null;
     this.autoLockType = isAutolock ? autoLockDefinition.getLockLevelAsInt() : -1;

@@ -4,19 +4,19 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.util.runtime.Vm;
 
-public class JavaUtilConcurrentHashMapEntryIteratorAdapter extends ClassAdapter implements Opcodes {
+public class JavaUtilConcurrentHashMapEntryIteratorAdapter extends ClassVisitor implements Opcodes {
 
   public JavaUtilConcurrentHashMapEntryIteratorAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
+  @Override
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     String[] interfacesNew = new String[interfaces.length + 1];
     System.arraycopy(interfaces, 0, interfacesNew, 0, interfaces.length);
@@ -24,17 +24,19 @@ public class JavaUtilConcurrentHashMapEntryIteratorAdapter extends ClassAdapter 
     super.visit(version, access, name, signature, superName, interfacesNew);
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     if (Vm.isJDK16Compliant()
         && "next".equals(name)
         && "()Ljava/util/Map$Entry;".equals(desc)) {
-      return mv;  
+      return mv;
     } else {
       return new JavaUtilConcurrentHashMapLazyValuesMethodAdapter(access, desc, mv, false);
-    }  
+    }
   }
   
+  @Override
   public void visitEnd() {
     createTCRawSetValueMethod();
     createTCIsFaultedInMethod();

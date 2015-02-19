@@ -10,12 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
-
 import com.tc.aspectwerkz.DeploymentModel;
 import com.tc.aspectwerkz.expression.PointcutType;
 import com.tc.aspectwerkz.expression.ExpressionContext;
@@ -34,7 +32,7 @@ import com.tc.aspectwerkz.transform.inlining.AsmHelper;
  *
  * @author <a href="mailto:jboner@codehaus.org">Jonas Bonr </a>
  */
-public class AddMixinMethodsVisitor extends ClassAdapter implements TransformationConstants {
+public class AddMixinMethodsVisitor extends ClassVisitor implements TransformationConstants {
 
   private final InstrumentationContext m_ctx;
   private String m_declaringTypeName;
@@ -57,7 +55,7 @@ public class AddMixinMethodsVisitor extends ClassAdapter implements Transformati
                                 final ClassInfo classInfo,
                                 final InstrumentationContext ctx,
                                 final Set addedMethods) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     m_classInfo = classInfo;
     m_ctx = (InstrumentationContext) ctx;
     m_addedMethods = addedMethods;
@@ -390,10 +388,10 @@ public class AddMixinMethodsVisitor extends ClassAdapter implements Transformati
    *
    * @author <a href="mailto:jboner@codehaus.org">Jonas Bonr </a>
    */
-  public class PrependToClinitMethodCodeAdapter extends MethodAdapter {
+  public class PrependToClinitMethodCodeAdapter extends MethodVisitor {
 
     public PrependToClinitMethodCodeAdapter(final MethodVisitor ca) {
-      super(ca);
+      super(Opcodes.ASM4, ca);
       for (Iterator i4 = m_mixinFields.values().iterator(); i4.hasNext();) {
         MixinFieldInfo fieldInfo = (MixinFieldInfo) i4.next();
         if (fieldInfo.isStatic) {
@@ -408,10 +406,10 @@ public class AddMixinMethodsVisitor extends ClassAdapter implements Transformati
    *
    * @author <a href="mailto:jboner@codehaus.org">Jonas Bonr </a>
    */
-  public class AppendToInitMethodCodeAdapter extends MethodAdapter {
+  public class AppendToInitMethodCodeAdapter extends MethodVisitor {
 
     public AppendToInitMethodCodeAdapter(final MethodVisitor ca) {
-      super(ca);
+      super(Opcodes.ASM4, ca);
     }
 
     public void visitInsn(final int opcode) {

@@ -2,18 +2,18 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object.bytecode;
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
-public class JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter extends ClassAdapter implements Opcodes {
+public class JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter extends ClassVisitor implements Opcodes {
 
   public JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
+  @Override
   public void visitEnd() {
     addGetItemMethod();
     super.visitEnd();

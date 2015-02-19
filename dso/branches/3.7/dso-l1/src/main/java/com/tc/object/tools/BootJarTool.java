@@ -19,6 +19,7 @@ import com.tc.asm.ClassReader;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
 import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.asm.commons.SerialVersionUIDAdder;
 import com.tc.asm.tree.ClassNode;
 import com.tc.asm.tree.InnerClassNode;
@@ -718,6 +719,7 @@ public class BootJarTool {
       adaptClassIfNotAlreadyIncluded(BufferedWriter.class.getName(), BufferedWriterAdapter.class);
       adaptClassIfNotAlreadyIncluded(DataOutputStream.class.getName(), DataOutputStreamAdapter.class);
     } catch (final Throwable e) {
+      e.printStackTrace();
       exit(this.bootJarHandler.getCreationErrorMessage(), e);
     }
 
@@ -2038,7 +2040,7 @@ public class BootJarTool {
     final byte[] tcData = getSystemBytes(tcClassNameDots);
 
     final ClassReader tcCR = new ClassReader(tcData);
-    final ClassNode tcCN = new ClassNode() {
+    final ClassNode tcCN = new ClassNode(Opcodes.ASM4) {
       @Override
       public MethodVisitor visitMethod(final int maccess, final String mname, final String mdesc,
                                        final String msignature, final String[] mexceptions) {

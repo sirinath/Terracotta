@@ -6,6 +6,7 @@
 package com.tc.object.bytecode;
 
 import com.tc.asm.ClassVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.asm.commons.SerialVersionUIDAdder;
 
 
@@ -19,9 +20,10 @@ import com.tc.asm.commons.SerialVersionUIDAdder;
 public class SafeSerialVersionUIDAdder extends SerialVersionUIDAdder {
 
     public SafeSerialVersionUIDAdder(ClassVisitor cv) {
-        super(cv);
+        super(Opcodes.ASM4, cv);
     }
 
+    @Override
     protected byte[] computeSHAdigest(final byte[] value) {
         return update(value, 0, value.length);
     }
@@ -59,10 +61,10 @@ public class SafeSerialVersionUIDAdder extends SerialVersionUIDAdder {
     private int H4 = 0x10325476;
     private int H5 = 0xc3d2e1f0;
 
-    private int[] X = new int[80];
+    private final int[] X = new int[80];
     private int xOff = 0;
 
-    private byte[] xBuf = new byte[4];
+    private final byte[] xBuf = new byte[4];
     private int xBufOff = 0;
 
     private long byteCount = 0;

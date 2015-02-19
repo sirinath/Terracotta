@@ -6,7 +6,6 @@ package com.tc.object.bytecode;
 
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
@@ -20,6 +19,7 @@ public class LinkedListAdapter {
 
   public static class RemoveMethodCreator implements MethodCreator, Opcodes {
 
+    @Override
     public void createMethods(ClassVisitor cv) {
       boolean hasReturnValue = Vm.isJDK15Compliant();
       String retType = hasReturnValue ? "Ljava/lang/Object;" : "V";
@@ -66,21 +66,24 @@ public class LinkedListAdapter {
 
   public static class RemoveAdapter extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor classVisitor) {
       MethodVisitor mv = visitOriginal(classVisitor);
       return new Adapter(mv);
     }
 
+    @Override
     public boolean doesOriginalNeedAdapting() {
       return false;
     }
 
-    private static class Adapter extends MethodAdapter implements Opcodes {
+    private static class Adapter extends MethodVisitor implements Opcodes {
 
       public Adapter(MethodVisitor mv) {
-        super(mv);
+        super(Opcodes.ASM4, mv);
       }
 
+      @Override
       public void visitCode() {
         super.visitCode();
 
@@ -97,6 +100,7 @@ public class LinkedListAdapter {
         super.visitLabel(notShared);
       }
 
+      @Override
       public void visitMethodInsn(int opcode, String owner, String name, String desc) {
         if (opcode == INVOKESPECIAL && "remove".equals(name) && "java/util/LinkedList".equals(owner)
             && desc.startsWith("(Ljava/util/LinkedList$Entry;)")) {
@@ -114,24 +118,27 @@ public class LinkedListAdapter {
 
   public static class ListIteratorAdapter extends AbstractMethodAdapter {
 
+    @Override
     public MethodVisitor adapt(ClassVisitor classVisitor) {
       MethodVisitor mv = visitOriginal(classVisitor);
       return new Adapter(mv);
     }
 
+    @Override
     public boolean doesOriginalNeedAdapting() {
       return false;
     }
 
-    private static class Adapter extends MethodAdapter implements Opcodes {
+    private static class Adapter extends MethodVisitor implements Opcodes {
 
       public Adapter(MethodVisitor mv) {
-        super(mv);
+        super(Opcodes.ASM4, mv);
         mv.visitTypeInsn(NEW, "com/tc/util/ListIteratorWrapper");
         mv.visitInsn(DUP);
         mv.visitVarInsn(ALOAD, 0);
       }
 
+      @Override
       public void visitInsn(int opcode) {
         if (ARETURN == opcode) {
           mv.visitMethodInsn(INVOKESPECIAL, "com/tc/util/ListIteratorWrapper", "<init>",

@@ -4,23 +4,22 @@
  */
 package com.tc.object.ibm;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.object.bytecode.ClassAdapterFactory;
 
-public class SystemInitializationAdapter extends ClassAdapter implements ClassAdapterFactory {
+public class SystemInitializationAdapter extends ClassVisitor implements ClassAdapterFactory {
 
   public SystemInitializationAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
   public SystemInitializationAdapter() {
-    super(null);
+    super(Opcodes.ASM4);
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
 
@@ -30,12 +29,13 @@ public class SystemInitializationAdapter extends ClassAdapter implements ClassAd
 
   }
 
-  private static class LastChanceHookAdapter extends MethodAdapter implements Opcodes {
+  private static class LastChanceHookAdapter extends MethodVisitor implements Opcodes {
 
     public LastChanceHookAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
+    @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       super.visitMethodInsn(opcode, owner, name, desc);
 
@@ -47,7 +47,8 @@ public class SystemInitializationAdapter extends ClassAdapter implements ClassAd
     }
   }
 
-  public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+  @Override
+  public ClassVisitor create(ClassVisitor visitor, ClassLoader loader) {
     return new SystemInitializationAdapter(visitor);
   }
 

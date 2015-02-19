@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.Set;
 
 import com.tc.asm.*;
-
 import com.tc.aspectwerkz.definition.SystemDefinition;
 import com.tc.aspectwerkz.intercept.AdvisableImpl;
 import com.tc.aspectwerkz.joinpoint.management.JoinPointType;
@@ -38,7 +37,7 @@ import com.tc.aspectwerkz.expression.ExpressionContext;
  * @author <a href="mailto:jboner@codehaus.org">Jonas Bonr </a>
  * @author <a href="mailto:alex AT gnilux DOT com">Alexandre Vasseur</a>
  */
-public class MethodExecutionVisitor extends ClassAdapter implements TransformationConstants {
+public class MethodExecutionVisitor extends ClassVisitor implements TransformationConstants {
 
   private final ClassInfo m_classInfo;
   private final InstrumentationContext m_ctx;
@@ -57,7 +56,7 @@ public class MethodExecutionVisitor extends ClassAdapter implements Transformati
                                 final ClassInfo classInfo,
                                 final InstrumentationContext ctx,
                                 final Set addedMethods) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     m_classInfo = classInfo;
     m_ctx = (InstrumentationContext) ctx;
     m_addedMethods = addedMethods;
@@ -143,7 +142,7 @@ public class MethodExecutionVisitor extends ClassAdapter implements Transformati
       }
       // prefix the original method and make sure we copy method annotations to the proxyMethod
       // while keeping the body for the prefixed method
-      return new MethodAdapter(cv.visitMethod(modifiers, prefixedOriginalName, desc, signature, exceptions)) {
+      return new MethodVisitor(Opcodes.ASM4, cv.visitMethod(modifiers, prefixedOriginalName, desc, signature, exceptions)) {
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
           return new AsmCopyAdapter.CopyAnnotationAdapter(
                   super.visitAnnotation(desc, visible),

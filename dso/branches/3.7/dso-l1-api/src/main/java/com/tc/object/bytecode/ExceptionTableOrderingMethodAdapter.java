@@ -4,8 +4,8 @@
 package com.tc.object.bytecode;
 
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.logging.TCLogger;
 import com.tc.logging.TCLogging;
 
@@ -30,7 +30,7 @@ import java.util.List;
  * 
  * @author Chris Dennis
  */
-public class ExceptionTableOrderingMethodAdapter extends MethodAdapter {
+public class ExceptionTableOrderingMethodAdapter extends MethodVisitor {
   private static final TCLogger LOGGER = TCLogging.getLogger(ExceptionTableOrderingMethodAdapter.class);
 
   /**
@@ -43,12 +43,13 @@ public class ExceptionTableOrderingMethodAdapter extends MethodAdapter {
   private int locals;
 
   public ExceptionTableOrderingMethodAdapter(MethodVisitor mv) {
-    super(mv);
+    super(Opcodes.ASM4, mv);
   }
 
   /**
    * Caches try/catch blocks in a local data structure.
    */
+  @Override
   public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
     handlers.add(new Handler(start, end, handler, type, handlers.size()));
   }
@@ -56,6 +57,7 @@ public class ExceptionTableOrderingMethodAdapter extends MethodAdapter {
   /**
    * Caches visited stack and local variable limits for later visitation.
    */
+  @Override
   public void visitMaxs(int maxStack, int maxLocals) {
     visitMaxs = true;
     stack = maxStack;
@@ -67,6 +69,7 @@ public class ExceptionTableOrderingMethodAdapter extends MethodAdapter {
    * <p>
    * Following this it calls <code>super.visitMaxs(...)</code> and <code>super.visitEnd()</code>
    */
+  @Override
   public void visitEnd() {
     Collections.sort(handlers);
     for (Iterator it = handlers.iterator(); it.hasNext(); ) {
@@ -91,7 +94,7 @@ public class ExceptionTableOrderingMethodAdapter extends MethodAdapter {
      * @param end Label representing the end of the try block (exclusive).
      * @param handler Label representing the start of the handler code.
      * @param type String representation of the internal Java type caught by this handler (<code>null</code> for finally).
-     * @param index integer representing the position in the original visited order. 
+     * @param index integer representing the position in the original visited order.
      */
     public Handler(Label start, Label end, Label handler, String type, int index) {
       this.start = start;
@@ -134,6 +137,7 @@ public class ExceptionTableOrderingMethodAdapter extends MethodAdapter {
       mv.visitTryCatchBlock(start, end, handler, desc);
     }
 
+    @Override
     public int hashCode() {
       try {
         return ((7 * start.getOffset()) ^ (11 * end.getOffset())
@@ -144,6 +148,7 @@ public class ExceptionTableOrderingMethodAdapter extends MethodAdapter {
       }
     }
 
+    @Override
     public boolean equals(Object o) {
       if (!(o instanceof Handler)) return false;
 
@@ -171,6 +176,7 @@ public class ExceptionTableOrderingMethodAdapter extends MethodAdapter {
      * Java source code)</li>
      * </ol>
      */
+    @Override
     public int compareTo(Object o) {
       Handler h0 = this;
       Handler h1 = (Handler) o;
@@ -203,7 +209,7 @@ public class ExceptionTableOrderingMethodAdapter extends MethodAdapter {
           }
         }
       } catch (IllegalArgumentException e) {
-        LOGGER.error("Not all handler labels were visited, reverting to the visited order (comparing " + h0 + " and " + h1 + ")");        
+        LOGGER.error("Not all handler labels were visited, reverting to the visited order (comparing " + h0 + " and " + h1 + ")");
         return h0.index - h1.index;
       }
 
@@ -211,11 +217,12 @@ public class ExceptionTableOrderingMethodAdapter extends MethodAdapter {
       return h0.index - h1.index;
     }
 
+    @Override
     public String toString() {
       try {
         return "Exception Handler : Catches " + (desc == null ? "<finally>" : desc) + " @ [" + start.getOffset() + ".." + end.getOffset() + "] => " + handler.getOffset();
       } catch (IllegalStateException e) {
-        return "Exception Handler : Catches " + (desc == null ? "<finally>" : desc) + " @ [" + start + ".." + end + "] => " + handler;        
+        return "Exception Handler : Catches " + (desc == null ? "<finally>" : desc) + " @ [" + start + ".." + end + "] => " + handler;
       }
     }
   }

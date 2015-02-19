@@ -3,10 +3,8 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
@@ -16,12 +14,13 @@ import com.tc.asm.Opcodes;
  * Ie.:
  * sun.misc.MessageUtils.toStderr(this.getClass().getName());
  */
-public class JavaLangThrowableDebugClassAdapter extends ClassAdapter implements Opcodes {
+public class JavaLangThrowableDebugClassAdapter extends ClassVisitor implements Opcodes {
 
   public JavaLangThrowableDebugClassAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     if ("<init>".equals(name)) {
@@ -31,11 +30,12 @@ public class JavaLangThrowableDebugClassAdapter extends ClassAdapter implements 
     return mv;
   }
   
-  private static class DebugConstructorMethodVisitor extends MethodAdapter implements Opcodes {
+  private static class DebugConstructorMethodVisitor extends MethodVisitor implements Opcodes {
     public DebugConstructorMethodVisitor(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
+    @Override
     public void visitInsn(int opcode) {
       if (RETURN == opcode) {
         mv.visitVarInsn(ALOAD, 0);

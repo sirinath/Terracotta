@@ -4,10 +4,8 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
@@ -15,7 +13,7 @@ import com.tc.asm.commons.LocalVariablesSorter;
 import com.tc.util.Assert;
 import com.tc.util.runtime.Vm;
 
-public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Opcodes {
+public class JavaUtilConcurrentHashMapAdapter extends ClassVisitor implements Opcodes {
   private final static String CONCURRENT_HASH_MAP_SLASH           = "java/util/concurrent/ConcurrentHashMap";
   private final static String TC_REHASH_METHOD_NAME               = ByteCodeUtil.TC_METHOD_PREFIX + "rehash";
   private final static String TC_REHASH_METHOD_DESC               = "()V";
@@ -40,13 +38,13 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
   private final static String TC_APPLICATOR_CLEAR_METHOD_NAME     = "__tc_applicator_clear";
   private final static String TC_APPLICATOR_CLEAR_METHOD_DESC     = "()V";
   private final static String TC_REMOVE_LOGICAL_METHOD_NAME       = "__tc_remove_logical";
-  private final static String TC_REMOVE_LOGICAL_METHOD_DESC       = "(Ljava/lang/Object;)V";  
+  private final static String TC_REMOVE_LOGICAL_METHOD_DESC       = "(Ljava/lang/Object;)V";
   private final static String TC_PUT_LOGICAL_METHOD_NAME          = "__tc_put_logical";
   private final static String TC_PUT_LOGICAL_METHOD_DESC          = "(Ljava/lang/Object;Ljava/lang/Object;)V";
   private final static String HASH_METHOD_NAME                    = "hash";
 
   public JavaUtilConcurrentHashMapAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
   /**
@@ -60,6 +58,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
    * instrumented code will always use an locking scheme to make sure all updates are applied before returning the size.
    * The same is true for isEmpty() and containsValue methods().
    */
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     if ("size".equals(name) && "()I".equals(desc)) {
       return addWrapperMethod(access, name, desc, signature, exceptions);
@@ -125,6 +124,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
     return new ConcurrentHashMapMethodAdapter(mv);
   }
 
+  @Override
   public void visitEnd() {
     createTCPutMethod();
     createTCRehashAndSupportMethods();
@@ -613,16 +613,17 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
     mv.visitEnd();
   }
 
-  private static class SetWrapperMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class SetWrapperMethodAdapter extends MethodVisitor implements Opcodes {
     private final String wrapperClass;
     private final String targetSet;
     
     public SetWrapperMethodAdapter(MethodVisitor mv, String targetSet, String wrapperClass) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
       this.targetSet = targetSet;
       this.wrapperClass = wrapperClass;
     }
     
+    @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       super.visitMethodInsn(opcode, owner, name, desc);
       
@@ -638,7 +639,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
     }
   }
   
-  private static class RetargetingMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class RetargetingMethodAdapter extends MethodVisitor implements Opcodes {
     private final String target;
     private final String replacement;
     private final String descriptor;
@@ -646,13 +647,14 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
     private int matches;
     
     public RetargetingMethodAdapter(MethodVisitor mv, String target, String replacement, String descriptor) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
       this.target = target;
       this.replacement = replacement;
       this.descriptor = descriptor;
       this.matches = 0;
     }
     
+    @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       if (INVOKEVIRTUAL == opcode && "java/util/concurrent/ConcurrentHashMap$Segment".equals(owner)
           && target.equals(name) && descriptor.equals(desc)) {
@@ -664,6 +666,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       }
     }
     
+    @Override
     public void visitEnd() {
       super.visitEnd();
       Assert.assertTrue("Adapter not applied", matches != 0);
@@ -678,6 +681,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       this.matches = 0;
     }
     
+    @Override
     public void visitInsn(int opcode) {
       if (ARETURN == opcode) {
         // change the old value return to a void return and swallow the normally returned value
@@ -689,17 +693,19 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       }
     }
     
+    @Override
     public void visitEnd() {
       super.visitEnd();
-      Assert.assertTrue("Adapter not applied", matches != 0);      
+      Assert.assertTrue("Adapter not applied", matches != 0);
     }
   }
   
-  private abstract static class AddCheckManagedKeyMethodAdapter extends MethodAdapter implements Opcodes {
+  private abstract static class AddCheckManagedKeyMethodAdapter extends MethodVisitor implements Opcodes {
     public AddCheckManagedKeyMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
+    @Override
     public void visitCode() {
       super.visitCode();
       addCheckManagedKeyCode();
@@ -713,6 +719,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       super(mv);
     }
 
+    @Override
     protected void addCheckManagedKeyCode() {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
@@ -731,6 +738,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       super(mv);
     }
 
+    @Override
     protected void addCheckManagedKeyCode() {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
@@ -757,10 +765,12 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       super(mv);
     }
 
+    @Override
     public void visitCode() {
       mv.visitCode();
     }
 
+    @Override
     public void visitJumpInsn(int opcode, Label label) {
       super.visitJumpInsn(opcode, label);
       if (IFNONNULL == opcode) {
@@ -768,6 +778,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       }
     }
 
+    @Override
     public void visitLabel(Label label) {
       super.visitLabel(label);
       if (label.equals(target)) {
@@ -781,6 +792,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       super(mv);
     }
 
+    @Override
     protected void addCheckManagedKeyCode() {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
@@ -801,10 +813,12 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       super(mv);
     }
 
+    @Override
     public void visitCode() {
       mv.visitCode();
     }
 
+    @Override
     public void visitJumpInsn(int opcode, Label label) {
       super.visitJumpInsn(opcode, label);
       if (IFNONNULL == opcode) {
@@ -812,6 +826,7 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
       }
     }
 
+    @Override
     public void visitLabel(Label label) {
       super.visitLabel(label);
       if (label.equals(target)) {
@@ -820,12 +835,13 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
     }
   }
 
-  private static class ConcurrentHashMapMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class ConcurrentHashMapMethodAdapter extends MethodVisitor implements Opcodes {
 
     public ConcurrentHashMapMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
+    @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       if (INVOKEVIRTUAL == opcode && CONCURRENT_HASH_MAP_SLASH.equals(owner) && "segmentFor".equals(name)
           && "(I)Ljava/util/concurrent/ConcurrentHashMap$Segment;".equals(desc)) {
@@ -849,12 +865,13 @@ public class JavaUtilConcurrentHashMapAdapter extends ClassAdapter implements Op
     }
   }
 
-  private static class TurnIntoReadLocksMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class TurnIntoReadLocksMethodAdapter extends MethodVisitor implements Opcodes {
 
     public TurnIntoReadLocksMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
+    @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       if (INVOKEVIRTUAL == opcode
           && JavaUtilConcurrentHashMapSegmentAdapter.CONCURRENT_HASH_MAP_SEGMENT_SLASH.equals(owner)

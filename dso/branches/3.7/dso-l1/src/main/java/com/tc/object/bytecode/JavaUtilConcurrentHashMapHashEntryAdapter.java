@@ -4,13 +4,12 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
-public class JavaUtilConcurrentHashMapHashEntryAdapter extends ClassAdapter implements Opcodes {
+public class JavaUtilConcurrentHashMapHashEntryAdapter extends ClassVisitor implements Opcodes {
   private static final String THIS_TYPE                    = "java/util/concurrent/ConcurrentHashMap$HashEntry";
 
   private static final String PREFIX                       = ByteCodeUtil.TC_METHOD_PREFIX + "CHM_";
@@ -20,14 +19,16 @@ public class JavaUtilConcurrentHashMapHashEntryAdapter extends ClassAdapter impl
   static final String         GET_VALUE_RAW                = PREFIX + "getValueRaw";
   
   public JavaUtilConcurrentHashMapHashEntryAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
+  @Override
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     interfaces = ByteCodeUtil.addInterface(interfaces, TCMapEntry.class.getName().replace('.', '/'));
     super.visit(version, access, name, signature, superName, interfaces);
   }
 
+  @Override
   public void visitEnd() {
     createTCRawSetValueMethod();
     createTCIsFaultedInMethod();
@@ -128,7 +129,7 @@ public class JavaUtilConcurrentHashMapHashEntryAdapter extends ClassAdapter impl
     mv.visitFieldInsn(GETFIELD, THIS_TYPE, "value", "Ljava/lang/Object;");
     mv.visitInsn(ARETURN);
     mv.visitMaxs(0, 0);
-    mv.visitEnd();    
+    mv.visitEnd();
   }
   /**
    * <code>

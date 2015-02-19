@@ -6,16 +6,14 @@ package com.tc.object.bytecode;
 
 import com.tc.asm.AnnotationVisitor;
 import com.tc.asm.Attribute;
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
 import com.tc.object.SerializationUtil;
 
-public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassAdapter implements Opcodes {
+public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassVisitor implements Opcodes {
   private final static String PARENT_CONCURRENT_HASH_MAP_FIELD_TYPE = "Ljava/util/concurrent/ConcurrentHashMap;";
 
   private final static String PARENT_CONCURRENT_HASH_MAP_FIELD_NAME = "parentMap";
@@ -58,7 +56,7 @@ public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassAdapter implem
                                                                       + "IF)V";
 
   public JavaUtilConcurrentHashMapSegmentAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
   @Override
@@ -439,9 +437,9 @@ public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassAdapter implem
     mv.visitEnd();
   }
 
-  private static class InitMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class InitMethodAdapter extends MethodVisitor implements Opcodes {
     public InitMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -477,9 +475,9 @@ public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassAdapter implem
     }
   }
 
-  private static class PutMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class PutMethodAdapter extends MethodVisitor implements Opcodes {
     public PutMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -586,9 +584,9 @@ public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassAdapter implem
     }
   }
 
-  private static class RemoveLockUnlockMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class RemoveLockUnlockMethodAdapter extends MethodVisitor implements Opcodes {
     public RemoveLockUnlockMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -604,9 +602,9 @@ public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassAdapter implem
     }
   }
 
-  private static class ReplaceMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class ReplaceMethodAdapter extends MethodVisitor implements Opcodes {
     public ReplaceMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -646,9 +644,9 @@ public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassAdapter implem
     }
   }
 
-  private static class ReplaceIfValueEqualMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class ReplaceIfValueEqualMethodAdapter extends MethodVisitor implements Opcodes {
     public ReplaceIfValueEqualMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -688,9 +686,9 @@ public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassAdapter implem
     }
   }
 
-  private static class RemoveMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class RemoveMethodAdapter extends MethodVisitor implements Opcodes {
     public RemoveMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -730,11 +728,11 @@ public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassAdapter implem
     }
   }
 
-  private static class PutNullOldValueMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class PutNullOldValueMethodAdapter extends MethodVisitor implements Opcodes {
     private boolean previousIsHashEntryValue = false;
 
     public PutNullOldValueMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     private void restorePreviousHashEntryValue() {
@@ -901,11 +899,11 @@ public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassAdapter implem
     }
   }
 
-  private static class RemoveNullOldValueMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class RemoveNullOldValueMethodAdapter extends MethodVisitor implements Opcodes {
     private boolean previousIsHashEntryValue = false;
 
     public RemoveNullOldValueMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     private void restorePreviousHashEntryValue() {
@@ -1072,9 +1070,9 @@ public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassAdapter implem
     }
   }
 
-  private static class ClearMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class ClearMethodAdapter extends MethodVisitor implements Opcodes {
     public ClearMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -1099,9 +1097,9 @@ public class JavaUtilConcurrentHashMapSegmentAdapter extends ClassAdapter implem
     }
   }
 
-  private static class ReadValueUnderLockMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class ReadValueUnderLockMethodAdapter extends MethodVisitor implements Opcodes {
     public ReadValueUnderLockMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override

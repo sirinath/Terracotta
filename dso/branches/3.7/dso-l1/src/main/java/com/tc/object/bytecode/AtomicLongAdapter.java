@@ -4,7 +4,6 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
@@ -14,15 +13,16 @@ import com.tc.util.runtime.Vm;
 /**
  * NOTE: This adapter is only used for IBM JDK
  */
-public class AtomicLongAdapter extends ClassAdapter implements Opcodes {
+public class AtomicLongAdapter extends ClassVisitor implements Opcodes {
 
   public static final String VALUE_FIELD_NAME = "java.util.concurrent.atomic.AtomicLong.value";
 
   public AtomicLongAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     Vm.assertIsIbm();
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     if ("set".equals(name) && "(J)V".equals(desc)) {
@@ -39,6 +39,7 @@ public class AtomicLongAdapter extends ClassAdapter implements Opcodes {
       super(mv);
     }
 
+    @Override
     public void modifyVolatileValue(int tcobjectVarStore, Label labelCommitVolatile) {
       // if the TCObject instance is not null, obtain it again so
       // that it can be used to signal the new value for the local 'value'
@@ -53,6 +54,7 @@ public class AtomicLongAdapter extends ClassAdapter implements Opcodes {
       mv.visitJumpInsn(GOTO, labelCommitVolatile);
     }
 
+    @Override
     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
       if (PUTFIELD == opcode && owner.equals("java/util/concurrent/atomic/AtomicLong") && name.equals("value")
           && desc.equals("J")) {
@@ -83,10 +85,12 @@ public class AtomicLongAdapter extends ClassAdapter implements Opcodes {
       super(mv);
     }
 
+    @Override
     public void modifyVolatileValue(int tcobjectVarStore, Label labelCommitVolatile) {
       // do nothing since this is a getter
     }
 
+    @Override
     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
       if (GETFIELD == opcode && owner.equals("java/util/concurrent/atomic/AtomicLong") && name.equals("value")
           && desc.equals("J")) {

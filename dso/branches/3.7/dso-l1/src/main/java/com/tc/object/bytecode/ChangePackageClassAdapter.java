@@ -3,17 +3,15 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.FieldVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
 import java.util.Collection;
 
-public class ChangePackageClassAdapter extends ClassAdapter implements Opcodes {
+public class ChangePackageClassAdapter extends ClassVisitor implements Opcodes {
   private final static char DOT_DELIMITER   = '.';
   private final static char SLASH_DELIMITER = '/';
 
@@ -40,7 +38,7 @@ public class ChangePackageClassAdapter extends ClassAdapter implements Opcodes {
    */
   public ChangePackageClassAdapter(ClassVisitor cv, String targetClassName, String targetPackage, String newPackage,
                                    Collection innerClassesHolder) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     this.targetName = targetPackage.replace(DOT_DELIMITER, SLASH_DELIMITER) + SLASH_DELIMITER + targetClassName;
     this.newName = newPackage.replace(DOT_DELIMITER, SLASH_DELIMITER) + SLASH_DELIMITER + targetClassName;
     this.targetType = "L"+targetName;
@@ -48,17 +46,20 @@ public class ChangePackageClassAdapter extends ClassAdapter implements Opcodes {
     this.innerClassNames = innerClassesHolder;
   }
 
+  @Override
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     name = replaceName(name);
     superName = replaceName(superName);
     super.visit(version, access, name, signature, superName, interfaces);
   }
   
+  @Override
   public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
     desc = replaceName(desc);
     return super.visitField(access, name, desc, signature, value);
   }
   
+  @Override
   public void visitInnerClass(String name, String outerName, String innerName, int access) {
     if (innerClassNames != null && !innerClassNames.contains(name) && targetName.equals(outerName)) {
       innerClassNames.add(name);
@@ -69,6 +70,7 @@ public class ChangePackageClassAdapter extends ClassAdapter implements Opcodes {
     super.visitInnerClass(name, outerName, innerName, access);
   }
   
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     desc = replaceName(desc);
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
@@ -99,28 +101,32 @@ public class ChangePackageClassAdapter extends ClassAdapter implements Opcodes {
     return desc;
   }
   
-  private class ChangePackageMethodVisitor extends MethodAdapter implements Opcodes {
+  private class ChangePackageMethodVisitor extends MethodVisitor implements Opcodes {
     public ChangePackageMethodVisitor(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
     
+    @Override
     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
       owner = replaceName(owner);
       desc = replaceName(desc);
       super.visitFieldInsn(opcode, owner, name, desc);
     }
     
+    @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
       owner = replaceName(owner);
       desc = replaceDesc(desc);
       super.visitMethodInsn(opcode, owner, name, desc);
     }
     
+    @Override
     public void visitTypeInsn(int opcode, String desc) {
       desc = replaceName(desc);
       super.visitTypeInsn(opcode, desc);
     }
     
+    @Override
     public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
       desc = replaceName(desc);
       super.visitLocalVariable(name, desc, signature, start, end, index);

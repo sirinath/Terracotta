@@ -4,16 +4,15 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
 public class LinkedHashMapClassAdapter extends ChangeClassNameHierarchyAdapter implements Opcodes {
   
   public static final ClassAdapterFactory FACTORY = new ClassAdapterFactory(){
-    public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+    @Override
+    public ClassVisitor create(ClassVisitor visitor, ClassLoader loader) {
       return new LinkedHashMapClassAdapter(visitor);
     }
   };
@@ -24,11 +23,13 @@ public class LinkedHashMapClassAdapter extends ChangeClassNameHierarchyAdapter i
     super(cv);
   }
 
+  @Override
   public final void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     super.visit(version, access, name, signature, superName, interfaces);
     this.className = name;
   }
 
+  @Override
   public final MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
 
@@ -39,9 +40,9 @@ public class LinkedHashMapClassAdapter extends ChangeClassNameHierarchyAdapter i
     return mv;
   }
 
-  private final static class AddEntryMethodAdapter extends MethodAdapter implements Opcodes {
+  private final static class AddEntryMethodAdapter extends MethodVisitor implements Opcodes {
     public AddEntryMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     /**
@@ -49,6 +50,7 @@ public class LinkedHashMapClassAdapter extends ChangeClassNameHierarchyAdapter i
      * LinkedHashMap.removeEldestEntry(...) inside the method. This fixes the ClassCastException thrown when an
      * instrumented class extends java.util.LinkedHashMap and overrides the removeEldestEntry method.
      */
+    @Override
     public final void visitMethodInsn(int opcode, String owner, String name, String desc) {
       if ((opcode == INVOKEVIRTUAL)
           && (owner.equals("java/util/LinkedHashMap") && (name.equals("removeEldestEntry")) && (desc

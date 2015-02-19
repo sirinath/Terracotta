@@ -4,18 +4,19 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
+import com.tc.asm.Opcodes;
 
-public class AddInterfacesAdapter extends ClassAdapter {
+public class AddInterfacesAdapter extends ClassVisitor {
 
   private final String[] toAdd;
 
   public AddInterfacesAdapter(ClassVisitor cv, String[] toAdd) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     this.toAdd = toAdd;
   }
 
+  @Override
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     super.visit(version, access, name, signature, superName, ByteCodeUtil.addInterfaces(interfaces, toAdd));
   }

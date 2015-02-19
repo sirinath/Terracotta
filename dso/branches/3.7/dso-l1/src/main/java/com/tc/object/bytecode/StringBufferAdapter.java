@@ -4,23 +4,22 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.util.runtime.VmVersion;
 
-public class StringBufferAdapter extends ClassAdapter implements Opcodes {
+public class StringBufferAdapter extends ClassVisitor implements Opcodes {
 
   private final VmVersion version;
 
   public StringBufferAdapter(ClassVisitor cv, VmVersion version) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     this.version = version;
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     if ("toString".equals(name) && "()Ljava/lang/String;".equals(desc) && version.isJDK14()) {
@@ -79,16 +78,17 @@ public class StringBufferAdapter extends ClassAdapter implements Opcodes {
     mv.visitEnd();
   }
 
-  public static class FixUp extends ClassAdapter {
+  public static class FixUp extends ClassVisitor {
 
     private static final String MANAGED_APPEND = DuplicateMethodAdapter.MANAGED_PREFIX + "append";
     private final VmVersion       version;
 
     public FixUp(ClassVisitor cv, VmVersion version) {
-      super(cv);
+      super(Opcodes.ASM4, cv);
       this.version = version;
     }
 
+    @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
       MethodVisitor visitor = super.visitMethod(access, name, desc, signature, exceptions);
 
@@ -104,9 +104,9 @@ public class StringBufferAdapter extends ClassAdapter implements Opcodes {
     // StringBuffer) in JDK1.4), we need to make a defensive copy before calling anymore code that can modify it before
     // it gets appended into this StringBuffer. Specifically, our code to get the DSO monitor was corrupting the char[]
     // from the ThreadLocal
-    private static class CloneCharArrayFixup extends MethodAdapter {
+    private static class CloneCharArrayFixup extends MethodVisitor {
       public CloneCharArrayFixup(MethodVisitor mv) {
-        super(mv);
+        super(Opcodes.ASM4, mv);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "clone", "()Ljava/lang/Object;");
         mv.visitTypeInsn(CHECKCAST, "[C");

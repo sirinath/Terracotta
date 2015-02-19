@@ -4,24 +4,23 @@
  */
 package com.tc.jam.transform;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.object.bytecode.ClassAdapterFactory;
 
-public class ReflectClassBuilderAdapter extends ClassAdapter implements ClassAdapterFactory {
+public class ReflectClassBuilderAdapter extends ClassVisitor implements ClassAdapterFactory {
 
   public ReflectClassBuilderAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
   public ReflectClassBuilderAdapter() {
-    super(null);
+    super(Opcodes.ASM4);
   }
 
-  public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+  @Override
+  public ClassVisitor create(ClassVisitor visitor, ClassLoader loader) {
     return new ReflectClassBuilderAdapter(visitor);
   }
 
@@ -31,10 +30,10 @@ public class ReflectClassBuilderAdapter extends ClassAdapter implements ClassAda
     return new HideTCInstrumentationAdapter(mv);
   }
 
-  private static class HideTCInstrumentationAdapter extends MethodAdapter implements Opcodes {
+  private static class HideTCInstrumentationAdapter extends MethodVisitor implements Opcodes {
 
     public HideTCInstrumentationAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override

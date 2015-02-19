@@ -4,7 +4,6 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
@@ -19,7 +18,7 @@ import com.tc.object.util.ToggleableStrongReference;
  * NOTE: This zero/non-zero policy might not be appropriate for all AQS subclasses. It is possible that other types
  * might use different values to represent conditions that should apply for the toggling of the strong reference.
  */
-public class AQSSubclassStrongReferenceAdapter extends ClassAdapter implements ClassAdapterFactory, Opcodes {
+public class AQSSubclassStrongReferenceAdapter extends ClassVisitor implements ClassAdapterFactory, Opcodes {
 
   private static final String TOGGLE_REF_FIELD = ByteCodeUtil.TC_FIELD_PREFIX + "toggleRef";
   private static final String TOGGLE_REF_CLASS = ToggleableStrongReference.class.getName().replace('.', '/');
@@ -28,17 +27,19 @@ public class AQSSubclassStrongReferenceAdapter extends ClassAdapter implements C
   private String              className;
 
   public AQSSubclassStrongReferenceAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
   public AQSSubclassStrongReferenceAdapter() {
-    super(null);
+    super(Opcodes.ASM4);
   }
 
-  public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+  @Override
+  public ClassVisitor create(ClassVisitor visitor, ClassLoader loader) {
     return new AQSSubclassStrongReferenceAdapter(visitor);
   }
 
+  @Override
   public void visitEnd() {
     addToggleRefField();
     addStateChangedMethod();
@@ -46,6 +47,7 @@ public class AQSSubclassStrongReferenceAdapter extends ClassAdapter implements C
     super.visitEnd();
   }
 
+  @Override
   public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
     super.visit(version, access, name, signature, superName, interfaces);
     this.className = name;

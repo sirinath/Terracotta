@@ -5,8 +5,8 @@ package com.tc.object.bytecode;
 
 import org.apache.commons.io.IOUtils;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassReader;
+import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ public class DelegateMethodAdapterTest extends TestCase {
     Loader loader = new Loader();
 
     ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-    ClassAdapter adapter = new DelegateMethodAdapter(Base.class.getName(), "delegate").create(writer, loader);
+    ClassVisitor adapter = new DelegateMethodAdapter(Base.class.getName(), "delegate").create(writer, loader);
     ClassReader reader = new ClassReader(getBytes(Wrapper.class.getName()));
     reader.accept(adapter, ClassReader.SKIP_FRAMES);
 

@@ -4,21 +4,20 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
 
-public class JavaUtilTreeMapAdapter extends ClassAdapter implements Opcodes {
+public class JavaUtilTreeMapAdapter extends ClassVisitor implements Opcodes {
 
   public JavaUtilTreeMapAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     if ("writeObject".equals(name) && Modifier.isPrivate(access)) { return new WriteObjectAdapter(mv); }
@@ -26,6 +25,7 @@ public class JavaUtilTreeMapAdapter extends ClassAdapter implements Opcodes {
     return mv;
   }
 
+  @Override
   public void visitEnd() {
     addRemoveEntryForKey();
     super.visitEnd();
@@ -64,12 +64,13 @@ public class JavaUtilTreeMapAdapter extends ClassAdapter implements Opcodes {
     mv.visitEnd();
   }
 
-  private static class WriteObjectAdapter extends MethodAdapter implements Opcodes {
+  private static class WriteObjectAdapter extends MethodVisitor implements Opcodes {
 
     public WriteObjectAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
+    @Override
     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
       if (opcode == GETFIELD) {
         if ("java/util/TreeMap$Entry".equals(owner)) {
@@ -87,6 +88,7 @@ public class JavaUtilTreeMapAdapter extends ClassAdapter implements Opcodes {
       super.visitFieldInsn(opcode, owner, name, desc);
     }
 
+    @Override
     public void visitTypeInsn(int opcode, String desc) {
       if (CHECKCAST == opcode) {
         if ("java/util/TreeMap$Entry".equals(desc)) {

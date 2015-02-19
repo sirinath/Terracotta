@@ -4,17 +4,17 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
-public class JavaUtilConcurrentHashMapValueIteratorAdapter extends ClassAdapter implements Opcodes {
+public class JavaUtilConcurrentHashMapValueIteratorAdapter extends ClassVisitor implements Opcodes {
 
   public JavaUtilConcurrentHashMapValueIteratorAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     return new JavaUtilConcurrentHashMapLazyValuesMethodAdapter(access, desc, mv, false);

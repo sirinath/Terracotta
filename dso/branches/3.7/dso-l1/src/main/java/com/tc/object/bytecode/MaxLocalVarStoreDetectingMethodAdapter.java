@@ -4,21 +4,21 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
 /**
  * Method adaptor that keeps track of the maximum store index that is used for a local variable.
  */
-public class MaxLocalVarStoreDetectingMethodAdapter extends MethodAdapter implements Opcodes {
+public class MaxLocalVarStoreDetectingMethodAdapter extends MethodVisitor implements Opcodes {
 
     private int max_var_store = 0;
     
     public MaxLocalVarStoreDetectingMethodAdapter(MethodVisitor mv) {
-      super(mv);
-    }    
+      super(Opcodes.ASM4, mv);
+    }
     
+    @Override
     public void visitVarInsn(int opcode, int var) {
       // detect the maximum position at which local variables are already
       // stored in the method, this will be used during the instrumentation

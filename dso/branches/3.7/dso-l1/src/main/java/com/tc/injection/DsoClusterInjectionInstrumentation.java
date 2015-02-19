@@ -4,7 +4,6 @@
  */
 package com.tc.injection;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
@@ -17,6 +16,7 @@ public class DsoClusterInjectionInstrumentation implements InjectionInstrumentat
 
   public final static String TC_INJECTION_METHOD_NAME = ByteCodeUtil.TC_METHOD_PREFIX + "injection";
 
+  @Override
   public ClassAdapterFactory getClassAdapterFactoryForFieldInjection(final FieldInfo fieldToInjectInto) {
     return new Factory(fieldToInjectInto);
   }
@@ -52,16 +52,17 @@ public class DsoClusterInjectionInstrumentation implements InjectionInstrumentat
       return identityString.equals(other.identityString);
     }
 
-    public ClassAdapter create(final ClassVisitor visitor, final ClassLoader loader) {
+    @Override
+    public ClassVisitor create(final ClassVisitor visitor, final ClassLoader loader) {
       return new Adapter(visitor, loader);
     }
 
-    private final class Adapter extends ClassAdapter implements Opcodes {
+    private final class Adapter extends ClassVisitor implements Opcodes {
 
       private boolean isInjectionMethodPresent = false;
 
       private Adapter(final ClassVisitor cv, final ClassLoader caller) {
-        super(cv);
+        super(Opcodes.ASM4, cv);
       }
 
       @Override
@@ -111,7 +112,7 @@ public class DsoClusterInjectionInstrumentation implements InjectionInstrumentat
         }
 
         public DsoClusterInjectionMethod(final MethodVisitor mv, final int access, final String name, final String desc) {
-          super(mv, access, name, desc);
+          super(Opcodes.ASM4, mv, access, name, desc);
         }
 
       }
@@ -138,7 +139,7 @@ public class DsoClusterInjectionInstrumentation implements InjectionInstrumentat
 
         public DsoClusterConstructorInjection(final MethodVisitor mv, final int access, final String name,
                                               final String desc) {
-          super(mv, access, name, desc);
+          super(Opcodes.ASM4, mv, access, name, desc);
         }
 
       }

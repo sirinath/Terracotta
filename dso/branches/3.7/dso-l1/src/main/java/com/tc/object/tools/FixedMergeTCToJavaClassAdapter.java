@@ -3,13 +3,11 @@
  */
 package com.tc.object.tools;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.tree.ClassNode;
 import com.tc.asm.tree.InnerClassNode;
 import com.tc.object.bytecode.MergeTCToJavaClassAdapter;
-import com.tc.object.bytecode.TransparencyClassAdapterHack;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -22,7 +20,7 @@ public class FixedMergeTCToJavaClassAdapter extends MergeTCToJavaClassAdapter {
   private final String       jFullClassSlashes;
   private final String       tcFullClassSlashes;
 
-  public FixedMergeTCToJavaClassAdapter(ClassVisitor cv, TransparencyClassAdapterHack dsoAdapter,
+  public FixedMergeTCToJavaClassAdapter(ClassVisitor cv, ClassVisitor dsoAdapter,
                                         String jFullClassDots, String tcFullClassDots, ClassNode tcClassNode,
                                         Map instrumentedContext, String methodPrefix, boolean insertTCinit) {
     super(cv, dsoAdapter, jFullClassDots, tcFullClassDots, tcClassNode, instrumentedContext, methodPrefix, insertTCinit);
@@ -31,7 +29,7 @@ public class FixedMergeTCToJavaClassAdapter extends MergeTCToJavaClassAdapter {
     this.tcFullClassSlashes = tcFullClassDots.replace(DOT_DELIMITER, SLASH_DELIMITER);
   }
 
-  public FixedMergeTCToJavaClassAdapter(ClassVisitor cv, TransparencyClassAdapterHack dsoAdapter,
+  public FixedMergeTCToJavaClassAdapter(ClassVisitor cv, ClassVisitor dsoAdapter,
                                         String jFullClassDots, String tcFullClassDots, ClassNode tcClassNode,
                                         Map instrumentedContext) {
     super(cv, dsoAdapter, jFullClassDots, tcFullClassDots, tcClassNode, instrumentedContext);
@@ -89,9 +87,9 @@ public class FixedMergeTCToJavaClassAdapter extends MergeTCToJavaClassAdapter {
     return newClassName.toString();
   }
 
-  private class TCInnerClassAdapter extends ClassAdapter implements Opcodes {
+  private class TCInnerClassAdapter extends ClassVisitor implements Opcodes {
     public TCInnerClassAdapter(ClassVisitor cv) {
-      super(cv);
+      super(Opcodes.ASM4, cv);
     }
 
     @Override

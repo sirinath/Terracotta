@@ -3,12 +3,11 @@
  */
 package com.tc.aspectwerkz.transform.inlining.weaver;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
-
 import com.tc.aspectwerkz.definition.SystemDefinition;
 import com.tc.aspectwerkz.joinpoint.management.JoinPointType;
 import com.tc.aspectwerkz.reflect.impl.asm.AsmClassInfo;
@@ -34,7 +33,7 @@ import java.util.Set;
  *
  * @author <a href="mailto:jboner@codehaus.org">Jonas Bonr </a>
  */
-public class FieldSetFieldGetVisitor extends ClassAdapter implements TransformationConstants {
+public class FieldSetFieldGetVisitor extends ClassVisitor implements TransformationConstants {
 
   private final InstrumentationContext m_ctx;
   private final ClassLoader m_loader;
@@ -54,7 +53,7 @@ public class FieldSetFieldGetVisitor extends ClassAdapter implements Transformat
                                  final ClassLoader loader,
                                  final ClassInfo classInfo,
                                  final InstrumentationContext ctx) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     m_loader = loader;
     m_callerClassInfo = classInfo;
     m_ctx = ctx;

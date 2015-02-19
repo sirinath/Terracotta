@@ -4,7 +4,6 @@
 package com.tc.aspectwerkz.transform.inlining.weaver;
 
 import com.tc.asm.Opcodes;
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Type;
@@ -27,7 +26,7 @@ import java.lang.reflect.Modifier;
  * @author <a href="mailto:alex AT gnilux DOT com">Alexandre Vasseur</a>
  * @author <a href="mailto:jboner@codehaus.org">Jonas Bonér </a>
  */
-public class AddWrapperVisitor extends ClassAdapter implements Opcodes, TransformationConstants {
+public class AddWrapperVisitor extends ClassVisitor implements Opcodes, TransformationConstants {
 
   private InstrumentationContext m_context;
 
@@ -35,7 +34,7 @@ public class AddWrapperVisitor extends ClassAdapter implements Opcodes, Transfor
 
 
   public AddWrapperVisitor(ClassVisitor classVisitor, InstrumentationContext context, Set alreadyAddedMethods) {
-    super(classVisitor);
+    super(Opcodes.ASM4, classVisitor);
     m_context = (InstrumentationContext) context;
     m_addedMethods = alreadyAddedMethods;
   }

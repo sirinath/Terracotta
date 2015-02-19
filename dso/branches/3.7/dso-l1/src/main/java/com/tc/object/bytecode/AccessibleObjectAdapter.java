@@ -4,7 +4,6 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
@@ -14,10 +13,10 @@ import com.tc.object.TCObjectExternal;
 
 import java.lang.reflect.AccessibleObject;
 
-public class AccessibleObjectAdapter extends ClassAdapter implements Opcodes {
+public class AccessibleObjectAdapter extends ClassVisitor implements Opcodes {
 
   public AccessibleObjectAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
   @Override

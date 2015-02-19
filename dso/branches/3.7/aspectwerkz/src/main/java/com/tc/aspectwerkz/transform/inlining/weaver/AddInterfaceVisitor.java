@@ -3,9 +3,8 @@
  */
 package com.tc.aspectwerkz.transform.inlining.weaver;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
-
+import com.tc.asm.Opcodes;
 import com.tc.aspectwerkz.definition.InterfaceIntroductionDefinition;
 import com.tc.aspectwerkz.definition.MixinDefinition;
 import com.tc.aspectwerkz.definition.SystemDefinition;
@@ -26,7 +25,7 @@ import java.util.Set;
  * @author <a href="mailto:jboner@codehaus.org">Jonas Bonr </a>
  * @author <a href="mailto:alex AT gnilux DOT com">Alexandre Vasseur</a>
  */
-public class AddInterfaceVisitor extends ClassAdapter implements TransformationConstants {
+public class AddInterfaceVisitor extends ClassVisitor implements TransformationConstants {
 
   private final static String ADVISABLE_MIXIN_IMPL_NAME = "com.tc.aspectwerkz.intercept.AdvisableImpl";
 
@@ -43,7 +42,7 @@ public class AddInterfaceVisitor extends ClassAdapter implements TransformationC
   public AddInterfaceVisitor(final ClassVisitor cv,
                              final ClassInfo classInfo,
                              final InstrumentationContext ctx) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     m_classInfo = classInfo;
     m_ctx = (InstrumentationContext) ctx;
   }

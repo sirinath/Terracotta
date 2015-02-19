@@ -4,7 +4,6 @@
 package com.tc.aspectwerkz.transform.inlining.weaver;
 
 import com.tc.asm.*;
-
 import com.tc.aspectwerkz.transform.InstrumentationContext;
 import com.tc.aspectwerkz.transform.TransformationConstants;
 import com.tc.aspectwerkz.transform.inlining.EmittedJoinPoint;
@@ -24,7 +23,7 @@ import java.util.Iterator;
  *         TODO: for multi weaving, we could go on in adding several AW initJoinPoints_xxWeaveCount method, but then cannot be
  *         done with RW
  */
-public class JoinPointInitVisitor extends ClassAdapter implements TransformationConstants {
+public class JoinPointInitVisitor extends ClassVisitor implements TransformationConstants {
 
   private final InstrumentationContext m_ctx;
   private boolean m_hasClinitMethod = false;
@@ -39,7 +38,7 @@ public class JoinPointInitVisitor extends ClassAdapter implements Transformation
    * @param ctx
    */
   public JoinPointInitVisitor(final ClassVisitor cv, final InstrumentationContext ctx) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     m_ctx = ctx;
   }
 
@@ -167,10 +166,10 @@ public class JoinPointInitVisitor extends ClassAdapter implements Transformation
    *
    * @author <a href="mailto:alex@gnilux.com">Alexandre Vasseur </a>
    */
-  public class InsertBeforeClinitCodeAdapter extends MethodAdapter {
+  public class InsertBeforeClinitCodeAdapter extends MethodVisitor {
 
     public InsertBeforeClinitCodeAdapter(MethodVisitor ca) {
-      super(ca);
+      super(Opcodes.ASM4, ca);
       if (!m_hasClassField && !m_ctx.isProxy()) {
         mv.visitLdcInsn(m_ctx.getClassName().replace('/', '.'));
         mv.visitMethodInsn(INVOKESTATIC, CLASS_CLASS, FOR_NAME_METHOD_NAME, FOR_NAME_METHOD_SIGNATURE);
@@ -200,10 +199,10 @@ public class JoinPointInitVisitor extends ClassAdapter implements Transformation
    * @author <a href="mailto:alex@gnilux.com">Alexandre Vasseur </a>
    * @author <a href="mailto:jboner@codehaus.org">Jonas Bonr </a>
    */
-  public class InsertBeforeInitJoinPointsCodeAdapter extends MethodAdapter {
+  public class InsertBeforeInitJoinPointsCodeAdapter extends MethodVisitor {
 
     public InsertBeforeInitJoinPointsCodeAdapter(MethodVisitor ca) {
-      super(ca);
+      super(Opcodes.ASM4, ca);
 
       // loop over emitted jp and insert call to "JoinPointManager.loadJoinPoint(...)"
       // add calls to aw$emittedJoinPoints.put(.. new EmittedJoinPoint) if needed.

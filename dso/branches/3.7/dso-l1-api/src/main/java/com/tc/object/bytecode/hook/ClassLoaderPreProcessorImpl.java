@@ -4,12 +4,10 @@
  */
 package com.tc.object.bytecode.hook;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassReader;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
@@ -75,12 +73,12 @@ public class ClassLoaderPreProcessorImpl {
     }
   }
 
-  static class IBMClassLoaderAdapter extends ClassAdapter implements Opcodes {
+  static class IBMClassLoaderAdapter extends ClassVisitor implements Opcodes {
 
     private String className;
 
     public IBMClassLoaderAdapter(ClassVisitor cv) {
-      super(cv);
+      super(Opcodes.ASM4, cv);
     }
 
     @Override
@@ -99,7 +97,7 @@ public class ClassLoaderPreProcessorImpl {
       } else if (CLASSLOADER_CLASS_NAME.equals(className) && "getResource".equals(name)
                  && "(Ljava/lang/String;)Ljava/net/URL;".equals(desc)) { return new GetResourceVisitor(mv); }
 
-      return new MethodAdapter(mv) {
+      return new MethodVisitor(Opcodes.ASM4, mv) {
         @Override
         public void visitMethodInsn(int opcode, String owner, String mname, String mdesc) {
           if (CLASSLOADER_CLASS_NAME.equals(owner) && "defineClassImpl".equals(mname)) {
@@ -167,13 +165,13 @@ public class ClassLoaderPreProcessorImpl {
     }
   }
 
-  private static class ClassLoaderVisitor extends ClassAdapter {
+  private static class ClassLoaderVisitor extends ClassVisitor {
     private String  className;
 
     private boolean getClassLoadingLockExists = false;
 
     public ClassLoaderVisitor(ClassVisitor cv) {
-      super(cv);
+      super(Opcodes.ASM4, cv);
     }
 
     @Override
@@ -230,10 +228,10 @@ public class ClassLoaderPreProcessorImpl {
     }
   }
 
-  private static class SclSetAdapter extends MethodAdapter implements Opcodes {
+  private static class SclSetAdapter extends MethodVisitor implements Opcodes {
 
     public SclSetAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -295,11 +293,11 @@ public class ClassLoaderPreProcessorImpl {
    * Adding hook for loading tc classes. Uses a primitive state machine to insert new code after first line attribute
    * (if exists) in order to help with debugging and line-based breakpoints.
    */
-  public static class GetResourceVisitor extends MethodAdapter implements Opcodes {
+  public static class GetResourceVisitor extends MethodVisitor implements Opcodes {
     private boolean isInstrumented = false;
 
     public GetResourceVisitor(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     @Override
@@ -344,7 +342,7 @@ public class ClassLoaderPreProcessorImpl {
   public static class LoadClassAdapter extends AdviceAdapter {
 
     public LoadClassAdapter(MethodVisitor mv, int access, String name, String desc) {
-      super(mv, access, name, desc);
+      super(Opcodes.ASM4, mv, access, name, desc);
     }
 
     @Override
@@ -543,17 +541,17 @@ public class ClassLoaderPreProcessorImpl {
   }
 
   // TODO replace this with LocalVariableSorterAdapter
-  private static class RemappingMethodVisitor extends MethodAdapter {
+  private static class RemappingMethodVisitor extends MethodVisitor {
     private final State  state;
     private final IntRef check = new IntRef();
 
     public RemappingMethodVisitor(MethodVisitor v, int access, String desc) {
-      super(v);
+      super(Opcodes.ASM4, v);
       state = new State(access, Type.getArgumentTypes(desc));
     }
 
     public RemappingMethodVisitor(RemappingMethodVisitor wrap) {
-      super(wrap.mv);
+      super(Opcodes.ASM4, wrap.mv);
       this.state = wrap.state;
     }
 

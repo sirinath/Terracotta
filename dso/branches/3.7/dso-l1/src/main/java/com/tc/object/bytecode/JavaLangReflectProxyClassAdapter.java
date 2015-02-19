@@ -3,10 +3,8 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
@@ -15,14 +13,15 @@ import com.tc.asm.Opcodes;
  * This custom adapter instrument java.lang.reflect.Proxy class so that all DSO interfaces
  * added to the Proxy class will be filtered out in the getProxyClass method.
  */
-public class JavaLangReflectProxyClassAdapter extends ClassAdapter implements Opcodes {
+public class JavaLangReflectProxyClassAdapter extends ClassVisitor implements Opcodes {
   private final static String FILTER_INTERFACES_METHOD_NAME = ByteCodeUtil.TC_METHOD_PREFIX + "filterInterfaces";
   private final static String PROXY_INTERFACES_FIELD_NAME = ByteCodeUtil.TC_FIELD_PREFIX + "proxyInterfaces";
   
   public JavaLangReflectProxyClassAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
   
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     if ("getProxyClass".equals(name) && "(Ljava/lang/ClassLoader;[Ljava/lang/Class;)Ljava/lang/Class;".equals(desc)) {
@@ -32,8 +31,9 @@ public class JavaLangReflectProxyClassAdapter extends ClassAdapter implements Op
     }
     
     return mv;
-  }  
+  }
   
+  @Override
   public void visitEnd() {
     addProxyInterfacesField();
     addFilterInterfacesMethod();
@@ -153,11 +153,12 @@ public class JavaLangReflectProxyClassAdapter extends ClassAdapter implements Op
     mv.visitEnd();
   }
 
-  private static class FilterInterfacesMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class FilterInterfacesMethodAdapter extends MethodVisitor implements Opcodes {
     public FilterInterfacesMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
     
+    @Override
     public void visitCode() {
       super.visitCode();
       mv.visitVarInsn(ALOAD, 1);
@@ -166,11 +167,12 @@ public class JavaLangReflectProxyClassAdapter extends ClassAdapter implements Op
     }
   }
   
-  private static class StaticInitializerMethodAdapter extends MethodAdapter implements Opcodes {
+  private static class StaticInitializerMethodAdapter extends MethodVisitor implements Opcodes {
     public StaticInitializerMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
     
+    @Override
     public void visitInsn(int opcode) {
       if (RETURN == opcode) {
         mv.visitTypeInsn(NEW, "java/lang/reflect/Proxy");

@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.Collection;
 
 import com.tc.asm.*;
-
 import com.tc.aspectwerkz.DeploymentModel;
 import com.tc.aspectwerkz.expression.PointcutType;
 import com.tc.aspectwerkz.expression.ExpressionInfo;
@@ -27,7 +26,7 @@ import com.tc.aspectwerkz.transform.TransformationConstants;
  * @author <a href="mailto:jboner@codehaus.org">Jonas Bonr </a>
  * @author <a href='mailto:the_mindstorm@evolva.ro'>Alexandru Popescu</a>
  */
-public class InstanceLevelAspectVisitor extends ClassAdapter implements TransformationConstants {
+public class InstanceLevelAspectVisitor extends ClassVisitor implements TransformationConstants {
 
   private final InstrumentationContext m_ctx;
   private final ClassInfo m_classInfo;
@@ -43,7 +42,7 @@ public class InstanceLevelAspectVisitor extends ClassAdapter implements Transfor
   public InstanceLevelAspectVisitor(final ClassVisitor cv,
                                     final ClassInfo classInfo,
                                     final InstrumentationContext ctx) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     m_classInfo = classInfo;
     m_ctx = (InstrumentationContext) ctx;
   }

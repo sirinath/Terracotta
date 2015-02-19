@@ -3,22 +3,22 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 import com.tc.aspectwerkz.reflect.ClassInfo;
 import com.tc.aspectwerkz.reflect.MethodInfo;
 import com.tc.aspectwerkz.reflect.impl.asm.AsmClassInfo;
 
-public class HashMapClassAdapter extends ClassAdapter implements Opcodes {
+public class HashMapClassAdapter extends ClassVisitor implements Opcodes {
 
   public static final String J_MAP_CLASSNAME_DOTS = "java.util.HashMap";
   public static final String TC_MAP_CLASSNAME_DOTS = "java.util.HashMapTC";
 
   public static final ClassAdapterFactory FACTORY = new ClassAdapterFactory(){
-    public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+                                                                  @Override
+                                                                  public ClassVisitor create(ClassVisitor visitor,
+                                                                                             ClassLoader loader) {
       return new HashMapClassAdapter(visitor, getHashMapEntrySetMethodName(loader));
     }
   };
@@ -31,9 +31,9 @@ public class HashMapClassAdapter extends ClassAdapter implements Opcodes {
     
     final ClassInfo jClassInfo = AsmClassInfo.getClassInfo(J_MAP_CLASSNAME_DOTS, loader);
     final MethodInfo[] methods = jClassInfo.getMethods();
-    for (int i = 0; i < methods.length; i++) {
-      if (methods[i].getName().equals("entrySet0")){
-        entrySetMethodName = methods[i].getName();
+    for (MethodInfo method : methods) {
+      if (method.getName().equals("entrySet0")){
+        entrySetMethodName = method.getName();
         break;
       }
     }
@@ -45,10 +45,11 @@ public class HashMapClassAdapter extends ClassAdapter implements Opcodes {
   private final String entrySetMethodName;
 
   public HashMapClassAdapter(ClassVisitor cv, String entrySetMethodName) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     this.entrySetMethodName = entrySetMethodName;
   }
 
+  @Override
   public final MethodVisitor visitMethod(int access, String methodName, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, methodName, desc, signature, exceptions);
 
@@ -59,9 +60,9 @@ public class HashMapClassAdapter extends ClassAdapter implements Opcodes {
     return mv;
   }
 
-  private final static class EntrySetMethodAdapter extends MethodAdapter implements Opcodes {
+  private final static class EntrySetMethodAdapter extends MethodVisitor implements Opcodes {
     public EntrySetMethodAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     /**
@@ -76,6 +77,7 @@ public class HashMapClassAdapter extends ClassAdapter implements Opcodes {
      *   }
      * </code>
      */
+    @Override
     public void visitInsn(final int opcode) {
 
       if (opcode == ARETURN) {

@@ -4,30 +4,30 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
-public class JavaUtilConcurrentLocksAQSAdapter extends ClassAdapter implements ClassAdapterFactory, Opcodes {
+public class JavaUtilConcurrentLocksAQSAdapter extends ClassVisitor implements ClassAdapterFactory, Opcodes {
 
   public static final String TC_STAGE_CHANGED      = ByteCodeUtil.TC_METHOD_PREFIX + "AQS_stateChanged";
   public static final String TC_STAGE_CHANGED_DESC = "(I)V";
 
   public JavaUtilConcurrentLocksAQSAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
   public JavaUtilConcurrentLocksAQSAdapter() {
-    super(null);
+    super(Opcodes.ASM4);
   }
 
-  public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+  @Override
+  public ClassVisitor create(ClassVisitor visitor, ClassLoader loader) {
     return new JavaUtilConcurrentLocksAQSAdapter(visitor);
   }
 
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     if ("setState".equals(name)) {
@@ -39,6 +39,7 @@ public class JavaUtilConcurrentLocksAQSAdapter extends ClassAdapter implements C
     return mv;
   }
 
+  @Override
   public void visitEnd() {
     addTCStateChangedMethod();
     super.visitEnd();
@@ -52,12 +53,13 @@ public class JavaUtilConcurrentLocksAQSAdapter extends ClassAdapter implements C
     mv.visitEnd();
   }
 
-  private static class CompareAndSetStateAdapter extends MethodAdapter implements Opcodes {
+  private static class CompareAndSetStateAdapter extends MethodVisitor implements Opcodes {
 
     public CompareAndSetStateAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
+    @Override
     public void visitInsn(int opcode) {
       if (IRETURN == opcode) {
         mv.visitVarInsn(ISTORE, 3);
@@ -78,12 +80,13 @@ public class JavaUtilConcurrentLocksAQSAdapter extends ClassAdapter implements C
 
   }
 
-  private static class SetStateAdapter extends MethodAdapter implements Opcodes {
+  private static class SetStateAdapter extends MethodVisitor implements Opcodes {
 
     public SetStateAdapter(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
+    @Override
     public void visitInsn(int opcode) {
       if (opcode == RETURN) {
         mv.visitVarInsn(ALOAD, 0);

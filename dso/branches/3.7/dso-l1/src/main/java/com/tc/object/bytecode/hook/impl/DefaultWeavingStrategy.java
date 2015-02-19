@@ -7,7 +7,7 @@ package com.tc.object.bytecode.hook.impl;
 import com.tc.asm.ClassReader;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
-import com.tc.asm.commons.EmptyVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.aspectwerkz.definition.SystemDefinition;
 import com.tc.aspectwerkz.definition.deployer.StandardAspectModuleDeployer;
 import com.tc.aspectwerkz.exception.WrappedRuntimeException;
@@ -120,6 +120,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
    * @param className
    * @param context
    */
+  @Override
   public void transform(final String className, final InstrumentationContext context) {
     ClassKey key = new ClassKey(className, context.getLoader());
     BYTECODE_PROVIDER.put(key, context.getInitialBytecode());
@@ -286,7 +287,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
         // prepare handler jp, by gathering ALL catch blocks and their exception type
         List catchLabels = new ArrayList();
         if (!filterForHandler) {
-          final ClassVisitor cv = new EmptyVisitor();
+          final ClassVisitor cv = new ClassVisitor(Opcodes.ASM4) {};
           HandlerVisitor.LookaheadCatchLabelsClassAdapter lookForCatches = //
           new HandlerVisitor.LookaheadCatchLabelsClassAdapter(cv, loader, classInfo, context, catchLabels);
           // we must visit exactly as we will do further on with debug info (that produces extra labels)
@@ -553,6 +554,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
       bytes.put(key, bytecode);
     }
 
+    @Override
     public byte[] getBytecode(String className, ClassLoader loader) throws ClassNotFoundException, IOException {
       ClassKey key = new ClassKey(className, loader);
 

@@ -2,7 +2,6 @@
  * All content copyright (c) 2003-2008 Terracotta, Inc., except as may otherwise be noted in a separate copyright notice.  All rights reserved.
  */
 package com.tc.object.bytecode;
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
@@ -11,12 +10,13 @@ import com.tc.asm.Type;
 import com.tc.asm.commons.LocalVariablesSorter;
 import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueClassAdapter.NodeMethodAdapter;
 
-public class JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter extends ClassAdapter implements Opcodes {
+public class JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter extends ClassVisitor implements Opcodes {
 
   public JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
   
+  @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     mv = new NodeMethodAdapter(mv);
@@ -34,10 +34,11 @@ public class JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter extends C
     private boolean logicalInvoke = false;
     
     public RemoveMethodAdapter(int access, String desc, MethodVisitor mv) {
-      super(access, desc, mv);
+      super(Opcodes.ASM4, access, desc, mv);
       newLocalVar = newLocal(Type.INT_TYPE);
     }
     
+    @Override
     public void visitCode() {
       super.visitCode();
       
@@ -45,6 +46,7 @@ public class JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter extends C
       mv.visitVarInsn(ISTORE, newLocalVar);
     }
     
+    @Override
     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
       super.visitFieldInsn(opcode, owner, name, desc);
       if (GETFIELD == opcode  && "next".equals(name)) {

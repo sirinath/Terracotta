@@ -5,8 +5,8 @@ package com.tctest;
 
 import org.apache.commons.io.IOUtils;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassReader;
+import com.tc.asm.ClassVisitor;
 import com.tc.asm.ClassWriter;
 import com.tc.asm.commons.RemappingClassAdapter;
 import com.tc.asm.commons.SimpleRemapper;
@@ -59,7 +59,7 @@ public class ClassExportTest extends TransparentTestBase {
         
         try {
           ClassWriter cw = new ClassWriter(0);
-          ClassAdapter rename = new RemappingClassAdapter(cw, new SimpleRemapper("com/tctest/ExportedClass", "com/tctest/ExportedClassButNot"));
+          ClassVisitor rename = new RemappingClassAdapter(cw, new SimpleRemapper("com/tctest/ExportedClass", "com/tctest/ExportedClassButNot"));
             new ClassReader(getResourceURL(ExportedClass.class).openStream()).accept(rename, 0);
           
           File temp = File.createTempFile("terracotta_class_export_test", ".class");
@@ -100,6 +100,7 @@ public class ClassExportTest extends TransparentTestBase {
 
       List<Future<Class>> futures = executor.<Class> invokeAll(Collections
           .<Callable<Class>> nCopies(16, new Callable<Class>() {
+            @Override
             public Class call() throws Exception {
               return broken.loadClass("com.tctest.ExportedClassButNot");
             }

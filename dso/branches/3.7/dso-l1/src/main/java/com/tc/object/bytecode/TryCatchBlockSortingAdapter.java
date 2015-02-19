@@ -3,8 +3,8 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.asm.tree.MethodNode;
 import com.tc.asm.tree.TryCatchBlockNode;
 
@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  *
  * @author Chris Dennis
  */
-public class TryCatchBlockSortingAdapter extends MethodAdapter {
+public class TryCatchBlockSortingAdapter extends MethodVisitor {
 
   private static final Logger LOGGER = Logger.getLogger(TryCatchBlockSortingAdapter.class.getName());
 
@@ -47,7 +47,7 @@ public class TryCatchBlockSortingAdapter extends MethodAdapter {
    * Constructs a sorting adapter that visits the supplied visitor with the processed method.
    */
   public TryCatchBlockSortingAdapter(MethodVisitor visitor) {
-    super(new MethodNode(0, null, null, null, null));
+    super(Opcodes.ASM4, new MethodNode(0, null, null, null, null));
 
     next = visitor;
     method = (MethodNode) mv;
@@ -94,6 +94,7 @@ public class TryCatchBlockSortingAdapter extends MethodAdapter {
       this.method = method;
     }
     
+    @Override
     public int compare(TryCatchBlockNode i, TryCatchBlockNode j) {
 
       int crossDeltaOne = method.instructions.indexOf(i.start) - method.instructions.indexOf(j.end);
