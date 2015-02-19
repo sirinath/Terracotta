@@ -1,4 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.terracotta.forge</groupId>
@@ -11,6 +11,13 @@
   <artifactId>tim-api-root</artifactId>
   <version>1.4.0-SNAPSHOT</version>
   <packaging>pom</packaging>
+
+  <properties>
+  
+    <metadata.build.jenkins.url/>
+    <metadata.build.maven.active.profiles>nexus</metadata.build.maven.active.profiles>
+    <metadata.svn.revision/>
+  </properties>
 
   <modules>
     <module>tim-api</module>
@@ -61,5 +68,13 @@
     </plugins>
   </build>
 
-</project>
+  <scm>
+    <connection>
+      scm:svn:http://svn.terracotta.org/svn/tc/tim-api/trunk
+    </connection>
+    <developerConnection>
+      scm:svn:https://svn.terracotta.org/repo/tc/tim-api/trunk
+    </developerConnection>
+  </scm>
 
+</project>
