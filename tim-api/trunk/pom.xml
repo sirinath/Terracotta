@@ -9,14 +9,10 @@
   <groupId>org.terracotta.api</groupId>
   <name>tim-api-root</name>
   <artifactId>tim-api-root</artifactId>
-  <version>1.4.0</version>
+  <version>1.5.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <properties>
-  
-    <metadata.build.jenkins.url />
-    <metadata.build.maven.active.profiles>nexus</metadata.build.maven.active.profiles>
-    <metadata.svn.revision />
   </properties>
 
   <modules>
@@ -70,10 +66,10 @@
 
   <scm>
     <connection>
-      scm:svn:http://svn.terracotta.org/svn/tc/tim-api/tags/release-1.4.0
+      scm:svn:http://svn.terracotta.org/svn/tc/tim-api/trunk
     </connection>
     <developerConnection>
-      scm:svn:https://svn.terracotta.org/repo/tc/tim-api/tags/release-1.4.0
+      scm:svn:https://svn.terracotta.org/repo/tc/tim-api/trunk
     </developerConnection>
   </scm>
 
