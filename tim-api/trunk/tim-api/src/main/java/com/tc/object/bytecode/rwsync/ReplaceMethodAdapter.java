@@ -9,13 +9,13 @@ import com.tc.asm.AnnotationVisitor;
 import com.tc.asm.Attribute;
 import com.tc.asm.Label;
 import com.tc.asm.MethodVisitor;
-import com.tc.asm.commons.EmptyVisitor;
+import com.tc.asm.Opcodes;
 
 /**
  * A method adapter that replaces the contents of the method. When visitCode() is called, it executes visitNewBody(),
  * and then it discards all subsequent instructions.
  */
-public abstract class ReplaceMethodAdapter implements MethodVisitor {
+public abstract class ReplaceMethodAdapter extends MethodVisitor {
 
   /**
    * Starts out as the next MethodVisitor in the chain, but after visitEnd() is called for the first time, is replaced
@@ -26,6 +26,7 @@ public abstract class ReplaceMethodAdapter implements MethodVisitor {
   private boolean         visitedCode = false;
 
   public ReplaceMethodAdapter(MethodVisitor mv) {
+    super(Opcodes.ASM4);
     this.mv = mv;
   }
 
@@ -72,7 +73,9 @@ public abstract class ReplaceMethodAdapter implements MethodVisitor {
 
   public void visitEnd() {
     mv.visitEnd();
-    mv = new EmptyVisitor();
+    mv = new MethodVisitor(Opcodes.ASM4) {
+      //empty
+    };
   }
 
   public void visitFieldInsn(int opcode, String owner, String name, String desc) {

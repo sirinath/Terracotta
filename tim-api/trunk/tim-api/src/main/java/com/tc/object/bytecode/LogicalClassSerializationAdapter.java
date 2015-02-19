@@ -4,10 +4,8 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
@@ -51,11 +49,11 @@ public class LogicalClassSerializationAdapter implements Opcodes {
                        "(L" + logicalExtendingClassName + ";)V");
   }
 
-  public static class LogicalClassSerializationMethodAdapter extends MethodAdapter implements Opcodes {
+  public static class LogicalClassSerializationMethodAdapter extends MethodVisitor implements Opcodes {
     private final String classNameSlashes;
 
     public LogicalClassSerializationMethodAdapter(MethodVisitor mv, String classNameSlashes) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
       this.classNameSlashes = classNameSlashes;
     }
 
@@ -73,7 +71,7 @@ public class LogicalClassSerializationAdapter implements Opcodes {
     }
   }
 
-  public static class LogicalSubclassSerializationMethodAdapter extends MethodAdapter implements Opcodes {
+  public static class LogicalSubclassSerializationMethodAdapter extends MethodVisitor implements Opcodes {
     private final String methodSignature;
     private final String classNameSlashes;
     private final String logicalExtendingClassName;
@@ -81,7 +79,7 @@ public class LogicalClassSerializationAdapter implements Opcodes {
 
     public LogicalSubclassSerializationMethodAdapter(MethodVisitor mv, String methodSignature, String classNameSlashes,
                                                      String logicalExtendingClassName, String delegateFieldName) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
       this.methodSignature = methodSignature;
       this.classNameSlashes = classNameSlashes;
       this.logicalExtendingClassName = logicalExtendingClassName;
@@ -99,11 +97,11 @@ public class LogicalClassSerializationAdapter implements Opcodes {
     }
   }
 
-  public static class LogicalClassSerializationClassAdapter extends ClassAdapter implements Opcodes {
+  public static class LogicalClassSerializationClassAdapter extends ClassVisitor implements Opcodes {
     private final String classNameSlashes;
 
     public LogicalClassSerializationClassAdapter(ClassVisitor cv, String className) {
-      super(cv);
+      super(Opcodes.ASM4, cv);
       this.classNameSlashes = className.replace(ChangeClassNameHierarchyAdapter.DOT_DELIMITER,
                                                 ChangeClassNameHierarchyAdapter.SLASH_DELIMITER);
     }

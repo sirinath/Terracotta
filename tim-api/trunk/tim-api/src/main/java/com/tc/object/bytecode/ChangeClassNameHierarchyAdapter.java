@@ -4,7 +4,6 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
@@ -16,7 +15,7 @@ import java.util.Map;
 /**
  * This class will change the class name in methodInsn.
  */
-public abstract class ChangeClassNameHierarchyAdapter extends ClassAdapter implements Opcodes {
+public abstract class ChangeClassNameHierarchyAdapter extends ClassVisitor implements Opcodes {
   public final static char DOT_DELIMITER          = '.';
   public final static char SLASH_DELIMITER        = '/';
   public final static char INNER_CLASS_DELIMITER  = '$';
@@ -201,7 +200,7 @@ public abstract class ChangeClassNameHierarchyAdapter extends ClassAdapter imple
   }
 
   public ChangeClassNameHierarchyAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
   public MethodVisitor invokeSuperVisitMethod(int access, String name, String desc, String signature,

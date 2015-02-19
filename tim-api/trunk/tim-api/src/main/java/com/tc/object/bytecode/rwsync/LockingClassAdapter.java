@@ -12,7 +12,6 @@ import static com.tc.object.bytecode.rwsync.LockNames.RWLOCK_NAME;
 import static com.tc.object.bytecode.rwsync.LockNames.WRITELOCK_DESC;
 import static com.tc.object.bytecode.rwsync.LockNames.WRITELOCK_NAME;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
@@ -25,7 +24,7 @@ import java.util.Map;
  * A base for class adapters that wrap methods inside read or write locks. Creates and initializes the lock fields, and
  * defines a table-based approach to specifying locking strategy.
  */
-public abstract class LockingClassAdapter extends ClassAdapter implements Opcodes {
+public abstract class LockingClassAdapter extends ClassVisitor implements Opcodes {
 
   // Common locking strategies
   protected static final MethodStrategy INIT_STRATEGY      = new InitMethodStrategy();
@@ -67,7 +66,7 @@ public abstract class LockingClassAdapter extends ClassAdapter implements Opcode
   abstract protected Map<MethodId, MethodStrategy> getLockingStrategy();
 
   public LockingClassAdapter(ClassVisitor cv) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
   }
 
   /**

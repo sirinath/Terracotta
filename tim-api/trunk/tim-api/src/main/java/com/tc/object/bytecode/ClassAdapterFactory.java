@@ -4,7 +4,6 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
 
 /**
@@ -18,6 +17,6 @@ public interface ClassAdapterFactory {
    * @param loader Class loader to use
    * @return Adapter that can modify classes
    */
-  ClassAdapter create(ClassVisitor visitor, ClassLoader loader);
+  ClassVisitor create(ClassVisitor visitor, ClassLoader loader);
 
 }

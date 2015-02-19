@@ -12,8 +12,8 @@ import static com.tc.object.bytecode.rwsync.LockNames.UNLOCK_METHOD_NAME;
 
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.Label;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
 import com.tc.object.bytecode.ByteCodeUtil;
 
@@ -50,7 +50,7 @@ public class SimpleLockMethodStrategy extends LockingMethodStrategy {
     return cv.visitMethod(getWrappedAttributes(access), getWrappedName(name), desc, signature, exceptions);
   }
 
-  private class LockWrapAdapter extends MethodAdapter {
+  private class LockWrapAdapter extends MethodVisitor {
 
     private final String ownerType;
     private final String outerType;
@@ -61,7 +61,7 @@ public class SimpleLockMethodStrategy extends LockingMethodStrategy {
 
     public LockWrapAdapter(MethodVisitor mv, String ownerType, String outerType, String outerDesc, int access,
                            String name, String desc) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
       this.ownerType = ownerType;
       this.outerType = outerType;
       this.outerDesc = outerDesc;

@@ -19,6 +19,7 @@ import static com.tc.object.bytecode.rwsync.LockNames.WRITELOCK_NAME;
 
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.asm.commons.AdviceAdapter;
 
 /**
@@ -46,7 +47,7 @@ public class InitMethodStrategy implements MethodStrategy {
     private final String ownerType;
 
     protected InitMethodAdapter(MethodVisitor mv, String ownerType, int access, String name, String desc) {
-      super(mv, access, name, desc);
+      super(Opcodes.ASM4, mv, access, name, desc);
       this.ownerType = ownerType;
     }
 
