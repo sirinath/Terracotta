@@ -1,5 +1,5 @@
 /*******************************************************************************************
- * Copyright (c) Jonas Bonér, Alexandre Vasseur. All rights reserved.                      *
+ * Copyright (c) Jonas Bonï¿½r, Alexandre Vasseur. All rights reserved.                      *
  * http://backport175.codehaus.org                                                         *
  * --------------------------------------------------------------------------------------- *
  * The software in this package is published under the terms of Apache License Version 2.0 *
@@ -9,8 +9,9 @@ package com.tc.backport175.bytecode;
 
 import com.tc.asm.AnnotationVisitor;
 import com.tc.asm.ClassReader;
+import com.tc.asm.ClassVisitor;
 import com.tc.asm.MethodVisitor;
-import com.tc.asm.commons.EmptyVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.backport175.ReaderException;
 import com.tc.backport175.bytecode.AnnotationElement.Annotation;
 
@@ -63,11 +64,12 @@ class AnnotationDefaults {
         return defaults;
     }
 
-    static final class AnnotationDefaultsClassVisitor extends EmptyVisitor {
+    static final class AnnotationDefaultsClassVisitor extends ClassVisitor {
       private final AnnotationElement.Annotation  defaults;
       private final ClassLoader loader;
 
       AnnotationDefaultsClassVisitor(AnnotationElement.Annotation defaults, ClassLoader loader) {
+        super(Opcodes.ASM4);
         this.defaults = defaults;
         this.loader = loader;
       }
@@ -77,12 +79,13 @@ class AnnotationDefaults {
       }
     }
 
-    static final class AnnotationDefaultsMethodVisitor extends EmptyVisitor {
+    static final class AnnotationDefaultsMethodVisitor extends MethodVisitor {
       private final String name;
       private final Annotation defaults;
       private final ClassLoader loader;
       
       AnnotationDefaultsMethodVisitor(String name, Annotation defaults, ClassLoader loader) {
+        super(Opcodes.ASM4);
         this.name = name;
         this.defaults = defaults;
         this.loader = loader;

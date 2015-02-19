@@ -1,5 +1,5 @@
 /*******************************************************************************************
- * Copyright (c) Jonas Bonér, Alexandre Vasseur. All rights reserved.                      *
+ * Copyright (c) Jonas Bonï¿½r, Alexandre Vasseur. All rights reserved.                      *
  * http://backport175.codehaus.org                                                         *
  * --------------------------------------------------------------------------------------- *
  * The software in this package is published under the terms of Apache License Version 2.0 *
@@ -9,10 +9,11 @@ package com.tc.backport175.bytecode;
 
 import com.tc.asm.AnnotationVisitor;
 import com.tc.asm.ClassReader;
+import com.tc.asm.ClassVisitor;
 import com.tc.asm.FieldVisitor;
 import com.tc.asm.MethodVisitor;
+import com.tc.asm.Opcodes;
 import com.tc.asm.Type;
-import com.tc.asm.commons.EmptyVisitor;
 import com.tc.backport175.Annotation;
 import com.tc.backport175.bytecode.spi.BytecodeProvider;
 import com.tc.backport175.proxy.ProxyFactory;
@@ -39,7 +40,7 @@ import java.util.WeakHashMap;
  * Note: does not handles {@link java.lang.annotation.Inherited} feature. This has to be done in the higher level
  * that knows about the class hierarchy (see backport175.Annotations f.e)
  *
- * @author <a href="mailto:jboner@codehaus.org">Jonas Bonér</a>
+ * @author <a href="mailto:jboner@codehaus.org">Jonas Bonï¿½r</a>
  * @author <a href="mailto:alex AT gnilux DOT com">Alexandre Vasseur</a>
  */
 public class AnnotationReader {
@@ -967,7 +968,11 @@ public class AnnotationReader {
     /**
      * Retrieves the Java 5 RuntimeVisibleAnnotations annotations from the class bytecode.
      */
-    class AnnotationRetrievingVisitor extends EmptyVisitor {
+    class AnnotationRetrievingVisitor extends ClassVisitor {
+
+        public AnnotationRetrievingVisitor() {
+            super(Opcodes.ASM4);
+        }
 
         public AnnotationVisitor visitAnnotation(final String desc, final boolean visible) {
             String annotationClassName = toJavaName(desc);
@@ -1013,11 +1018,12 @@ public class AnnotationReader {
 //            return new TraceAnnotationVisitor();
     }
 
-    static final class AnnotationRetrievingConstructorVisitor extends EmptyVisitor {
+    static final class AnnotationRetrievingConstructorVisitor extends MethodVisitor {
       private final MemberKey key;
       private final AnnotationReader reader;
 
       AnnotationRetrievingConstructorVisitor(MemberKey key, AnnotationReader reader) {
+        super(Opcodes.ASM4);
         this.key = key;
         this.reader = reader;
       }
@@ -1036,11 +1042,12 @@ public class AnnotationReader {
       }
     }
 
-    static final class AnnotationRetrievingMethodVisitor extends EmptyVisitor {
+    static final class AnnotationRetrievingMethodVisitor extends MethodVisitor {
       private final MemberKey key;
       private final AnnotationReader reader;
 
       AnnotationRetrievingMethodVisitor(MemberKey key, AnnotationReader reader) {
+        super(Opcodes.ASM4);
         this.key = key;
         this.reader = reader;
       }
@@ -1059,11 +1066,12 @@ public class AnnotationReader {
       }
     }
 
-    static final class AnnotationRetrievingFieldVisitor extends EmptyVisitor {
+    static final class AnnotationRetrievingFieldVisitor extends FieldVisitor {
       private final MemberKey    key;
       private final AnnotationReader reader;
 
       AnnotationRetrievingFieldVisitor(MemberKey key, AnnotationReader reader) {
+        super(Opcodes.ASM4);
         this.key = key;
         this.reader = reader;
       }
@@ -1084,7 +1092,7 @@ public class AnnotationReader {
     }
 
 
-    static class AnnotationBuilderVisitor implements AnnotationVisitor {
+    static class AnnotationBuilderVisitor extends AnnotationVisitor {
 
         private final AnnotationElement.NestedAnnotationElement m_nestedAnnotationElement;
 
@@ -1102,6 +1110,7 @@ public class AnnotationReader {
         public AnnotationBuilderVisitor(final AnnotationElement.NestedAnnotationElement annotation,
                                         final ClassLoader loader,
                                         final String annotationClassName) {
+            super(Opcodes.ASM4);
             m_nestedAnnotationElement = annotation;
             m_loader = loader;
             m_annotationClassName = annotationClassName;
@@ -1223,7 +1232,7 @@ public class AnnotationReader {
      * as a unique key. Needed since at bytecode parsing time we do not have access to the reflect members, only
      * strings.
      *
-     * @author <a href="mailto:jboner@codehaus.org">Jonas Bonér</a>
+     * @author <a href="mailto:jboner@codehaus.org">Jonas Bonï¿½r</a>
      */
     public static class ClassKey {
         private final String m_name;
@@ -1275,7 +1284,7 @@ public class AnnotationReader {
      * <p/>
      * Needed since at bytecode parsing time we do not have access to the reflect members, only strings.
      *
-     * @author <a href="mailto:jboner@codehaus.org">Jonas Bonér</a>
+     * @author <a href="mailto:jboner@codehaus.org">Jonas Bonï¿½r</a>
      */
     public static class MemberKey {
         private final String m_name;
@@ -1338,7 +1347,12 @@ public class AnnotationReader {
     /**
      * To be used for debugging purposes.
      */
-    private class TraceAnnotationVisitor implements AnnotationVisitor {
+    private class TraceAnnotationVisitor extends AnnotationVisitor {
+
+        public TraceAnnotationVisitor() {
+            super(Opcodes.ASM4);
+        }
+
         public void visit(final String name, final Object value) {
             System.out.println("    NAMED-VALUE: " + name + "->" + value);
         }

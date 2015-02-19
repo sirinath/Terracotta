@@ -1,6 +1,6 @@
 /***
  * ASM XML Adapter
- * Copyright (c) 2004, Eugene Kuleshov
+ * Copyright (c) 2004-2011, Eugene Kuleshov
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,14 +33,12 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import com.tc.asm.Attribute;
-
 /**
  * SAXAdapter
  * 
  * @author Eugene Kuleshov
  */
-public abstract class SAXAdapter {
+public class SAXAdapter {
 
     private final ContentHandler h;
 
@@ -56,7 +54,7 @@ public abstract class SAXAdapter {
         try {
             h.startDocument();
         } catch (SAXException ex) {
-            throw new RuntimeException(ex.getException());
+            throw new RuntimeException(ex.getMessage(), ex.getException());
         }
     }
 
@@ -64,7 +62,7 @@ public abstract class SAXAdapter {
         try {
             h.endDocument();
         } catch (SAXException ex) {
-            throw new RuntimeException(ex.toString());
+            throw new RuntimeException(ex.getMessage(), ex.getException());
         }
     }
 
@@ -72,7 +70,7 @@ public abstract class SAXAdapter {
         try {
             h.startElement("", name, name, attrs);
         } catch (SAXException ex) {
-            throw new RuntimeException(ex.toString());
+            throw new RuntimeException(ex.getMessage(), ex.getException());
         }
     }
 
@@ -80,16 +78,12 @@ public abstract class SAXAdapter {
         try {
             h.endElement("", name, name);
         } catch (SAXException ex) {
-            throw new RuntimeException(ex.toString());
+            throw new RuntimeException(ex.getMessage(), ex.getException());
         }
     }
 
     protected final void addElement(final String name, final Attributes attrs) {
         addStart(name, attrs);
         addEnd(name);
-    }
-
-    public void visitAttribute(final Attribute attr) {
-        // nothing to do
     }
 }

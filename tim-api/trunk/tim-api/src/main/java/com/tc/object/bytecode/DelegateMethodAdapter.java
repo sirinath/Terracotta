@@ -4,7 +4,6 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassReader;
 import com.tc.asm.ClassVisitor;
 import com.tc.asm.FieldVisitor;
@@ -26,7 +25,7 @@ import java.util.Map;
 /**
  * Use me to make sure a class overrides all methods from parent hierarchy and delegates the call
  */
-public class DelegateMethodAdapter extends ClassAdapter implements Opcodes, ClassAdapterFactory {
+public class DelegateMethodAdapter extends ClassVisitor implements Opcodes, ClassAdapterFactory {
 
   private final Map     overrideMethods;
   private final String  delegateFieldName;
@@ -40,7 +39,7 @@ public class DelegateMethodAdapter extends ClassAdapter implements Opcodes, Clas
 
   // This is the real constructor for the actual adapter
   private DelegateMethodAdapter(ClassVisitor cv, Class superClass, String delegateFieldName, boolean crossLoader) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     this.delegateFieldName = delegateFieldName;
     this.crossLoader = crossLoader;
     this.overrideMethods = getOverrideMethods(superClass);
@@ -50,7 +49,7 @@ public class DelegateMethodAdapter extends ClassAdapter implements Opcodes, Clas
 
   // This constructor is for creating the factory
   public DelegateMethodAdapter(String delegateType, String delegateField) {
-    super(null);
+    super(Opcodes.ASM4, null);
     this.delegateFieldName = delegateField;
     this.delegateType = delegateType;
     this.overrideMethods = null;
@@ -58,7 +57,7 @@ public class DelegateMethodAdapter extends ClassAdapter implements Opcodes, Clas
     this.crossLoader = false;
   }
 
-  public ClassAdapter create(ClassVisitor visitor, ClassLoader loader) {
+  public ClassVisitor create(ClassVisitor visitor, ClassLoader loader) {
     final Class delegateClass;
     try {
       delegateClass = Class.forName(delegateType, false, loader);

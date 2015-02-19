@@ -1,6 +1,6 @@
 /***
  * ASM XML Adapter
- * Copyright (c) 2004, Eugene Kuleshov
+ * Copyright (c) 2004-2011, Eugene Kuleshov
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,36 +29,43 @@
  */
 package com.tc.asm.xml;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-
 import com.tc.asm.AnnotationVisitor;
 import com.tc.asm.FieldVisitor;
+import com.tc.asm.Opcodes;
+import com.tc.asm.TypePath;
+import org.xml.sax.Attributes;
 
 /**
  * SAXFieldAdapter
  * 
  * @author Eugene Kuleshov
  */
-public class SAXFieldAdapter extends SAXAdapter implements FieldVisitor {
+public final class SAXFieldAdapter extends FieldVisitor {
 
-    public SAXFieldAdapter(final ContentHandler h, final Attributes att) {
-        super(h);
-        addStart("field", att);
+    SAXAdapter sa;
+
+    public SAXFieldAdapter(final SAXAdapter sa, final Attributes att) {
+        super(Opcodes.ASM5);
+        this.sa = sa;
+        sa.addStart("field", att);
     }
 
-    public AnnotationVisitor visitAnnotation(
-        final String desc,
-        final boolean visible)
-    {
-        return new SAXAnnotationAdapter(getContentHandler(),
-                "annotation",
-                visible ? 1 : -1,
-                null,
-                desc);
+    @Override
+    public AnnotationVisitor visitAnnotation(final String desc,
+            final boolean visible) {
+        return new SAXAnnotationAdapter(sa, "annotation", visible ? 1 : -1,
+                null, desc);
     }
 
+    @Override
+    public AnnotationVisitor visitTypeAnnotation(int typeRef,
+            TypePath typePath, String desc, boolean visible) {
+        return new SAXAnnotationAdapter(sa, "typeAnnotation", visible ? 1 : -1,
+                null, desc, typeRef, typePath);
+    }
+
+    @Override
     public void visitEnd() {
-        addEnd("field");
+        sa.addEnd("field");
     }
 }

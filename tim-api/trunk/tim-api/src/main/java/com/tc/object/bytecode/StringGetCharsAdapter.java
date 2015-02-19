@@ -3,18 +3,16 @@
  */
 package com.tc.object.bytecode;
 
-import com.tc.asm.ClassAdapter;
 import com.tc.asm.ClassVisitor;
-import com.tc.asm.MethodAdapter;
 import com.tc.asm.MethodVisitor;
 import com.tc.asm.Opcodes;
 
-public class StringGetCharsAdapter extends ClassAdapter {
+public class StringGetCharsAdapter extends ClassVisitor {
 
   private final String[] includePatterns;
 
   public StringGetCharsAdapter(ClassVisitor cv, String[] includePatterns) {
-    super(cv);
+    super(Opcodes.ASM4, cv);
     this.includePatterns = includePatterns;
   }
 
@@ -28,10 +26,10 @@ public class StringGetCharsAdapter extends ClassAdapter {
     return mv;
   }
 
-  private static class RewriteStringGetChars extends MethodAdapter implements Opcodes {
+  private static class RewriteStringGetChars extends MethodVisitor implements Opcodes {
 
     public RewriteStringGetChars(MethodVisitor mv) {
-      super(mv);
+      super(Opcodes.ASM4, mv);
     }
 
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
