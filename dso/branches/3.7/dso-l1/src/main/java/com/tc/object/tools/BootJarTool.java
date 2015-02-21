@@ -133,6 +133,7 @@ import com.tc.object.bytecode.Manager;
 import com.tc.object.bytecode.ManagerInternal;
 import com.tc.object.bytecode.ManagerUtil;
 import com.tc.object.bytecode.ManagerUtilInternal;
+import com.tc.object.bytecode.MergeTCToJavaClassAdapter;
 import com.tc.object.bytecode.NotClearable;
 import com.tc.object.bytecode.NullManager;
 import com.tc.object.bytecode.NullManagerInternal;
@@ -857,7 +858,7 @@ public class BootJarTool {
     final ClassWriter cw = new ClassWriter(jCR, ClassWriter.COMPUTE_MAXS);
 
     final Map instrumentedContext = new HashMap();
-    final ClassVisitor cv = new FixedMergeTCToJavaClassAdapter(cw, null, jClassNameDots, tcClassNameDots, tcCN,
+    final ClassVisitor cv = new MergeTCToJavaClassAdapter(cw, null, jClassNameDots, tcClassNameDots, tcCN,
                                                                instrumentedContext);
     jCR.accept(cv, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
     jData = cw.toByteArray();
@@ -1484,7 +1485,7 @@ public class BootJarTool {
 
     cr = new ClassReader(cw.toByteArray());
     cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
-    cv = new FixedMergeTCToJavaClassAdapter(cw, null, "sun.misc.Launcher$AppClassLoader", "sun.misc.AppClassLoaderTC",
+    cv = new MergeTCToJavaClassAdapter(cw, null, "sun.misc.Launcher$AppClassLoader", "sun.misc.AppClassLoaderTC",
                                             tcCN, new HashMap(), ByteCodeUtil.TC_METHOD_PREFIX, false);
     cr.accept(cv, ClassReader.SKIP_FRAMES);
 
@@ -1578,7 +1579,7 @@ public class BootJarTool {
       final TransparencyClassAdapter dsoAdapter = this.configHelper
           .createDsoClassAdapterFor(cw, jClassInfo, this.instrumentationLogger, getClass().getClassLoader(), true, true);
       final Map instrumentedContext = new HashMap();
-      final ClassVisitor cv = new SerialVersionUIDAdder(new FixedMergeTCToJavaClassAdapter(cw, dsoAdapter,
+      final ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter,
                                                                                            jClassNameDots,
                                                                                            tcClassNameDots, tcCN,
                                                                                            instrumentedContext));
@@ -1728,7 +1729,7 @@ public class BootJarTool {
       final Map instrumentedContext = new HashMap();
       final ClassVisitor cv = new SerialVersionUIDAdder(
                                                         new JavaUtilConcurrentLinkedBlockingQueueClassAdapter(
-                                                                                                              new FixedMergeTCToJavaClassAdapter(
+                                                                                                              new MergeTCToJavaClassAdapter(
                                                                                                                                                  cw,
                                                                                                                                                  dsoAdapter,
                                                                                                                                                  jClassNameDots,
@@ -1970,7 +1971,7 @@ public class BootJarTool {
                                                                                            this.instrumentationLogger,
                                                                                            getClass().getClassLoader(),
                                                                                            true, false);
-    final ClassVisitor cv = new SerialVersionUIDAdder(new FixedMergeTCToJavaClassAdapter(cw, dsoAdapter,
+    final ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter,
                                                                                          jInnerClassNameDots,
                                                                                          tcInnerClassNameDots, tcCN,
                                                                                          instrumentedContext,
@@ -2011,7 +2012,7 @@ public class BootJarTool {
                                                                                            this.instrumentationLogger,
                                                                                            getClass().getClassLoader(),
                                                                                            true, true);
-    final ClassVisitor cv = new SerialVersionUIDAdder(new FixedMergeTCToJavaClassAdapter(cw, dsoAdapter,
+    final ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter,
                                                                                          jClassNameDots,
                                                                                          tcClassNameDots, tcCN,
                                                                                          instrumentedContext,
@@ -2080,7 +2081,7 @@ public class BootJarTool {
                                                                                            this.instrumentationLogger,
                                                                                            getClass().getClassLoader(),
                                                                                            true, false);
-    final ClassVisitor cv = new SerialVersionUIDAdder(new FixedMergeTCToJavaClassAdapter(cw, dsoAdapter,
+    final ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter,
                                                                                          jClassNameDots,
                                                                                          tcClassNameDots, tcCN,
                                                                                          instrumentedContext));
@@ -2224,7 +2225,7 @@ public class BootJarTool {
                                                                                            this.instrumentationLogger,
                                                                                            getClass().getClassLoader(),
                                                                                            true, true);
-    final ClassVisitor cv = new SerialVersionUIDAdder(new FixedMergeTCToJavaClassAdapter(cw, dsoAdapter,
+    final ClassVisitor cv = new SerialVersionUIDAdder(new MergeTCToJavaClassAdapter(cw, dsoAdapter,
                                                                                          jClassNameDots,
                                                                                          tcClassNameDots, tcCN,
                                                                                          instrumentedContext,
