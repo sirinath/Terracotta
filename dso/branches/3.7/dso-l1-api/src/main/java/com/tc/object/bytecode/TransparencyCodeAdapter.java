@@ -417,7 +417,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
           // rlock
           super.visitInsn(DUP); // ..., array, index, tcobj, rlock, rlock
           int lockSlot = newLocal(Type.getType(Object.class));
-          mv.visitVarInsn(ASTORE, lockSlot); // ..., array, index, tcobj, rlock
+          super.visitVarInsn(ASTORE, lockSlot); // ..., array, index, tcobj, rlock
           super.visitInsn(MONITORENTER); // ..., array, index, tcobj
 
           super.visitLabel(lockedStart); // ..., array, index, tcobj
@@ -429,13 +429,13 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
           // tcobj
           super.visitInsn(POP); // ..., array, index
           super.visitInsn(opCode); // ..., reslt
-          mv.visitVarInsn(ALOAD, lockSlot); // ..., reslt, rlock
+          super.visitVarInsn(ALOAD, lockSlot); // ..., reslt, rlock
           super.visitInsn(MONITOREXIT); // ..., reslt
           super.visitLabel(lockedEnd); // ..., reslt
           super.visitJumpInsn(GOTO, end); // ..., reslt
 
           super.visitLabel(unlockException); // excep
-          mv.visitVarInsn(ALOAD, lockSlot); // excep, rlock
+          super.visitVarInsn(ALOAD, lockSlot); // excep, rlock
           super.visitInsn(MONITOREXIT); // excep
           super.visitInsn(ATHROW); // <--->
 
@@ -670,7 +670,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
       super.visitVarInsn(ASTORE, localVar);
       callTCCommit(mv);
       super.visitVarInsn(ALOAD, localVar);
-      mv.visitInsn(ATHROW);
+      super.visitInsn(ATHROW);
     }
 
     super.visitEnd();
