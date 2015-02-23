@@ -103,6 +103,7 @@
         </file>
       </activation>
       <modules>
+        <module>../build-parent-ee</module>
         <module>../ent-common</module>
         <module>../ent-dso-l1</module>
         <module>../ent-dso-l2</module>

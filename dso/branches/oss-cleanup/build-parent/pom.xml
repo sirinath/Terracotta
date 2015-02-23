@@ -28,7 +28,6 @@
     <core-storage-api.version>1.3</core-storage-api.version>
     <heap-core-storage.version>1.1.2</heap-core-storage.version>
     <bigmemory-core-storage.version>2.0.0-SNAPSHOT</bigmemory-core-storage.version>
-    <bigmemory-restartable-core-storage.version>1.1.12-SNAPSHOT</bigmemory-restartable-core-storage.version>
     <jetty.version>8.1.15.v20140411</jetty.version>
     <javax.servlet.version>3.0.0.v201112011016</javax.servlet.version>
     <slf4j.version>1.7.7</slf4j.version>
@@ -91,11 +90,6 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>com.terracottatech</groupId>
-        <artifactId>fast-restartable-store</artifactId>
-        <version>1.1.19</version>
-      </dependency>
-      <dependency>
         <groupId>org.terracotta.internal</groupId>
         <artifactId>core-storage-api</artifactId>
         <version>${core-storage-api.version}</version>
@@ -106,14 +100,9 @@
         <version>${heap-core-storage.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.terracottatech.internal</groupId>
+        <groupId>org.terracotta.internal</groupId>
         <artifactId>bigmemory-core-storage</artifactId>
         <version>${bigmemory-core-storage.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.terracottatech.internal</groupId>
-        <artifactId>bigmemory-restartable-core-storage</artifactId>
-        <version>${bigmemory-restartable-core-storage.version}</version>
       </dependency>
       <dependency>
         <groupId>org.terracotta</groupId>
@@ -265,17 +254,6 @@
         <groupId>com.terracotta</groupId>
         <artifactId>security-REST</artifactId>
         <version>${security-version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.terracottatech</groupId>
-        <artifactId>search-ee</artifactId>
-        <version>${search.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
-          </exclusion>          
-        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.terracotta.license</groupId>

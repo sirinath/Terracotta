@@ -34,7 +34,7 @@
       <artifactId>heap-core-storage</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.terracottatech.internal</groupId>
+      <groupId>org.terracotta.internal</groupId>
       <artifactId>bigmemory-core-storage</artifactId>
     </dependency>
     <dependency>
