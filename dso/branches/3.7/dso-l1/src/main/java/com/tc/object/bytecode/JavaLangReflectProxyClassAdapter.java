@@ -24,7 +24,8 @@ public class JavaLangReflectProxyClassAdapter extends ClassVisitor implements Op
   @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
-    if ("getProxyClass".equals(name) && "(Ljava/lang/ClassLoader;[Ljava/lang/Class;)Ljava/lang/Class;".equals(desc)) {
+    if (("getProxyClass".equals(name) || ("getProxyClass0".equals(name)))
+        && "(Ljava/lang/ClassLoader;[Ljava/lang/Class;)Ljava/lang/Class;".equals(desc)) {
       mv = new FilterInterfacesMethodAdapter(mv);
     } else if ("<clinit>".equals(name)) {
       mv = new StaticInitializerMethodAdapter(mv);
