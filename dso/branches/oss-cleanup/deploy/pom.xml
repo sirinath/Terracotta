@@ -21,6 +21,7 @@
   <name>deploy</name>
 
   <properties>  
+    <sag-deps>false</sag-deps>
     <skip.deploy>true</skip.deploy>
     <jersey.version>2.6</jersey.version>
     <hk2.version>2.2.0</hk2.version>
@@ -187,6 +188,23 @@
       <version>1.2</version>
     </dependency>
     <dependency>
+      <groupId>com.fasterxml.jackson.jaxrs</groupId>
+      <artifactId>jackson-jaxrs-json-provider</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+  </dependencies>
+
+  <profiles>
+    <profile>
+      <id>sag-deps</id>
+      <activation>
+        <property>
+          <name>sag-deps</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
       <groupId>gf-3122</groupId>
       <artifactId>gf.javax.security.auth.message</artifactId>
     </dependency>
@@ -202,14 +220,36 @@
       <groupId>gf-3122</groupId>
       <artifactId>gf.javax.servlet-api</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.jaxrs</groupId>
-      <artifactId>jackson-jaxrs-json-provider</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-  </dependencies>
-  
-  <profiles>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>community-deps</id>
+      <activation>
+        <property>
+          <name>sag-deps</name>
+          <value>false</value>
+        </property>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.eclipse.jetty.orbit</groupId>
+          <artifactId>javax.servlet</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>org.eclipse.jetty.orbit</groupId>
+          <artifactId>javax.security.auth.message</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>org.eclipse.jetty.orbit</groupId>
+          <artifactId>javax.annotation</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>org.eclipse.jetty.orbit</groupId>
+          <artifactId>javax.mail.glassfish</artifactId>
+        </dependency>
+      </dependencies>
+    </profile>
     <profile>
       <id>start-server</id>
       <build>
