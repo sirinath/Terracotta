@@ -79,7 +79,6 @@
       -Dcom.tc.sigar.enabled=true
       -Dtc.install-root.ignore-checks=true
       -Dcom.sun.management.jmxremote 
-      -Dtc.classloader.writeToDisk
       ${surefire.additional-jvm-args}</surefire.argLine>   
   </properties>
 
