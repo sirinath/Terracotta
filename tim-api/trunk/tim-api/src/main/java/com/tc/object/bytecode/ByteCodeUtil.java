@@ -339,49 +339,49 @@ public class ByteCodeUtil implements Opcodes {
         c.visitTypeInsn(NEW, "java/lang/Boolean");
         c.visitInsn(DUP);
         c.visitVarInsn(type.getOpcode(ILOAD), offset);
-        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Boolean", "<init>", "(Z)V");
+        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Boolean", "<init>", "(Z)V", false);
         break;
       case Type.BYTE:
         c.visitTypeInsn(NEW, "java/lang/Byte");
         c.visitInsn(DUP);
         c.visitVarInsn(type.getOpcode(ILOAD), offset);
-        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Byte", "<init>", "(B)V");
+        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Byte", "<init>", "(B)V", false);
         break;
       case Type.CHAR:
         c.visitTypeInsn(NEW, "java/lang/Character");
         c.visitInsn(DUP);
         c.visitVarInsn(type.getOpcode(ILOAD), offset);
-        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Character", "<init>", "(C)V");
+        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Character", "<init>", "(C)V", false);
         break;
       case Type.DOUBLE:
         c.visitTypeInsn(NEW, "java/lang/Double");
         c.visitInsn(DUP);
         c.visitVarInsn(type.getOpcode(ILOAD), offset);
-        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Double", "<init>", "(D)V");
+        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Double", "<init>", "(D)V", false);
         break;
       case Type.FLOAT:
         c.visitTypeInsn(NEW, "java/lang/Float");
         c.visitInsn(DUP);
         c.visitVarInsn(type.getOpcode(ILOAD), offset);
-        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Float", "<init>", "(F)V");
+        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Float", "<init>", "(F)V", false);
         break;
       case Type.INT:
         c.visitTypeInsn(NEW, "java/lang/Integer");
         c.visitInsn(DUP);
         c.visitVarInsn(type.getOpcode(ILOAD), offset);
-        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V");
+        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V", false);
         break;
       case Type.LONG:
         c.visitTypeInsn(NEW, "java/lang/Long");
         c.visitInsn(DUP);
         c.visitVarInsn(type.getOpcode(ILOAD), offset);
-        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Long", "<init>", "(J)V");
+        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Long", "<init>", "(J)V", false);
         break;
       case Type.SHORT:
         c.visitTypeInsn(NEW, "java/lang/Short");
         c.visitInsn(DUP);
         c.visitVarInsn(type.getOpcode(ILOAD), offset);
-        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Short", "<init>", "(S)V");
+        c.visitMethodInsn(INVOKESPECIAL, "java/lang/Short", "<init>", "(S)V", false);
         break;
       default:
         throw new AssertionError("can't happen:" + type);
@@ -603,7 +603,7 @@ public class ByteCodeUtil implements Opcodes {
   public static void systemOutPrintln(final MethodVisitor mv, final String msg) {
     mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
     mv.visitLdcInsn(msg);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
   }
 
   /**

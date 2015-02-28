@@ -12,7 +12,7 @@ public class StringGetCharsAdapter extends ClassVisitor {
   private final String[] includePatterns;
 
   public StringGetCharsAdapter(ClassVisitor cv, String[] includePatterns) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     this.includePatterns = includePatterns;
   }
 
@@ -29,16 +29,16 @@ public class StringGetCharsAdapter extends ClassVisitor {
   private static class RewriteStringGetChars extends MethodVisitor implements Opcodes {
 
     public RewriteStringGetChars(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
       if ((INVOKEVIRTUAL == opcode)
           && ("java/lang/String".equals(owner) && "getChars".equals(name) && ("(II[CI)V".equals(desc) || "([CI)V"
               .equals(desc)))) {
-        super.visitMethodInsn(opcode, owner, "getCharsFast", desc);
+        super.visitMethodInsn(opcode, owner, "getCharsFast", desc, itf);
       } else {
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
       }
     }
   }

@@ -276,7 +276,7 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
 
   private class TCSuperClassAdapter extends ClassVisitor implements Opcodes {
     public TCSuperClassAdapter(ClassVisitor cv) {
-      super(Opcodes.ASM4, cv);
+      super(Opcodes.ASM5, cv);
     }
 
     @Override
@@ -304,11 +304,11 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
     
     private class TCSuperMethodAdapter extends MethodVisitor implements Opcodes {
       public TCSuperMethodAdapter(MethodVisitor mv) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM5, mv);
       }
 
       @Override
-      public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+      public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
         int index = owner.indexOf(tcFullClassSlashes);
         if (opcode == INVOKESPECIAL && index == -1) {
           if (!visitedMethods.contains(name + desc) && !isInitMethod(name)) {
@@ -320,11 +320,11 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
             }
             name = getNewName(name);
           }
-          super.visitMethodInsn(opcode, owner, name, desc);
+          super.visitMethodInsn(opcode, owner, name, desc, itf);
         } else {
           owner = replaceClassName(owner);
           desc = replaceClassName(desc);
-          super.visitMethodInsn(opcode, owner, name, desc);
+          super.visitMethodInsn(opcode, owner, name, desc, itf);
         }
       }
 
@@ -353,7 +353,7 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
     private final MethodNode target;
 
     public TransformConstructorAdapter(MethodNode mv, int access, String name, String desc) {
-      super(Opcodes.ASM4, mv, access, name, desc);
+      super(Opcodes.ASM5, mv, access, name, desc);
       this.target = mv;
     }
 
@@ -373,7 +373,7 @@ public class MergeTCToJavaClassAdapter extends ChangeClassNameHierarchyAdapter i
     private final String owner;
 
     public AddTCInitCallAdapter(String owner, MethodVisitor mv, int access, String name, String desc) {
-      super(Opcodes.ASM4, mv, access, name, desc);
+      super(Opcodes.ASM5, mv, access, name, desc);
       this.owner = owner;
     }
 

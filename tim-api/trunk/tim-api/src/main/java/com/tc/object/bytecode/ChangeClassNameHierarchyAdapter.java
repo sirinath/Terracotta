@@ -200,7 +200,7 @@ public abstract class ChangeClassNameHierarchyAdapter extends ClassVisitor imple
   }
 
   public ChangeClassNameHierarchyAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   public MethodVisitor invokeSuperVisitMethod(int access, String name, String desc, String signature,
@@ -216,7 +216,7 @@ public abstract class ChangeClassNameHierarchyAdapter extends ClassVisitor imple
     mv.visitCode();
     mv.visitVarInsn(ALOAD, 0);
     ByteCodeUtil.pushMethodArguments(access, desc, mv);
-    mv.visitMethodInsn(INVOKESPECIAL, origSuperClassName, name, desc);
+    mv.visitMethodInsn(INVOKESPECIAL, origSuperClassName, name, desc, false);
     mv.visitInsn(returnType.getOpcode(IRETURN));
     mv.visitMaxs(0, 0);
     mv.visitEnd();

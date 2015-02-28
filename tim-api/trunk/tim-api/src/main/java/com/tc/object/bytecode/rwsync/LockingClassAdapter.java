@@ -66,7 +66,7 @@ public abstract class LockingClassAdapter extends ClassVisitor implements Opcode
   abstract protected Map<MethodId, MethodStrategy> getLockingStrategy();
 
   public LockingClassAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   /**

@@ -61,7 +61,7 @@ public class SimpleLockMethodStrategy extends LockingMethodStrategy {
 
     public LockWrapAdapter(MethodVisitor mv, String ownerType, String outerType, String outerDesc, int access,
                            String name, String desc) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
       this.ownerType = ownerType;
       this.outerType = outerType;
       this.outerDesc = outerDesc;
@@ -94,7 +94,7 @@ public class SimpleLockMethodStrategy extends LockingMethodStrategy {
       } else {
         visitFieldInsn(GETFIELD, ownerType, lockField, lockTypeDesc);
       }
-      visitMethodInsn(INVOKEVIRTUAL, lockTypeName, LOCK_METHOD_NAME, LOCK_METHOD_DESC);
+      visitMethodInsn(INVOKEVIRTUAL, lockTypeName, LOCK_METHOD_NAME, LOCK_METHOD_DESC, false);
       visitLabel(lblTryStart);
       callRenamedMethod();
       if (!isVoid) {
@@ -108,7 +108,7 @@ public class SimpleLockMethodStrategy extends LockingMethodStrategy {
       } else {
         visitFieldInsn(GETFIELD, ownerType, lockField, lockTypeDesc);
       }
-      visitMethodInsn(INVOKEVIRTUAL, lockTypeName, UNLOCK_METHOD_NAME, UNLOCK_METHOD_DESC);
+      visitMethodInsn(INVOKEVIRTUAL, lockTypeName, UNLOCK_METHOD_NAME, UNLOCK_METHOD_DESC, false);
       if (!isVoid) {
         visitVarInsn(opLoad, lviReturn);
       }
@@ -122,7 +122,7 @@ public class SimpleLockMethodStrategy extends LockingMethodStrategy {
       } else {
         visitFieldInsn(GETFIELD, ownerType, lockField, lockTypeDesc);
       }
-      visitMethodInsn(INVOKEVIRTUAL, lockTypeName, UNLOCK_METHOD_NAME, UNLOCK_METHOD_DESC);
+      visitMethodInsn(INVOKEVIRTUAL, lockTypeName, UNLOCK_METHOD_NAME, UNLOCK_METHOD_DESC, false);
       visitVarInsn(ALOAD, lviCaughtException);
       visitInsn(ATHROW);
     }
@@ -133,7 +133,7 @@ public class SimpleLockMethodStrategy extends LockingMethodStrategy {
     private void callRenamedMethod() {
       ByteCodeUtil.prepareStackForMethodCall(access, desc, mv);
       int invokeOp = Modifier.isStatic(access) ? INVOKESTATIC : INVOKESPECIAL;
-      visitMethodInsn(invokeOp, ownerType, getWrappedName(name), desc);
+      visitMethodInsn(invokeOp, ownerType, getWrappedName(name), desc, false);
     }
 
   }

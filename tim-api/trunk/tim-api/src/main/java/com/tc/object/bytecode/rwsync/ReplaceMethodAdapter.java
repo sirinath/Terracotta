@@ -26,7 +26,7 @@ public abstract class ReplaceMethodAdapter extends MethodVisitor {
   private boolean         visitedCode = false;
 
   public ReplaceMethodAdapter(MethodVisitor mv) {
-    super(Opcodes.ASM4);
+    super(Opcodes.ASM5);
     this.mv = mv;
   }
 
@@ -73,7 +73,7 @@ public abstract class ReplaceMethodAdapter extends MethodVisitor {
 
   public void visitEnd() {
     mv.visitEnd();
-    mv = new MethodVisitor(Opcodes.ASM4) {
+    mv = new MethodVisitor(Opcodes.ASM5) {
       //empty
     };
   }
@@ -126,8 +126,8 @@ public abstract class ReplaceMethodAdapter extends MethodVisitor {
     mv.visitMaxs(maxStack, maxLocals);
   }
 
-  public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-    mv.visitMethodInsn(opcode, owner, name, desc);
+  public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+    mv.visitMethodInsn(opcode, owner, name, desc, itf);
   }
 
   public void visitMultiANewArrayInsn(String desc, int dims) {

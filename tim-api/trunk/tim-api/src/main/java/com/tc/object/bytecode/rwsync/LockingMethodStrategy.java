@@ -73,7 +73,7 @@ public abstract class LockingMethodStrategy implements MethodStrategy, Opcodes {
   public static void callRenamedMethod(String owner, int access, String name, String desc, MethodVisitor mv) {
     ByteCodeUtil.prepareStackForMethodCall(access, desc, mv);
     int invokeOp = Modifier.isStatic(access) ? INVOKESTATIC : INVOKESPECIAL;
-    mv.visitMethodInsn(invokeOp, owner, getWrappedName(name), desc);
+    mv.visitMethodInsn(invokeOp, owner, getWrappedName(name), desc, false);
   }
 
 }

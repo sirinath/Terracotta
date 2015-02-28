@@ -35,25 +35,25 @@ public class LogicalClassSerializationAdapter implements Opcodes {
     mv.visitVarInsn(ALOAD, 1);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitMethodInsn(INVOKESPECIAL, classNameSlashes, ByteCodeUtil.fieldGetterMethod(delegateFieldName),
-                       "()L" + logicalExtendingClassName + ";");
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/ObjectOutputStream", "writeObject", "(Ljava/lang/Object;)V");
+                       "()L" + logicalExtendingClassName + ";", false);
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/ObjectOutputStream", "writeObject", "(Ljava/lang/Object;)V", false);
   }
 
   public static void addDelegateFieldReadObjectCode(MethodVisitor mv, String classNameSlashes,
                                                     String logicalExtendingClassName, String delegateFieldName) {
     mv.visitVarInsn(ALOAD, 0);
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/ObjectInputStream", "readObject", "()Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/ObjectInputStream", "readObject", "()Ljava/lang/Object;", false);
     mv.visitTypeInsn(CHECKCAST, logicalExtendingClassName);
     mv.visitMethodInsn(INVOKESPECIAL, classNameSlashes, ByteCodeUtil.fieldSetterMethod(delegateFieldName),
-                       "(L" + logicalExtendingClassName + ";)V");
+                       "(L" + logicalExtendingClassName + ";)V", false);
   }
 
   public static class LogicalClassSerializationMethodAdapter extends MethodVisitor implements Opcodes {
     private final String classNameSlashes;
 
     public LogicalClassSerializationMethodAdapter(MethodVisitor mv, String classNameSlashes) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
       this.classNameSlashes = classNameSlashes;
     }
 
@@ -63,7 +63,7 @@ public class LogicalClassSerializationAdapter implements Opcodes {
 
       mv.visitVarInsn(ALOAD, 0);
       mv.visitMethodInsn(INVOKEVIRTUAL, classNameSlashes, SERIALIZATION_OVERRIDE_METHOD_NAME,
-                         SERIALIZATION_OVERRIDE_METHOD_DESC);
+                         SERIALIZATION_OVERRIDE_METHOD_DESC, false);
       Label l1 = new Label();
       mv.visitJumpInsn(IFEQ, l1);
       mv.visitInsn(RETURN);
@@ -79,7 +79,7 @@ public class LogicalClassSerializationAdapter implements Opcodes {
 
     public LogicalSubclassSerializationMethodAdapter(MethodVisitor mv, String methodSignature, String classNameSlashes,
                                                      String logicalExtendingClassName, String delegateFieldName) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
       this.methodSignature = methodSignature;
       this.classNameSlashes = classNameSlashes;
       this.logicalExtendingClassName = logicalExtendingClassName;
@@ -101,7 +101,7 @@ public class LogicalClassSerializationAdapter implements Opcodes {
     private final String classNameSlashes;
 
     public LogicalClassSerializationClassAdapter(ClassVisitor cv, String className) {
-      super(Opcodes.ASM4, cv);
+      super(Opcodes.ASM5, cv);
       this.classNameSlashes = className.replace(ChangeClassNameHierarchyAdapter.DOT_DELIMITER,
                                                 ChangeClassNameHierarchyAdapter.SLASH_DELIMITER);
     }
