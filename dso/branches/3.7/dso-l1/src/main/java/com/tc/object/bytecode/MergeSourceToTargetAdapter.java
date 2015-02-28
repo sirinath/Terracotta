@@ -33,7 +33,7 @@ public class MergeSourceToTargetAdapter extends ClassVisitor implements ClassAda
    * When created for use as factory, the {@link ClassVisitor} parameter is ignored
    */
   public MergeSourceToTargetAdapter(ClassVisitor cv, String targetClassNameDots, String sourceClassNameDots) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     actualVisitor = cv;
     this.sourceClassNameDots = sourceClassNameDots;
     this.targetClassNameDots = targetClassNameDots;
@@ -94,7 +94,7 @@ public class MergeSourceToTargetAdapter extends ClassVisitor implements ClassAda
 
   private class SourceToTargetRenameClassAdapter extends ClassVisitor implements Opcodes {
     public SourceToTargetRenameClassAdapter(ClassVisitor cv) {
-      super(Opcodes.ASM4, cv);
+      super(Opcodes.ASM5, cv);
     }
 
     @Override
@@ -118,16 +118,16 @@ public class MergeSourceToTargetAdapter extends ClassVisitor implements ClassAda
 
     private class SourceToTargetRenameMethodAdapter extends MethodVisitor implements Opcodes {
       public SourceToTargetRenameMethodAdapter(MethodVisitor mv) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM5, mv);
       }
 
       @Override
-      public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+      public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
         owner = replaceClassName(owner);
         // desc can also contain sourceName too... not happening atm
         // TODO revisit to clean desc too
         // desc = replaceClassName(desc);
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
       }
 
       @Override

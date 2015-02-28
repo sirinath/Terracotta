@@ -2041,7 +2041,7 @@ public class BootJarTool {
     final byte[] tcData = getSystemBytes(tcClassNameDots);
 
     final ClassReader tcCR = new ClassReader(tcData);
-    final ClassNode tcCN = new ClassNode(Opcodes.ASM4) {
+    final ClassNode tcCN = new ClassNode(Opcodes.ASM5) {
       @Override
       public MethodVisitor visitMethod(final int maccess, final String mname, final String mdesc,
                                        final String msignature, final String[] mexceptions) {

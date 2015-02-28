@@ -42,7 +42,7 @@ public class AddInterfaceVisitor extends ClassVisitor implements TransformationC
   public AddInterfaceVisitor(final ClassVisitor cv,
                              final ClassInfo classInfo,
                              final InstrumentationContext ctx) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     m_classInfo = classInfo;
     m_ctx = (InstrumentationContext) ctx;
   }

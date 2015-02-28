@@ -25,7 +25,7 @@ public class MulticastMethodVisitor extends MethodVisitor {
   private final Map labelsMapping = new HashMap();
   
   public MulticastMethodVisitor(MethodVisitor[] visitors) {
-    super(Opcodes.ASM4);
+    super(Opcodes.ASM5);
     this.visitors = visitors;
   }
 
@@ -155,9 +155,9 @@ public class MulticastMethodVisitor extends MethodVisitor {
   }
 
   @Override
-  public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+  public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
     for (MethodVisitor visitor : visitors) {
-      visitor.visitMethodInsn(opcode, owner, name, desc);
+      visitor.visitMethodInsn(opcode, owner, name, desc, itf);
     }
   }
 

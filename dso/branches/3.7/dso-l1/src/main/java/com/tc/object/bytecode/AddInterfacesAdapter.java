@@ -12,7 +12,7 @@ public class AddInterfacesAdapter extends ClassVisitor {
   private final String[] toAdd;
 
   public AddInterfacesAdapter(ClassVisitor cv, String[] toAdd) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     this.toAdd = toAdd;
   }
 

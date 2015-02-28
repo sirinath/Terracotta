@@ -47,7 +47,7 @@ public class TryCatchBlockSortingAdapter extends MethodVisitor {
    * Constructs a sorting adapter that visits the supplied visitor with the processed method.
    */
   public TryCatchBlockSortingAdapter(MethodVisitor visitor) {
-    super(Opcodes.ASM4, new MethodNode(0, null, null, null, null));
+    super(Opcodes.ASM5, new MethodNode(0, null, null, null, null));
 
     next = visitor;
     method = (MethodNode) mv;

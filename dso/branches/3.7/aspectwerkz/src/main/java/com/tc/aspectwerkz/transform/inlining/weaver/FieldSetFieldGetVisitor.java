@@ -53,7 +53,7 @@ public class FieldSetFieldGetVisitor extends ClassVisitor implements Transformat
                                  final ClassLoader loader,
                                  final ClassInfo classInfo,
                                  final InstrumentationContext ctx) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     m_loader = loader;
     m_callerClassInfo = classInfo;
     m_ctx = ctx;
@@ -254,7 +254,8 @@ public class FieldSetFieldGetVisitor extends ClassVisitor implements Transformat
                 INVOKE_METHOD_NAME,
                 TransformationUtil.getInvokeSignatureForFieldJoinPoints(
                         fieldInfo.getModifiers(), fieldDesc, m_callerClassName, className
-                )
+                ),
+                false
         );
 
         // emit the joinpoint
@@ -329,7 +330,8 @@ public class FieldSetFieldGetVisitor extends ClassVisitor implements Transformat
                 INVOKE_METHOD_NAME,
                 TransformationUtil.getInvokeSignatureForFieldJoinPoints(
                         fieldInfo.getModifiers(), fieldDesc, m_callerClassName, className
-                )
+                ),
+                false
         );
 
         final int sort = Type.getType(fieldDesc).getSort();

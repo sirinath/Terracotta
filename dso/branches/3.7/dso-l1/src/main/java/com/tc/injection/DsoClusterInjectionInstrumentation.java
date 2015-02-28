@@ -62,7 +62,7 @@ public class DsoClusterInjectionInstrumentation implements InjectionInstrumentat
       private boolean isInjectionMethodPresent = false;
 
       private Adapter(final ClassVisitor cv, final ClassLoader caller) {
-        super(Opcodes.ASM4, cv);
+        super(Opcodes.ASM5, cv);
       }
 
       @Override
@@ -84,9 +84,9 @@ public class DsoClusterInjectionInstrumentation implements InjectionInstrumentat
       private void addFieldInjectionByteCode(final MethodVisitor mv) {
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "getManager",
-                           "()Lcom/tc/object/bytecode/Manager;");
+                           "()Lcom/tc/object/bytecode/Manager;", false);
         mv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/bytecode/Manager", "getDsoCluster",
-                           "()Lcom/tc/cluster/DsoCluster;");
+                           "()Lcom/tc/cluster/DsoCluster;", true);
         mv.visitFieldInsn(PUTFIELD, declaringTypeInternalName, fieldToInjectInto.getName(),
                           'L' + fieldTypeInternalName + ';');
       }
@@ -112,7 +112,7 @@ public class DsoClusterInjectionInstrumentation implements InjectionInstrumentat
         }
 
         public DsoClusterInjectionMethod(final MethodVisitor mv, final int access, final String name, final String desc) {
-          super(Opcodes.ASM4, mv, access, name, desc);
+          super(Opcodes.ASM5, mv, access, name, desc);
         }
 
       }
@@ -122,24 +122,25 @@ public class DsoClusterInjectionInstrumentation implements InjectionInstrumentat
         protected void onMethodEnter() {
           // ensure that the injection method is always called first
           super.visitVarInsn(ALOAD, 0);
-          super.visitMethodInsn(INVOKEVIRTUAL, declaringTypeInternalName, TC_INJECTION_METHOD_NAME, "()V");
+          super.visitMethodInsn(INVOKEVIRTUAL, declaringTypeInternalName, TC_INJECTION_METHOD_NAME, "()V", false);
         }
 
         // todo: this should be done in a better way, by catching the visitVarInsn(ALOAD, 0) call and holding it back
         // unless the next instruction is something else than an injection method call
         @Override
-        public void visitMethodInsn(final int opcode, final String owner, final String name, final String desc) {
+        public void visitMethodInsn(final int opcode, final String owner, final String name, final String desc,
+                                    boolean itf) {
           // remove any other injection method calls
           if (TC_INJECTION_METHOD_NAME.equals(name)) {
             mv.visitInsn(POP);
           } else {
-            super.visitMethodInsn(opcode, owner, name, desc);
+            super.visitMethodInsn(opcode, owner, name, desc, itf);
           }
         }
 
         public DsoClusterConstructorInjection(final MethodVisitor mv, final int access, final String name,
                                               final String desc) {
-          super(Opcodes.ASM4, mv, access, name, desc);
+          super(Opcodes.ASM5, mv, access, name, desc);
         }
 
       }

@@ -106,7 +106,8 @@ public class RuntimeCheckVisitor extends ExpressionVisitor implements Opcodes {
                         adviceInfo.getAspectQualifiedName()
                 ),
                 TransformationConstants.FACTORY_HASASPECT_METHOD_NAME,
-                TransformationConstants.FACTORY_HASASPECT_PEROBJECT_METHOD_SIGNATURE
+                TransformationConstants.FACTORY_HASASPECT_PEROBJECT_METHOD_SIGNATURE,
+                false
         );
         cv.visitInsn(IAND);
 
@@ -122,7 +123,8 @@ public class RuntimeCheckVisitor extends ExpressionVisitor implements Opcodes {
                         adviceInfo.getAspectQualifiedName()
                 ),
                 TransformationConstants.FACTORY_HASASPECT_METHOD_NAME,
-                TransformationConstants.FACTORY_HASASPECT_PEROBJECT_METHOD_SIGNATURE
+                TransformationConstants.FACTORY_HASASPECT_PEROBJECT_METHOD_SIGNATURE,
+                false
         );
         cv.visitInsn(IAND);
 
@@ -196,7 +198,8 @@ public class RuntimeCheckVisitor extends ExpressionVisitor implements Opcodes {
             INVOKESTATIC,
             cflowClassName,
             TransformationConstants.IS_IN_CFLOW_METOD_NAME,
-            TransformationConstants.IS_IN_CFLOW_METOD_SIGNATURE
+            TransformationConstants.IS_IN_CFLOW_METOD_SIGNATURE,
+            false
     );
     return super.visit(node, data);
   }
@@ -209,7 +212,8 @@ public class RuntimeCheckVisitor extends ExpressionVisitor implements Opcodes {
             INVOKESTATIC,
             cflowClassName,
             TransformationConstants.IS_IN_CFLOW_METOD_NAME,
-            TransformationConstants.IS_IN_CFLOW_METOD_SIGNATURE
+            TransformationConstants.IS_IN_CFLOW_METOD_SIGNATURE,
+            false
     );
     return super.visit(node, data);
   }

@@ -16,11 +16,11 @@ public class UnsafeAdapter extends ClassVisitor implements Opcodes, ClassAdapter
   public final static String  TC_UNSAFE_FIELD_NAME = ByteCodeUtil.TC_FIELD_PREFIX + "theUnsafe";
 
   public UnsafeAdapter() {
-    super(Opcodes.ASM4);
+    super(Opcodes.ASM5);
   }
 
   private UnsafeAdapter(ClassVisitor cv, ClassLoader caller) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -56,15 +56,15 @@ public class UnsafeAdapter extends ClassVisitor implements Opcodes, ClassAdapter
 
   private static class UnsafeMethodAdapter extends MethodVisitor implements Opcodes {
     public UnsafeMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String className, String methodName, String desc) {
+    public void visitMethodInsn(int opcode, String className, String methodName, String desc, boolean itf) {
       if (Opcodes.INVOKESPECIAL == opcode && UNSAFE_CLASS_SLASH.equals(className) && "<init>".equals(methodName)) {
-        super.visitMethodInsn(opcode, DSOUnsafe.CLASS_SLASH, methodName, desc);
+        super.visitMethodInsn(opcode, DSOUnsafe.CLASS_SLASH, methodName, desc, itf);
       } else {
-        super.visitMethodInsn(opcode, className, methodName, desc);
+        super.visitMethodInsn(opcode, className, methodName, desc, itf);
       }
     }
 

@@ -40,7 +40,7 @@ public class StaticInitializationVisitor extends ClassVisitor implements Transfo
   public StaticInitializationVisitor(final ClassVisitor cv,
                                      final InstrumentationContext ctx,
                                      final Set addedMethods) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     m_ctx = (InstrumentationContext) ctx;
     m_addedMethods = addedMethods;
   }
@@ -133,7 +133,8 @@ public class StaticInitializationVisitor extends ClassVisitor implements Transfo
             TransformationUtil.getInvokeSignatureForCodeJoinPoints(access,
                     desc,
                     m_declaringTypeName,
-                    m_declaringTypeName));
+                    m_declaringTypeName),
+            false);
 
     AsmHelper.addReturnStatement(mv, Type.VOID_TYPE);
     mv.visitMaxs(0, 0);

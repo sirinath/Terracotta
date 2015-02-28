@@ -32,7 +32,7 @@ public class DuplicateMethodAdapter extends ClassVisitor implements Opcodes {
   }
 
   public DuplicateMethodAdapter(ClassVisitor cv, Set dontDupe) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     this.dontDupe = new HashSet(dontDupe);
     this.dontDupe.add("readObject(Ljava/io/ObjectInputStream;)V");
     this.dontDupe.add("writeObject(Ljava/io/ObjectOutputStream;)V");
@@ -84,10 +84,10 @@ public class DuplicateMethodAdapter extends ClassVisitor implements Opcodes {
     Label end = new Label();
     mv.visitCode();
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKEVIRTUAL, ownerSlashes, ClassAdapterBase.MANAGED_METHOD, "()Lcom/tc/object/TCObject;");
+    mv.visitMethodInsn(INVOKEVIRTUAL, ownerSlashes, ClassAdapterBase.MANAGED_METHOD, "()Lcom/tc/object/TCObject;", false);
     mv.visitJumpInsn(IFNULL, notManaged);
     ByteCodeUtil.prepareStackForMethodCall(access, desc, mv);
-    mv.visitMethodInsn(INVOKESPECIAL, ownerSlashes, MANAGED_PREFIX + name, desc);
+    mv.visitMethodInsn(INVOKESPECIAL, ownerSlashes, MANAGED_PREFIX + name, desc, false);
     if (!isVoid) {
       mv.visitInsn(Type.getReturnType(desc).getOpcode(IRETURN));
     } else {
@@ -95,7 +95,7 @@ public class DuplicateMethodAdapter extends ClassVisitor implements Opcodes {
     }
     mv.visitLabel(notManaged);
     ByteCodeUtil.prepareStackForMethodCall(access, desc, mv);
-    mv.visitMethodInsn(INVOKESPECIAL, ownerSlashes, UNMANAGED_PREFIX + name, desc);
+    mv.visitMethodInsn(INVOKESPECIAL, ownerSlashes, UNMANAGED_PREFIX + name, desc, false);
     if (!isVoid) {
       mv.visitInsn(Type.getReturnType(desc).getOpcode(IRETURN));
     } else {
@@ -113,20 +113,20 @@ public class DuplicateMethodAdapter extends ClassVisitor implements Opcodes {
     private final String   prefix;
 
     public RewriteSelfTypeCalls(MethodVisitor mv, String[] types, String prefix) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
       this.types = types;
       this.prefix = prefix;
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
       if ("<init>".equals(name)) {
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
         return;
       }
 
       if (dontDupe.contains(name + desc)) {
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
         return;
       }
 
@@ -144,7 +144,7 @@ public class DuplicateMethodAdapter extends ClassVisitor implements Opcodes {
         }
       }
 
-      super.visitMethodInsn(opcode, owner, name, desc);
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
     }
   }
 
@@ -153,7 +153,7 @@ public class DuplicateMethodAdapter extends ClassVisitor implements Opcodes {
     private final MethodVisitor[] targets;
 
     MulticastMethodVisitor(MethodVisitor targets[]) {
-      super(Opcodes.ASM4);
+      super(Opcodes.ASM5);
       this.targets = targets;
     }
 
@@ -310,13 +310,6 @@ public class DuplicateMethodAdapter extends ClassVisitor implements Opcodes {
     public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
       for (MethodVisitor target : targets) {
         target.visitMethodInsn(opcode, owner, name, desc, itf);
-      }
-    }
-
-    @Override
-    public void visitMethodInsn(int arg0, String arg1, String arg2, String arg3) {
-      for (MethodVisitor target : targets) {
-        target.visitMethodInsn(arg0, arg1, arg2, arg3);
       }
     }
 

@@ -164,7 +164,7 @@ public class ProxySubclassingCompiler implements TransformationConstants {
 
         proxyCode.visitVarInsn(ALOAD, 0);
         AsmHelper.loadArgumentTypes(proxyCode, Type.getArgumentTypes(desc), false);
-        proxyCode.visitMethodInsn(INVOKESPECIAL, m_className, INIT_METHOD_NAME, desc);
+        proxyCode.visitMethodInsn(INVOKESPECIAL, m_className, INIT_METHOD_NAME, desc, false);
         proxyCode.visitInsn(RETURN);
         proxyCode.visitMaxs(0, 0);
         copyAnnotation = true;
@@ -180,13 +180,13 @@ public class ProxySubclassingCompiler implements TransformationConstants {
 
         if (Modifier.isStatic(access)) {
           AsmHelper.loadArgumentTypes(proxyCode, Type.getArgumentTypes(desc), true);
-          proxyCode.visitMethodInsn(INVOKESTATIC, m_className, name, desc);
+          proxyCode.visitMethodInsn(INVOKESTATIC, m_className, name, desc, false);
           AsmHelper.addReturnStatement(proxyCode, Type.getReturnType(desc));
           proxyCode.visitMaxs(0, 0);
         } else {
           proxyCode.visitVarInsn(ALOAD, 0);
           AsmHelper.loadArgumentTypes(proxyCode, Type.getArgumentTypes(desc), false);
-          proxyCode.visitMethodInsn(INVOKESPECIAL, m_className, name, desc);
+          proxyCode.visitMethodInsn(INVOKESPECIAL, m_className, name, desc, false);
           AsmHelper.addReturnStatement(proxyCode, Type.getReturnType(desc));
           proxyCode.visitMaxs(0, 0);
         }

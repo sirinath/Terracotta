@@ -147,7 +147,8 @@ public abstract class AbstractAspectFactoryCompiler implements Opcodes, Transfor
             INVOKESTATIC,
             CLASS_CLASS,
             FOR_NAME_METHOD_NAME,
-            FOR_NAME_METHOD_SIGNATURE
+            FOR_NAME_METHOD_SIGNATURE,
+            false
     );
     m_clinit.visitFieldInsn(
             PUTSTATIC,
@@ -196,13 +197,13 @@ public abstract class AbstractAspectFactoryCompiler implements Opcodes, Transfor
 
     m_clinit.visitTypeInsn(NEW, HASH_MAP_CLASS_NAME);
     m_clinit.visitInsn(DUP);
-    m_clinit.visitMethodInsn(INVOKESPECIAL, HASH_MAP_CLASS_NAME, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE);
+    m_clinit.visitMethodInsn(INVOKESPECIAL, HASH_MAP_CLASS_NAME, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false);
     for (Iterator iterator = getParameters().entrySet().iterator(); iterator.hasNext();) {
       m_clinit.visitInsn(DUP);
       Map.Entry entry = (Map.Entry) iterator.next();
       m_clinit.visitLdcInsn(entry.getKey());
       m_clinit.visitLdcInsn(entry.getValue());
-      m_clinit.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, PUT_METHOD_NAME, PUT_METHOD_SIGNATURE);
+      m_clinit.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, PUT_METHOD_NAME, PUT_METHOD_SIGNATURE, true);
       m_clinit.visitInsn(POP);
     }
     m_clinit.visitFieldInsn(PUTSTATIC, m_aspectFactoryClassName, FACTORY_PARAMS_FIELD_NAME, MAP_CLASS_SIGNATURE);
@@ -235,7 +236,7 @@ public abstract class AbstractAspectFactoryCompiler implements Opcodes, Transfor
     m_clinit.visitInsn(DUP);
     if (hasConstructor) {
       m_clinit.visitLdcInsn(m_aspectClassName.replace('/', '.'));
-      m_clinit.visitMethodInsn(INVOKESTATIC, CLASS_CLASS, FOR_NAME_METHOD_NAME, FOR_NAME_METHOD_SIGNATURE);
+      m_clinit.visitMethodInsn(INVOKESTATIC, CLASS_CLASS, FOR_NAME_METHOD_NAME, FOR_NAME_METHOD_SIGNATURE, false);
       //Note have access to the CL that defines the aspect (can be child of aspect CL)
       m_clinit.visitFieldInsn(
               GETSTATIC, m_aspectFactoryClassName, FACTORY_CLASS_FIELD_NAME, CLASS_CLASS_SIGNATURE
@@ -244,7 +245,8 @@ public abstract class AbstractAspectFactoryCompiler implements Opcodes, Transfor
               INVOKEVIRTUAL,
               CLASS_CLASS,
               GETCLASSLOADER_METHOD_NAME,
-              CLASS_CLASS_GETCLASSLOADER_METHOD_SIGNATURE
+              CLASS_CLASS_GETCLASSLOADER_METHOD_SIGNATURE,
+              false
       );
       m_clinit.visitLdcInsn(m_uuid);
       m_clinit.visitLdcInsn(m_aspectQualifiedName);
@@ -259,11 +261,12 @@ public abstract class AbstractAspectFactoryCompiler implements Opcodes, Transfor
               INVOKESPECIAL,
               m_aspectContainerClassName,
               INIT_METHOD_NAME,
-              ASPECT_CONTAINER_OPTIONAL_INIT_SIGNATURE
+              ASPECT_CONTAINER_OPTIONAL_INIT_SIGNATURE,
+              false
       );
     } else {
       m_clinit.visitMethodInsn(
-              INVOKESPECIAL, m_aspectContainerClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE
+              INVOKESPECIAL, m_aspectContainerClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false
       );
     }
     m_clinit.visitFieldInsn(

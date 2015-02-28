@@ -28,7 +28,7 @@ public class AsmNullAdapter {
     public final static ClassVisitor NULL_CLASS_ADAPTER = new NullClassAdapter();
 
     public NullClassAdapter() {
-      super(Opcodes.ASM4);
+      super(Opcodes.ASM5);
     }
 
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
@@ -72,7 +72,7 @@ public class AsmNullAdapter {
     public final static MethodVisitor NULL_METHOD_ADAPTER = new NullMethodAdapter();
 
     public NullMethodAdapter() {
-      super(Opcodes.ASM4);
+      super(Opcodes.ASM5);
     }
     
     public void visitInsn(int opcode) {
@@ -90,7 +90,7 @@ public class AsmNullAdapter {
     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
     }
 
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
     }
 
     public void visitJumpInsn(int opcode, Label label) {
@@ -159,7 +159,7 @@ public class AsmNullAdapter {
     public final static FieldVisitor NULL_FIELD_ADAPTER = new NullFieldAdapter();
 
     public NullFieldAdapter() {
-      super(Opcodes.ASM4);
+      super(Opcodes.ASM5);
     }
     
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
@@ -181,7 +181,7 @@ public class AsmNullAdapter {
     public final static AnnotationVisitor NULL_ANNOTATION_ADAPTER = new NullAnnotationVisitor();
 
     public NullAnnotationVisitor() {
-      super(Opcodes.ASM4);
+      super(Opcodes.ASM5);
     }
     
     public void visit(String name, Object value) {

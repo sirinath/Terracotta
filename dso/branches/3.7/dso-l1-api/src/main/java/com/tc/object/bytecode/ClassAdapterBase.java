@@ -95,7 +95,7 @@ public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
 
   public ClassAdapterBase(ClassInfo classInfo, TransparencyClassSpec spec2, ClassVisitor delegate, ClassLoader caller,
                           Portability p) {
-    super(Opcodes.ASM4, delegate);
+    super(Opcodes.ASM5, delegate);
     this.portability = p;
     this.spec = new InstrumentationSpec(classInfo, spec2, caller);
   }
@@ -255,9 +255,10 @@ public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
       MethodVisitor mv = cv.visitMethod(modifier & ~ACC_ABSTRACT, methodName, methodDesc, null, exceptions);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitMethodInsn(INVOKESPECIAL, spec.getClassNameSlashes(), ByteCodeUtil
-          .fieldGetterMethod(getDelegateFieldName(logicalExtendingClassName)), "()L" + logicalExtendingClassName + ";");
+.fieldGetterMethod(getDelegateFieldName(logicalExtendingClassName)),
+                         "()L" + logicalExtendingClassName + ";", false);
       ByteCodeUtil.pushMethodArguments(ACC_PUBLIC, methodDesc, mv);
-      mv.visitMethodInsn(INVOKEVIRTUAL, logicalExtendingClassName, methodName, methodDesc);
+      mv.visitMethodInsn(INVOKEVIRTUAL, logicalExtendingClassName, methodName, methodDesc, false);
 
       mv.visitInsn(returnType.getOpcode(IRETURN));
       mv.visitMaxs(0, 0);
@@ -365,7 +366,7 @@ public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
                                                                        .getClassLoader()))) {
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ALOAD, 1);
-        mv.visitMethodInsn(INVOKESPECIAL, spec.getSuperClassNameSlashes(), VALUES_GETTER, VALUES_GETTER_DESCRIPTION);
+        mv.visitMethodInsn(INVOKESPECIAL, spec.getSuperClassNameSlashes(), VALUES_GETTER, VALUES_GETTER_DESCRIPTION, false);
       }
 
       for (Iterator i = fields.keySet().iterator(); i.hasNext();) {
@@ -376,7 +377,7 @@ public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
         mv.visitLdcInsn(spec.getClassNameDots() + "." + fieldName);
         addValueToStackForField(mv, fieldName, fieldDescription);
         mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "put",
-                           "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+                           "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
         mv.visitInsn(POP);
       }
       mv.visitInsn(RETURN);
@@ -404,7 +405,7 @@ public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
         String fieldDescription = (String) fields.get(fieldName);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitLdcInsn(spec.getClassNameDots() + "." + fieldName);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
         Label l1 = new Label();
         mv.visitJumpInsn(IFEQ, l1);
 
@@ -425,7 +426,7 @@ public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitMethodInsn(INVOKESPECIAL, spec.getSuperClassNameSlashes(), MANAGED_VALUES_GETTER,
-                           MANAGED_VALUES_GETTER_DESCRIPTION);
+                           MANAGED_VALUES_GETTER_DESCRIPTION, false);
       } else {
         mv.visitInsn(ACONST_NULL);
       }
@@ -453,7 +454,7 @@ public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
         Type t = Type.getType(fieldDescription);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitLdcInsn(spec.getClassNameDots() + "." + fieldName);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
         Label l2 = new Label();
         mv.visitJumpInsn(IFEQ, l2);
         mv.visitVarInsn(ALOAD, 0);
@@ -461,7 +462,7 @@ public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
         if (t.getSort() != Type.OBJECT && t.getSort() != Type.ARRAY) {
           mv.visitTypeInsn(CHECKCAST, ByteCodeUtil.sortToWrapperName(t.getSort()));
           mv.visitMethodInsn(INVOKEVIRTUAL, ByteCodeUtil.sortToWrapperName(t.getSort()), ByteCodeUtil
-              .sortToPrimitiveMethodName(t.getSort()), "()" + fieldDescription);
+              .sortToPrimitiveMethodName(t.getSort()), "()" + fieldDescription, false);
         } else {
           mv.visitTypeInsn(CHECKCAST, convertToCheckCastDesc(fieldDescription));
         }
@@ -477,7 +478,7 @@ public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitVarInsn(ALOAD, 2);
-        mv.visitMethodInsn(INVOKESPECIAL, spec.getSuperClassNameSlashes(), VALUES_SETTER, VALUES_SETTER_DESCRIPTION);
+        mv.visitMethodInsn(INVOKESPECIAL, spec.getSuperClassNameSlashes(), VALUES_SETTER, VALUES_SETTER_DESCRIPTION, false);
       }
       mv.visitLabel(l1);
 
@@ -504,20 +505,19 @@ public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
         Type t = Type.getType(fieldDescription);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitLdcInsn(spec.getClassNameDots() + "." + fieldName);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
         Label l2 = new Label();
         mv.visitJumpInsn(IFEQ, l2);
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ALOAD, 2);
         if (t.getSort() != Type.OBJECT && t.getSort() != Type.ARRAY) {
           mv.visitTypeInsn(CHECKCAST, ByteCodeUtil.sortToWrapperName(t.getSort()));
-          mv.visitMethodInsn(INVOKEVIRTUAL, ByteCodeUtil.sortToWrapperName(t.getSort()), ByteCodeUtil
-              .sortToPrimitiveMethodName(t.getSort()), "()" + fieldDescription);
+          mv.visitMethodInsn(INVOKEVIRTUAL, ByteCodeUtil.sortToWrapperName(t.getSort()), ByteCodeUtil.sortToPrimitiveMethodName(t.getSort()), "()" + fieldDescription, false);
         } else {
           mv.visitTypeInsn(CHECKCAST, convertToCheckCastDesc(fieldDescription));
         }
         mv.visitMethodInsn(INVOKEVIRTUAL, spec.getClassNameSlashes(), ByteCodeUtil.fieldSetterMethod(fieldName),
-                           "(" + fieldDescription + ")V");
+                           "(" + fieldDescription + ")V", false);
         mv.visitJumpInsn(GOTO, l1);
         mv.visitLabel(l2);
       }
@@ -531,7 +531,7 @@ public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
         mv.visitVarInsn(ALOAD, 1);
         mv.visitVarInsn(ALOAD, 2);
         mv.visitMethodInsn(INVOKESPECIAL, spec.getSuperClassNameSlashes(), MANAGED_VALUES_SETTER,
-                           VALUES_SETTER_DESCRIPTION);
+                           VALUES_SETTER_DESCRIPTION, false);
       }
 
       mv.visitLabel(l1);
@@ -557,8 +557,7 @@ public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
       mv.visitInsn(DUP);
       ByteCodeUtil.pushThis(mv);
       mv.visitFieldInsn(GETFIELD, spec.getClassNameSlashes(), fieldName, fieldDescription);
-      mv.visitMethodInsn(INVOKESPECIAL, ByteCodeUtil.sortToWrapperName(t.getSort()), "<init>", "(" + fieldDescription
-                                                                                               + ")V");
+      mv.visitMethodInsn(INVOKESPECIAL, ByteCodeUtil.sortToWrapperName(t.getSort()), "<init>", "(" + fieldDescription + ")V", false);
     }
   }
 
@@ -566,20 +565,17 @@ public abstract class ClassAdapterBase extends ClassVisitor implements Opcodes {
     Type t = Type.getType(fieldDescription);
     if (t.getSort() == Type.OBJECT || t.getSort() == Type.ARRAY) {
       ByteCodeUtil.pushThis(mv);
-      mv.visitMethodInsn(INVOKESPECIAL, spec.getClassNameSlashes(), ByteCodeUtil.fieldGetterMethod(fieldName),
-                         "()" + fieldDescription);
+      mv.visitMethodInsn(INVOKESPECIAL, spec.getClassNameSlashes(), ByteCodeUtil.fieldGetterMethod(fieldName), "()" + fieldDescription, false);
     } else {
       mv.visitTypeInsn(NEW, ByteCodeUtil.sortToWrapperName(t.getSort()));
       mv.visitInsn(DUP);
       ByteCodeUtil.pushThis(mv);
       if (isRoot(fieldName)) {
-        mv.visitMethodInsn(INVOKESPECIAL, spec.getClassNameSlashes(), ByteCodeUtil.fieldGetterMethod(fieldName),
-                           "()" + fieldDescription);
+        mv.visitMethodInsn(INVOKESPECIAL, spec.getClassNameSlashes(), ByteCodeUtil.fieldGetterMethod(fieldName), "()" + fieldDescription, false);
       } else {
         mv.visitFieldInsn(GETFIELD, spec.getClassNameSlashes(), fieldName, fieldDescription);
       }
-      mv.visitMethodInsn(INVOKESPECIAL, ByteCodeUtil.sortToWrapperName(t.getSort()), "<init>", "(" + fieldDescription
-                                                                                               + ")V");
+      mv.visitMethodInsn(INVOKESPECIAL, ByteCodeUtil.sortToWrapperName(t.getSort()), "<init>", "(" + fieldDescription + ")V", false);
     }
   }
 

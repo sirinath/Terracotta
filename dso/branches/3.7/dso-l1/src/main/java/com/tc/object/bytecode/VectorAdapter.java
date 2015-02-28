@@ -24,7 +24,7 @@ public class VectorAdapter {
     private static class Adapter extends MethodVisitor implements Opcodes {
 
       public Adapter(MethodVisitor mv) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM5, mv);
         mv.visitTypeInsn(NEW, "com/tc/util/EnumerationWrapper");
         mv.visitInsn(DUP);
         mv.visitVarInsn(ALOAD, 0);
@@ -33,7 +33,8 @@ public class VectorAdapter {
       @Override
       public void visitInsn(int opcode) {
         if (ARETURN == opcode) {
-          mv.visitMethodInsn(INVOKESPECIAL, "com/tc/util/EnumerationWrapper", "<init>", "(Ljava/util/Vector;Ljava/util/Enumeration;)V");
+          mv.visitMethodInsn(INVOKESPECIAL, "com/tc/util/EnumerationWrapper", "<init>",
+                             "(Ljava/util/Vector;Ljava/util/Enumeration;)V", false);
         }
         super.visitInsn(opcode);
       }

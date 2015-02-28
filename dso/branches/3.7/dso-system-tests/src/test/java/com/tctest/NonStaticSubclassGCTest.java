@@ -145,7 +145,7 @@ public class NonStaticSubclassGCTest extends GCTestBase {
     private static class AddFieldAdapter extends ClassVisitor implements Opcodes {
 
       public AddFieldAdapter(ClassVisitor cv) {
-        super(Opcodes.ASM4, cv);
+        super(Opcodes.ASM5, cv);
       }
 
       @Override

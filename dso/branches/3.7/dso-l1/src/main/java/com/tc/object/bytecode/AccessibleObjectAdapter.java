@@ -16,7 +16,7 @@ import java.lang.reflect.AccessibleObject;
 public class AccessibleObjectAdapter extends ClassVisitor implements Opcodes {
 
   public AccessibleObjectAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -55,7 +55,7 @@ public class AccessibleObjectAdapter extends ClassVisitor implements Opcodes {
         // look up the TCObject from the TC manager that corresponds
         // to the current object instance
         mv.visitMethodInsn(INVOKESTATIC, Type.getInternalName(ManagerUtil.class), "lookupExistingOrNull",
-                           "(Ljava/lang/Object;)Lcom/tc/object/TCObjectExternal;");
+                           "(Ljava/lang/Object;)Lcom/tc/object/TCObjectExternal;", false);
 
         // store the TCObject in the appropriate local variable slot
         mv.visitVarInsn(ASTORE, tcobject_var_store);
@@ -75,7 +75,7 @@ public class AccessibleObjectAdapter extends ClassVisitor implements Opcodes {
         mv.visitVarInsn(ILOAD, boolean_var_store);
         mv.visitInsn(ICONST_M1);
         mv.visitMethodInsn(INVOKEINTERFACE, Type.getInternalName(TCObjectExternal.class), "booleanFieldChanged",
-                           "(Ljava/lang/String;Ljava/lang/String;ZI)V");
+                           "(Ljava/lang/String;Ljava/lang/String;ZI)V", true);
 
         // label that is jumped to in case the TCObject instance is null
         mv.visitLabel(label_tcobject_null);

@@ -39,11 +39,11 @@ public class JavaLangReflectArrayAdapter extends ClassVisitor implements Opcodes
   }
 
   public JavaLangReflectArrayAdapter() {
-    super(Opcodes.ASM4, null);
+    super(Opcodes.ASM5, null);
   }
   
   private JavaLangReflectArrayAdapter(ClassVisitor cv, ClassLoader caller) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -88,7 +88,7 @@ public class JavaLangReflectArrayAdapter extends ClassVisitor implements Opcodes
     for (int i = 0; i < params.length; i++) {
       mv.visitVarInsn(params[i].getOpcode(ILOAD), i);
     }
-    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, methodName, description);
+    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, methodName, description, false);
     mv.visitInsn(returnType.getOpcode(IRETURN));
     mv.visitMaxs(0, 0);
     mv.visitEnd();

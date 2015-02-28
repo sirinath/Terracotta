@@ -17,12 +17,12 @@ public class LabelToLineNumberVisitor extends ClassVisitor {
   private InstrumentationContext m_ctx;
 
   public LabelToLineNumberVisitor(ClassVisitor cv, InstrumentationContext ctx) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     m_ctx = ctx;
   }
 
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-    return new MethodVisitor(Opcodes.ASM4, super.visitMethod(access, name, desc, signature, exceptions)) {
+    return new MethodVisitor(Opcodes.ASM5, super.visitMethod(access, name, desc, signature, exceptions)) {
       public void visitLineNumber(int i, Label label) {
         super.visitLineNumber(i, label);
         m_ctx.addLineNumberInfo(label, i);

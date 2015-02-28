@@ -71,7 +71,7 @@ public class MethodExecutionJoinPointCompiler extends AbstractJoinPointCompiler 
             INVOKESTATIC,
             SIGNATURE_FACTORY_CLASS,
             NEW_METHOD_SIGNATURE_METHOD_NAME,
-            NEW_METHOD_SIGNATURE_METHOD_SIGNATURE
+            NEW_METHOD_SIGNATURE_METHOD_SIGNATURE, false
     );
     cv.visitFieldInsn(
             PUTSTATIC, m_joinPointClassName, SIGNATURE_FIELD_NAME, METHOD_SIGNATURE_IMPL_CLASS_SIGNATURE
@@ -102,9 +102,9 @@ public class MethodExecutionJoinPointCompiler extends AbstractJoinPointCompiler 
             m_calleeClassName
     );
     if (Modifier.isStatic(m_calleeMemberModifiers)) {
-      cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, joinPointName, m_calleeMemberDesc);
+      cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, joinPointName, m_calleeMemberDesc, false);
     } else {
-      cv.visitMethodInsn(INVOKEVIRTUAL, m_calleeClassName, joinPointName, m_calleeMemberDesc);
+      cv.visitMethodInsn(INVOKEVIRTUAL, m_calleeClassName, joinPointName, m_calleeMemberDesc, false);
     }
 
   }
@@ -130,9 +130,9 @@ public class MethodExecutionJoinPointCompiler extends AbstractJoinPointCompiler 
             m_calleeClassName
     );
     if (Modifier.isStatic(m_calleeMemberModifiers)) {
-      cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, joinPointName, m_calleeMemberDesc);
+      cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, joinPointName, m_calleeMemberDesc, false);
     } else {
-      cv.visitMethodInsn(INVOKEVIRTUAL, m_calleeClassName, joinPointName, m_calleeMemberDesc);
+      cv.visitMethodInsn(INVOKEVIRTUAL, m_calleeClassName, joinPointName, m_calleeMemberDesc, false);
     }
   }
 
@@ -171,7 +171,7 @@ public class MethodExecutionJoinPointCompiler extends AbstractJoinPointCompiler 
     cv.visitVarInsn(ALOAD, 0);
     cv.visitFieldInsn(GETFIELD, m_joinPointClassName, CALLEE_INSTANCE_FIELD_NAME, m_calleeClassSignature);
     cv.visitMethodInsn(
-            INVOKESPECIAL, METHOD_RTTI_IMPL_CLASS_NAME, INIT_METHOD_NAME, METHOD_RTTI_IMPL_INIT_SIGNATURE
+            INVOKESPECIAL, METHOD_RTTI_IMPL_CLASS_NAME, INIT_METHOD_NAME, METHOD_RTTI_IMPL_INIT_SIGNATURE, false
     );
 
     // set the arguments
@@ -180,7 +180,7 @@ public class MethodExecutionJoinPointCompiler extends AbstractJoinPointCompiler 
     cv.visitVarInsn(ALOAD, 1);
     cv.visitMethodInsn(
             INVOKEVIRTUAL, METHOD_RTTI_IMPL_CLASS_NAME, SET_PARAMETER_VALUES_METHOD_NAME,
-            SET_PARAMETER_VALUES_METHOD_SIGNATURE
+            SET_PARAMETER_VALUES_METHOD_SIGNATURE, false
     );
 
     // set the Returned instance
@@ -201,7 +201,7 @@ public class MethodExecutionJoinPointCompiler extends AbstractJoinPointCompiler 
       }
       cv.visitMethodInsn(
               INVOKEVIRTUAL, METHOD_RTTI_IMPL_CLASS_NAME, SET_RETURN_VALUE_METHOD_NAME,
-              SET_RETURN_VALUE_METHOD_SIGNATURE
+              SET_RETURN_VALUE_METHOD_SIGNATURE, false
       );
     }
 

@@ -38,7 +38,7 @@ public class ChangePackageClassAdapter extends ClassVisitor implements Opcodes {
    */
   public ChangePackageClassAdapter(ClassVisitor cv, String targetClassName, String targetPackage, String newPackage,
                                    Collection innerClassesHolder) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     this.targetName = targetPackage.replace(DOT_DELIMITER, SLASH_DELIMITER) + SLASH_DELIMITER + targetClassName;
     this.newName = newPackage.replace(DOT_DELIMITER, SLASH_DELIMITER) + SLASH_DELIMITER + targetClassName;
     this.targetType = "L"+targetName;
@@ -103,7 +103,7 @@ public class ChangePackageClassAdapter extends ClassVisitor implements Opcodes {
   
   private class ChangePackageMethodVisitor extends MethodVisitor implements Opcodes {
     public ChangePackageMethodVisitor(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
     
     @Override
@@ -114,10 +114,10 @@ public class ChangePackageClassAdapter extends ClassVisitor implements Opcodes {
     }
     
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
       owner = replaceName(owner);
       desc = replaceDesc(desc);
-      super.visitMethodInsn(opcode, owner, name, desc);
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
     }
     
     @Override

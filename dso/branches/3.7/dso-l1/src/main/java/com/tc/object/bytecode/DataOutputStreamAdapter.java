@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
 public class DataOutputStreamAdapter extends ClassVisitor implements Opcodes {
 
   public DataOutputStreamAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -26,15 +26,15 @@ public class DataOutputStreamAdapter extends ClassVisitor implements Opcodes {
   private static class WriteUTFAdatper extends MethodVisitor {
 
     public WriteUTFAdatper(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
       if ((INVOKEVIRTUAL == opcode) && ("java/lang/String".equals(owner) && "getChars".equals(name))) {
-        super.visitMethodInsn(opcode, owner, "getCharsFast", desc);
+        super.visitMethodInsn(opcode, owner, "getCharsFast", desc, itf);
       } else {
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
       }
     }
 

@@ -34,7 +34,7 @@ public class AddWrapperVisitor extends ClassVisitor implements Opcodes, Transfor
 
 
   public AddWrapperVisitor(ClassVisitor classVisitor, InstrumentationContext context, Set alreadyAddedMethods) {
-    super(Opcodes.ASM4, classVisitor);
+    super(Opcodes.ASM5, classVisitor);
     m_context = (InstrumentationContext) context;
     m_addedMethods = alreadyAddedMethods;
   }
@@ -262,11 +262,11 @@ public class AddWrapperVisitor extends ClassVisitor implements Opcodes, Transfor
 
     if (Modifier.isStatic(access)) {
       AsmHelper.loadArgumentTypes(mv, Type.getArgumentTypes(desc), Modifier.isStatic(access));
-      mv.visitMethodInsn(INVOKESTATIC, declaringTypeName, name, desc);
+      mv.visitMethodInsn(INVOKESTATIC, declaringTypeName, name, desc, false);
     } else {
       mv.visitVarInsn(ALOAD, 0);
       AsmHelper.loadArgumentTypes(mv, Type.getArgumentTypes(desc), Modifier.isStatic(access));
-      mv.visitMethodInsn(INVOKEVIRTUAL, declaringTypeName, name, desc);
+      mv.visitMethodInsn(INVOKEVIRTUAL, declaringTypeName, name, desc, false);
     }
 
     AsmHelper.addReturnStatement(mv, Type.getReturnType(desc));
@@ -317,7 +317,7 @@ public class AddWrapperVisitor extends ClassVisitor implements Opcodes, Transfor
     mv.visitTypeInsn(NEW, declaringTypeName);
     mv.visitInsn(DUP);
     AsmHelper.loadArgumentTypes(mv, Type.getArgumentTypes(desc), true);
-    mv.visitMethodInsn(INVOKESPECIAL, declaringTypeName, name, desc);
+    mv.visitMethodInsn(INVOKESPECIAL, declaringTypeName, name, desc, false);
     AsmHelper.addReturnStatement(mv, declaringType);
 
     mv.visitMaxs(0, 0);

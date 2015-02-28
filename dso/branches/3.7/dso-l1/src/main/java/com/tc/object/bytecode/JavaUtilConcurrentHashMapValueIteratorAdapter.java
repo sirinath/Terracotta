@@ -11,7 +11,7 @@ import com.tc.asm.Opcodes;
 public class JavaUtilConcurrentHashMapValueIteratorAdapter extends ClassVisitor implements Opcodes {
 
   public JavaUtilConcurrentHashMapValueIteratorAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override

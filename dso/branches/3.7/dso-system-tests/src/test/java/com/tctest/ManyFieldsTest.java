@@ -124,7 +124,7 @@ public class ManyFieldsTest extends TransparentTestBase {
   private static class Adapter extends ClassVisitor {
 
     public Adapter(ClassVisitor cv) {
-      super(Opcodes.ASM4, cv);
+      super(Opcodes.ASM5, cv);
     }
 
     @Override

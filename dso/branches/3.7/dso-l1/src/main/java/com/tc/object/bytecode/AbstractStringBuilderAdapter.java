@@ -12,7 +12,7 @@ public class AbstractStringBuilderAdapter extends ClassVisitor {
   private final String stringBuilderInternalName;
   
   public AbstractStringBuilderAdapter(ClassVisitor cv, String stringBuilderClassName) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     
     this.stringBuilderInternalName = stringBuilderClassName.replace('.', '/');
   }
@@ -36,7 +36,7 @@ public class AbstractStringBuilderAdapter extends ClassVisitor {
     private boolean   hasVisitedOnce = false;
 
     public AppendAdapter(MethodVisitor mv, String type) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
 
       if (!"J".equals(type) && !"I".equals(type)) { throw new AssertionError("bad type: " + type); }
 
@@ -59,10 +59,12 @@ public class AbstractStringBuilderAdapter extends ClassVisitor {
 
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKEVIRTUAL, stringBuilderInternalName, ByteCodeUtil.fieldGetterMethod("value"),
-                           "()[C");
+ "()[C",
+                           false);
         mv.visitVarInsn(ILOAD, spaceNeededSlot);
         mv.visitVarInsn(ILOAD, countSlot);
-        mv.visitMethodInsn(INVOKESTATIC, JavaLangArrayHelpers.CLASS, "javaLangAbstractStringBuilderAppend", "([CII)V");
+        mv.visitMethodInsn(INVOKESTATIC, JavaLangArrayHelpers.CLASS, "javaLangAbstractStringBuilderAppend", "([CII)V",
+                           false);
 
         super.visitInsn(opcode);
         return;

@@ -11,7 +11,7 @@ import com.tc.object.bytecode.hook.ClassLoaderPreProcessorImpl.LoadClassAdapter;
 public class ClassLoaderSubclassAdapter extends ClassVisitor {
 
   public ClassLoaderSubclassAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override

@@ -38,7 +38,7 @@ public class RootClassChangeTest extends TransparentTestBase {
     private String owner;
 
     public DeepLargeObjectAdapter(ClassVisitor cv) {
-      super(Opcodes.ASM4, cv);
+      super(Opcodes.ASM5, cv);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class RootClassChangeTest extends TransparentTestBase {
         visitor.visitLdcInsn("Yeah");
         visitor.visitInsn(Opcodes.ICONST_5);
         visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "com/tctest/RootClassChangeTestApp$FooObject", "<init>",
-                                "(Ljava/lang/String;I)V");
+                                "(Ljava/lang/String;I)V", false);
         visitor.visitFieldInsn(Opcodes.PUTFIELD, owner, "foo", "Lcom/tctest/RootClassChangeTestApp$FooObject;");
         visitor.visitInsn(Opcodes.RETURN);
         visitor.visitMaxs(0, 0);

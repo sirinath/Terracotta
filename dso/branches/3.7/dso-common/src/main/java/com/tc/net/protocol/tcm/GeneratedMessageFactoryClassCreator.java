@@ -24,7 +24,7 @@ public class GeneratedMessageFactoryClassCreator implements Opcodes {
       mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
       mv.visitCode();
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
       mv.visitInsn(RETURN);
       mv.visitMaxs(0, 0);
       mv.visitEnd();
@@ -50,7 +50,8 @@ public class GeneratedMessageFactoryClassCreator implements Opcodes {
                            INVOKESPECIAL,
                            msgClass,
                            "<init>",
-                           "(Lcom/tc/object/session/SessionID;Lcom/tc/net/protocol/tcm/MessageMonitor;Lcom/tc/io/TCByteBufferOutputStream;Lcom/tc/net/protocol/tcm/MessageChannel;Lcom/tc/net/protocol/tcm/TCMessageType;)V");
+                           "(Lcom/tc/object/session/SessionID;Lcom/tc/net/protocol/tcm/MessageMonitor;Lcom/tc/io/TCByteBufferOutputStream;Lcom/tc/net/protocol/tcm/MessageChannel;Lcom/tc/net/protocol/tcm/TCMessageType;)V",
+                           false);
       mv.visitInsn(ARETURN);
       mv.visitMaxs(0, 0);
       mv.visitEnd();
@@ -75,7 +76,8 @@ public class GeneratedMessageFactoryClassCreator implements Opcodes {
                            INVOKESPECIAL,
                            msgClass,
                            "<init>",
-                           "(Lcom/tc/object/session/SessionID;Lcom/tc/net/protocol/tcm/MessageMonitor;Lcom/tc/net/protocol/tcm/MessageChannel;Lcom/tc/net/protocol/tcm/TCMessageHeader;[Lcom/tc/bytes/TCByteBuffer;)V");
+                           "(Lcom/tc/object/session/SessionID;Lcom/tc/net/protocol/tcm/MessageMonitor;Lcom/tc/net/protocol/tcm/MessageChannel;Lcom/tc/net/protocol/tcm/TCMessageHeader;[Lcom/tc/bytes/TCByteBuffer;)V",
+                           false);
       mv.visitInsn(ARETURN);
       mv.visitMaxs(0, 0);
       mv.visitEnd();
