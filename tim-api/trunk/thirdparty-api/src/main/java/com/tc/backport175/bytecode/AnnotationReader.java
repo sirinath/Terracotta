@@ -971,7 +971,7 @@ public class AnnotationReader {
     class AnnotationRetrievingVisitor extends ClassVisitor {
 
         public AnnotationRetrievingVisitor() {
-            super(Opcodes.ASM4);
+            super(Opcodes.ASM5);
         }
 
         public AnnotationVisitor visitAnnotation(final String desc, final boolean visible) {
@@ -1023,7 +1023,7 @@ public class AnnotationReader {
       private final AnnotationReader reader;
 
       AnnotationRetrievingConstructorVisitor(MemberKey key, AnnotationReader reader) {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
         this.key = key;
         this.reader = reader;
       }
@@ -1047,7 +1047,7 @@ public class AnnotationReader {
       private final AnnotationReader reader;
 
       AnnotationRetrievingMethodVisitor(MemberKey key, AnnotationReader reader) {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
         this.key = key;
         this.reader = reader;
       }
@@ -1071,7 +1071,7 @@ public class AnnotationReader {
       private final AnnotationReader reader;
 
       AnnotationRetrievingFieldVisitor(MemberKey key, AnnotationReader reader) {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
         this.key = key;
         this.reader = reader;
       }
@@ -1110,7 +1110,7 @@ public class AnnotationReader {
         public AnnotationBuilderVisitor(final AnnotationElement.NestedAnnotationElement annotation,
                                         final ClassLoader loader,
                                         final String annotationClassName) {
-            super(Opcodes.ASM4);
+            super(Opcodes.ASM5);
             m_nestedAnnotationElement = annotation;
             m_loader = loader;
             m_annotationClassName = annotationClassName;
@@ -1350,7 +1350,7 @@ public class AnnotationReader {
     private class TraceAnnotationVisitor extends AnnotationVisitor {
 
         public TraceAnnotationVisitor() {
-            super(Opcodes.ASM4);
+            super(Opcodes.ASM5);
         }
 
         public void visit(final String name, final Object value) {

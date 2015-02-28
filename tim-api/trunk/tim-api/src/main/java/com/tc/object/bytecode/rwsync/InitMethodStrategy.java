@@ -47,7 +47,7 @@ public class InitMethodStrategy implements MethodStrategy {
     private final String ownerType;
 
     protected InitMethodAdapter(MethodVisitor mv, String ownerType, int access, String name, String desc) {
-      super(Opcodes.ASM4, mv, access, name, desc);
+      super(Opcodes.ASM5, mv, access, name, desc);
       this.ownerType = ownerType;
     }
 

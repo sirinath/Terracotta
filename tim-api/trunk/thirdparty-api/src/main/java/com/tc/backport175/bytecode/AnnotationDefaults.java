@@ -69,7 +69,7 @@ class AnnotationDefaults {
       private final ClassLoader loader;
 
       AnnotationDefaultsClassVisitor(AnnotationElement.Annotation defaults, ClassLoader loader) {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
         this.defaults = defaults;
         this.loader = loader;
       }
@@ -85,7 +85,7 @@ class AnnotationDefaults {
       private final ClassLoader loader;
       
       AnnotationDefaultsMethodVisitor(String name, Annotation defaults, ClassLoader loader) {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
         this.name = name;
         this.defaults = defaults;
         this.loader = loader;
