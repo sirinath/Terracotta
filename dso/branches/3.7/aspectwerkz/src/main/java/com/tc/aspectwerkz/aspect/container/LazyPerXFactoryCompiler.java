@@ -31,7 +31,7 @@ public abstract class LazyPerXFactoryCompiler extends AbstractAspectFactoryCompi
 
     m_clinit.visitTypeInsn(NEW, "java/util/WeakHashMap");
     m_clinit.visitInsn(DUP);
-    m_clinit.visitMethodInsn(INVOKESPECIAL, "java/util/WeakHashMap", INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE);
+    m_clinit.visitMethodInsn(INVOKESPECIAL, "java/util/WeakHashMap", INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false);
     m_clinit.visitFieldInsn(PUTSTATIC, m_aspectFactoryClassName, FACTORY_ASPECTS_FIELD_NAME, MAP_CLASS_SIGNATURE);
 
     MethodVisitor cv = m_cw.visitMethod(
@@ -44,7 +44,7 @@ public abstract class LazyPerXFactoryCompiler extends AbstractAspectFactoryCompi
 
     cv.visitFieldInsn(GETSTATIC, m_aspectFactoryClassName, FACTORY_ASPECTS_FIELD_NAME, MAP_CLASS_SIGNATURE);
     cv.visitVarInsn(ALOAD, 0);//Class
-    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, "getDefault", "(Ljava/lang/Object;)Ljava/lang/Object;");
+    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, "getDefault", "(Ljava/lang/Object;)Ljava/lang/Object;", true);
     cv.visitVarInsn(ASTORE, 1);
     cv.visitVarInsn(ALOAD, 1);
     Label ifBound = new Label();
@@ -57,20 +57,21 @@ public abstract class LazyPerXFactoryCompiler extends AbstractAspectFactoryCompi
               INVOKEINTERFACE,
               ASPECT_CONTAINER_CLASS_NAME,
               ASPECT_CONTAINER_ASPECTOF_METHOD_NAME,
-              "(" + getXSignature() + ")Ljava/lang/Object;"
+              "(" + getXSignature() + ")Ljava/lang/Object;",
+              true
       );
       cv.visitTypeInsn(CHECKCAST, m_aspectClassName);
     } else {
       cv.visitTypeInsn(NEW, m_aspectClassName);
       cv.visitInsn(DUP);
-      cv.visitMethodInsn(INVOKESPECIAL, m_aspectClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE);
+      cv.visitMethodInsn(INVOKESPECIAL, m_aspectClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false);
     }
     cv.visitVarInsn(ASTORE, 2);
     cv.visitFieldInsn(GETSTATIC, m_aspectFactoryClassName, FACTORY_ASPECTS_FIELD_NAME, MAP_CLASS_SIGNATURE);
     cv.visitVarInsn(ALOAD, 0);
     cv.visitVarInsn(ALOAD, 2);
     cv.visitMethodInsn(
-            INVOKEINTERFACE, MAP_CLASS_NAME, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"
+            INVOKEINTERFACE, MAP_CLASS_NAME, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true
     );
     cv.visitVarInsn(ALOAD, 2);
     cv.visitInsn(ARETURN);
@@ -93,7 +94,7 @@ public abstract class LazyPerXFactoryCompiler extends AbstractAspectFactoryCompi
 
     cv.visitFieldInsn(GETSTATIC, m_aspectFactoryClassName, FACTORY_ASPECTS_FIELD_NAME, MAP_CLASS_SIGNATURE);
     cv.visitVarInsn(ALOAD, 0);
-    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, "containsKey", "(Ljava/lang/Object;)Z");
+    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, "containsKey", "(Ljava/lang/Object;)Z", true);
     cv.visitInsn(IRETURN);
     cv.visitMaxs(0, 0);
   }

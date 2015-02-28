@@ -137,15 +137,15 @@ class FooKid extends Foo {
 class GetValAdapter extends ClassVisitor implements Opcodes, ClassAdapterFactory {
 
   public GetValAdapter() {
-    super(Opcodes.ASM4);
+    super(Opcodes.ASM5);
   }
 
   public GetValAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   public GetValAdapter(ClassVisitor visitor, ClassLoader loader) {
-    super(Opcodes.ASM4, visitor);
+    super(Opcodes.ASM5, visitor);
   }
 
   @Override

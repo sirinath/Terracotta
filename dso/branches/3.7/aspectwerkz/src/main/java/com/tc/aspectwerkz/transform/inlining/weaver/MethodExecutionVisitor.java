@@ -56,7 +56,7 @@ public class MethodExecutionVisitor extends ClassVisitor implements Transformati
                                 final ClassInfo classInfo,
                                 final InstrumentationContext ctx,
                                 final Set addedMethods) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     m_classInfo = classInfo;
     m_ctx = (InstrumentationContext) ctx;
     m_addedMethods = addedMethods;
@@ -142,7 +142,7 @@ public class MethodExecutionVisitor extends ClassVisitor implements Transformati
       }
       // prefix the original method and make sure we copy method annotations to the proxyMethod
       // while keeping the body for the prefixed method
-      return new MethodVisitor(Opcodes.ASM4, cv.visitMethod(modifiers, prefixedOriginalName, desc, signature, exceptions)) {
+      return new MethodVisitor(Opcodes.ASM5, cv.visitMethod(modifiers, prefixedOriginalName, desc, signature, exceptions)) {
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
           return new AsmCopyAdapter.CopyAnnotationAdapter(
                   super.visitAnnotation(desc, visible),
@@ -217,7 +217,8 @@ public class MethodExecutionVisitor extends ClassVisitor implements Transformati
             INVOKE_METHOD_NAME,
             TransformationUtil.getInvokeSignatureForCodeJoinPoints(
                     access, desc, m_declaringTypeName, m_declaringTypeName
-            )
+            ),
+            false
     );
 
     AsmHelper.addReturnStatement(mv, Type.getReturnType(desc));

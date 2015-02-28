@@ -24,6 +24,7 @@ public class SetRemoveMethodAdapter extends AbstractMethodAdapter implements Opc
     this.mapFieldType = mapFieldType;
   }
 
+  @Override
   public MethodVisitor adapt(ClassVisitor cv) {
     String renamed = ByteCodeUtil.TC_METHOD_PREFIX + this.methodName;
 
@@ -37,16 +38,17 @@ public class SetRemoveMethodAdapter extends AbstractMethodAdapter implements Opc
 
     mv.visitCode();
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKEVIRTUAL, type, "__tc_isManaged", "()Z");
+    mv.visitMethodInsn(INVOKEVIRTUAL, type, "__tc_isManaged", "()Z", false);
     Label notManaged = new Label();
     mv.visitJumpInsn(IFEQ, notManaged);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "checkWriteAccess", "(Ljava/lang/Object;)V");
+    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "checkWriteAccess", "(Ljava/lang/Object;)V", false);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, type, mapField, "L" + mapFieldType + ";");
     mv.visitTypeInsn(CHECKCAST, mapType);
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKEVIRTUAL, mapType, "removeEntryForKey", "(Ljava/lang/Object;)L" + mapType + "$Entry;");
+    mv.visitMethodInsn(INVOKEVIRTUAL, mapType, "removeEntryForKey", "(Ljava/lang/Object;)L" + mapType + "$Entry;",
+                       false);
     mv.visitVarInsn(ASTORE, 2);
     mv.visitVarInsn(ALOAD, 2);
     Label entryNotNull = new Label();
@@ -61,21 +63,22 @@ public class SetRemoveMethodAdapter extends AbstractMethodAdapter implements Opc
     mv.visitInsn(DUP);
     mv.visitInsn(ICONST_0);
     mv.visitVarInsn(ALOAD, 2);
-    mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map$Entry", "getKey", "()Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map$Entry", "getKey", "()Ljava/lang/Object;", true);
     mv.visitInsn(AASTORE);
     mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "logicalInvoke",
-                       "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                       "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
     mv.visitInsn(ICONST_1);
     mv.visitInsn(IRETURN);
     mv.visitLabel(notManaged);
     ByteCodeUtil.pushThis(mv);
     ByteCodeUtil.pushMethodArguments(this.access, this.description, mv);
-    mv.visitMethodInsn(INVOKESPECIAL, this.ownerDots.replace('.', '/'), renamed, this.description);
+    mv.visitMethodInsn(INVOKESPECIAL, this.ownerDots.replace('.', '/'), renamed, this.description, false);
     mv.visitInsn(IRETURN);
     mv.visitMaxs(0, 0);
     mv.visitEnd();
   }
 
+  @Override
   public boolean doesOriginalNeedAdapting() {
     return false;
   }

@@ -682,7 +682,8 @@ public class AsmHelper implements TransformationConstants {
                 INVOKESPECIAL,
                 SHORT_CLASS_NAME,
                 INIT_METHOD_NAME,
-                SHORT_CLASS_INIT_METHOD_SIGNATURE
+                SHORT_CLASS_INIT_METHOD_SIGNATURE,
+                false
         );
         break;
       case Type.INT:
@@ -690,18 +691,20 @@ public class AsmHelper implements TransformationConstants {
                 INVOKESPECIAL,
                 INTEGER_CLASS_NAME,
                 INIT_METHOD_NAME,
-                INTEGER_CLASS_INIT_METHOD_SIGNATURE
+                INTEGER_CLASS_INIT_METHOD_SIGNATURE,
+                false
         );
         break;
       case Type.LONG:
-        cv.visitMethodInsn(INVOKESPECIAL, LONG_CLASS_NAME, INIT_METHOD_NAME, LONG_CLASS_INIT_METHOD_SIGNATURE);
+        cv.visitMethodInsn(INVOKESPECIAL, LONG_CLASS_NAME, INIT_METHOD_NAME, LONG_CLASS_INIT_METHOD_SIGNATURE, false);
         break;
       case Type.FLOAT:
         cv.visitMethodInsn(
                 INVOKESPECIAL,
                 FLOAT_CLASS_NAME,
                 INIT_METHOD_NAME,
-                FLOAT_CLASS_INIT_METHOD_SIGNATURE
+                FLOAT_CLASS_INIT_METHOD_SIGNATURE,
+                false
         );
         break;
       case Type.DOUBLE:
@@ -709,18 +712,20 @@ public class AsmHelper implements TransformationConstants {
                 INVOKESPECIAL,
                 DOUBLE_CLASS_NAME,
                 INIT_METHOD_NAME,
-                DOUBLE_CLASS_INIT_METHOD_SIGNATURE
+                DOUBLE_CLASS_INIT_METHOD_SIGNATURE,
+                false
         );
         break;
       case Type.BYTE:
-        cv.visitMethodInsn(INVOKESPECIAL, BYTE_CLASS_NAME, INIT_METHOD_NAME, BYTE_CLASS_INIT_METHOD_SIGNATURE);
+        cv.visitMethodInsn(INVOKESPECIAL, BYTE_CLASS_NAME, INIT_METHOD_NAME, BYTE_CLASS_INIT_METHOD_SIGNATURE, false);
         break;
       case Type.BOOLEAN:
         cv.visitMethodInsn(
                 INVOKESPECIAL,
                 BOOLEAN_CLASS_NAME,
                 INIT_METHOD_NAME,
-                BOOLEAN_CLASS_INIT_METHOD_SIGNATURE
+                BOOLEAN_CLASS_INIT_METHOD_SIGNATURE,
+                false
         );
         break;
       case Type.CHAR:
@@ -728,7 +733,8 @@ public class AsmHelper implements TransformationConstants {
                 INVOKESPECIAL,
                 CHARACTER_CLASS_NAME,
                 INIT_METHOD_NAME,
-                CHARACTER_CLASS_INIT_METHOD_SIGNATURE
+                CHARACTER_CLASS_INIT_METHOD_SIGNATURE,
+                false
         );
         break;
     }
@@ -775,7 +781,8 @@ public class AsmHelper implements TransformationConstants {
                 INVOKEVIRTUAL,
                 SHORT_CLASS_NAME,
                 SHORT_VALUE_METHOD_NAME,
-                SHORT_VALUE_METHOD_SIGNATURE
+                SHORT_VALUE_METHOD_SIGNATURE,
+                false
         );
         break;
       case Type.INT:
@@ -784,14 +791,14 @@ public class AsmHelper implements TransformationConstants {
                 INVOKEVIRTUAL,
                 INTEGER_CLASS_NAME,
                 INT_VALUE_METHOD_NAME,
-                INT_VALUE_METHOD_SIGNATURE
+                INT_VALUE_METHOD_SIGNATURE,
+                false
         );
         break;
       case Type.LONG:
         cv.visitTypeInsn(CHECKCAST, LONG_CLASS_NAME);
         cv.visitMethodInsn(
-                INVOKEVIRTUAL, LONG_CLASS_NAME, LONG_VALUE_METHOD_NAME, LONG_VALUE_METHOD_SIGNATURE
-        );
+                INVOKEVIRTUAL, LONG_CLASS_NAME, LONG_VALUE_METHOD_NAME, LONG_VALUE_METHOD_SIGNATURE, false);
         break;
       case Type.FLOAT:
         cv.visitTypeInsn(CHECKCAST, FLOAT_CLASS_NAME);
@@ -799,7 +806,8 @@ public class AsmHelper implements TransformationConstants {
                 INVOKEVIRTUAL,
                 FLOAT_CLASS_NAME,
                 FLOAT_VALUE_METHOD_NAME,
-                FLOAT_VALUE_METHOD_SIGNATURE
+                FLOAT_VALUE_METHOD_SIGNATURE,
+                false
         );
         break;
       case Type.DOUBLE:
@@ -808,13 +816,14 @@ public class AsmHelper implements TransformationConstants {
                 INVOKEVIRTUAL,
                 DOUBLE_CLASS_NAME,
                 DOUBLE_VALUE_METHOD_NAME,
-                DOUBLE_VALUE_METHOD_SIGNATURE
+                DOUBLE_VALUE_METHOD_SIGNATURE,
+                false
         );
         break;
       case Type.BYTE:
         cv.visitTypeInsn(CHECKCAST, BYTE_CLASS_NAME);
         cv.visitMethodInsn(
-                INVOKEVIRTUAL, BYTE_CLASS_NAME, BYTE_VALUE_METHOD_NAME, BYTE_VALUE_METHOD_SIGNATURE
+                INVOKEVIRTUAL, BYTE_CLASS_NAME, BYTE_VALUE_METHOD_NAME, BYTE_VALUE_METHOD_SIGNATURE, false
         );
         break;
       case Type.BOOLEAN:
@@ -823,7 +832,8 @@ public class AsmHelper implements TransformationConstants {
                 INVOKEVIRTUAL,
                 BOOLEAN_CLASS_NAME,
                 BOOLEAN_VALUE_METHOD_NAME,
-                BOOLEAN_VALUE_METHOD_SIGNATURE
+                BOOLEAN_VALUE_METHOD_SIGNATURE,
+                false
         );
         break;
       case Type.CHAR:
@@ -832,7 +842,8 @@ public class AsmHelper implements TransformationConstants {
                 INVOKEVIRTUAL,
                 CHARACTER_CLASS_NAME,
                 CHAR_VALUE_METHOD_NAME,
-                CHAR_VALUE_METHOD_SIGNATURE
+                CHAR_VALUE_METHOD_SIGNATURE,
+                false
         );
         break;
     }

@@ -23,7 +23,7 @@ public class OverridesHashCodeAdapter extends ClassVisitor {
   private VisitCall        originalVisitCall;
 
   public OverridesHashCodeAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override

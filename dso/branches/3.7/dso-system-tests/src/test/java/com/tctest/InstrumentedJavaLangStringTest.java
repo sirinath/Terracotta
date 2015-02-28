@@ -70,7 +70,7 @@ public class InstrumentedJavaLangStringTest extends TCTestCase {
 
   public void testStringIsInstrumented() throws IOException {
     ClassReader reader = new ClassReader(getStringBytes());
-    StringVisitor visitor = new StringVisitor(new ClassVisitor(Opcodes.ASM4) {});
+    StringVisitor visitor = new StringVisitor(new ClassVisitor(Opcodes.ASM5) {});
     reader.accept(visitor, ClassReader.SKIP_FRAMES);
 
     assertEquals(visitor.verified.toString(), 2, visitor.verified.size());
@@ -90,7 +90,7 @@ public class InstrumentedJavaLangStringTest extends TCTestCase {
     private final Set verified = new HashSet();
 
     public StringVisitor(ClassVisitor cv) {
-      super(Opcodes.ASM4, cv);
+      super(Opcodes.ASM5, cv);
     }
 
     @Override
@@ -107,12 +107,12 @@ public class InstrumentedJavaLangStringTest extends TCTestCase {
       private final String method;
 
       public VerifyArrayManagerAccess(MethodVisitor mv, String method) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM5, mv);
         this.method = method;
       }
 
       @Override
-      public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+      public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
         if ((opcode == Opcodes.INVOKESTATIC) && JavaLangArrayHelpers.CLASS.equals(owner)) {
           verified.add(method);
         }

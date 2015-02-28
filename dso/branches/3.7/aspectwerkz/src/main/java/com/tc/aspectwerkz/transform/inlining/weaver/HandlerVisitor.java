@@ -74,7 +74,7 @@ public class HandlerVisitor extends ClassVisitor implements TransformationConsta
      */
     public LookaheadCatchLabelsClassAdapter(ClassVisitor cv, ClassLoader loader, ClassInfo callerClassInfo,
                                             InstrumentationContext ctx, List catchLabels) {
-      super(Opcodes.ASM4, cv);
+      super(Opcodes.ASM5, cv);
       m_catchLabels = catchLabels;
       m_loader = loader;
       m_callerClassInfo = callerClassInfo;
@@ -137,7 +137,7 @@ public class HandlerVisitor extends ClassVisitor implements TransformationConsta
     private final LookaheadCatchLabelsClassAdapter classAdapter;
 
     LookaheadCatchLabelsMethodAdapter(MethodVisitor mv, MemberInfo info, LookaheadCatchLabelsClassAdapter classAdapter) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
       this.info = info;
       this.classAdapter = classAdapter;
     }
@@ -202,7 +202,7 @@ public class HandlerVisitor extends ClassVisitor implements TransformationConsta
   public HandlerVisitor(final ClassVisitor cv,
                         final InstrumentationContext ctx,
                         final List catchLabels) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     m_ctx = ctx;
     m_catchLabels = catchLabels;
   }
@@ -243,7 +243,7 @@ public class HandlerVisitor extends ClassVisitor implements TransformationConsta
      * @param ca
      */
     public CatchClauseCodeAdapter(final MethodVisitor ca) {
-      super(Opcodes.ASM4, ca);
+      super(Opcodes.ASM5, ca);
     }
 
     public void visitLabel(Label label) {
@@ -293,7 +293,7 @@ public class HandlerVisitor extends ClassVisitor implements TransformationConsta
       //? check in AJ RTTI
       mv.visitMethodInsn(
               INVOKESTATIC, joinPointClassName, INVOKE_METHOD_NAME,
-              TransformationUtil.getInvokeSignatureForHandlerJoinPoints(callerTypeName, exceptionTypeName)
+              TransformationUtil.getInvokeSignatureForHandlerJoinPoints(callerTypeName, exceptionTypeName), false
       );
 
       // emit the joinpoint

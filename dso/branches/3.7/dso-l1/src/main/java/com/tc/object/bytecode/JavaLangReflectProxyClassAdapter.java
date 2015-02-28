@@ -18,7 +18,7 @@ public class JavaLangReflectProxyClassAdapter extends ClassVisitor implements Op
   private final static String PROXY_INTERFACES_FIELD_NAME = ByteCodeUtil.TC_FIELD_PREFIX + "proxyInterfaces";
   
   public JavaLangReflectProxyClassAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
   
   @Override
@@ -52,7 +52,7 @@ public class JavaLangReflectProxyClassAdapter extends ClassVisitor implements Op
     mv.visitLabel(l0);
     mv.visitTypeInsn(NEW, "java/util/ArrayList");
     mv.visitInsn(DUP);
-    mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V", false);
     mv.visitVarInsn(ASTORE, 1);
     Label l1 = new Label();
     mv.visitLabel(l1);
@@ -85,10 +85,10 @@ public class JavaLangReflectProxyClassAdapter extends ClassVisitor implements Op
     mv.visitFieldInsn(GETSTATIC, "java/lang/reflect/Proxy", PROXY_INTERFACES_FIELD_NAME, "[Ljava/lang/Class;");
     mv.visitVarInsn(ILOAD, 5);
     mv.visitInsn(AALOAD);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;", false);
     mv.visitVarInsn(ALOAD, 3);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;");
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;", false);
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
     Label l10 = new Label();
     mv.visitJumpInsn(IFEQ, l10);
     Label l11 = new Label();
@@ -96,9 +96,9 @@ public class JavaLangReflectProxyClassAdapter extends ClassVisitor implements Op
     mv.visitFieldInsn(GETSTATIC, "java/lang/reflect/Proxy", PROXY_INTERFACES_FIELD_NAME, "[Ljava/lang/Class;");
     mv.visitVarInsn(ILOAD, 5);
     mv.visitInsn(AALOAD);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;", false);
     mv.visitLdcInsn("com.tc");
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith", "(Ljava/lang/String;)Z");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith", "(Ljava/lang/String;)Z", false);
     mv.visitJumpInsn(IFEQ, l10);
     Label l12 = new Label();
     mv.visitLabel(l12);
@@ -123,7 +123,7 @@ public class JavaLangReflectProxyClassAdapter extends ClassVisitor implements Op
     mv.visitLabel(l16);
     mv.visitVarInsn(ALOAD, 1);
     mv.visitVarInsn(ALOAD, 3);
-    mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z");
+    mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z", true);
     mv.visitInsn(POP);
     mv.visitLabel(l15);
     mv.visitIincInsn(2, 1);
@@ -135,14 +135,14 @@ public class JavaLangReflectProxyClassAdapter extends ClassVisitor implements Op
     Label l17 = new Label();
     mv.visitLabel(l17);
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "size", "()I");
+    mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "size", "()I", true);
     mv.visitTypeInsn(ANEWARRAY, "java/lang/Class");
     mv.visitVarInsn(ASTORE, 2);
     Label l18 = new Label();
     mv.visitLabel(l18);
     mv.visitVarInsn(ALOAD, 1);
     mv.visitVarInsn(ALOAD, 2);
-    mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "toArray", "([Ljava/lang/Object;)[Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "toArray", "([Ljava/lang/Object;)[Ljava/lang/Object;", true);
     mv.visitInsn(POP);
     Label l19 = new Label();
     mv.visitLabel(l19);
@@ -156,21 +156,22 @@ public class JavaLangReflectProxyClassAdapter extends ClassVisitor implements Op
 
   private static class FilterInterfacesMethodAdapter extends MethodVisitor implements Opcodes {
     public FilterInterfacesMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
     
     @Override
     public void visitCode() {
       super.visitCode();
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKESTATIC, "java/lang/reflect/Proxy", FILTER_INTERFACES_METHOD_NAME, "([Ljava/lang/Class;)[Ljava/lang/Class;");
+      mv.visitMethodInsn(INVOKESTATIC, "java/lang/reflect/Proxy", FILTER_INTERFACES_METHOD_NAME,
+                         "([Ljava/lang/Class;)[Ljava/lang/Class;", false);
       mv.visitVarInsn(ASTORE, 1);
     }
   }
   
   private static class StaticInitializerMethodAdapter extends MethodVisitor implements Opcodes {
     public StaticInitializerMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
     
     @Override
@@ -178,9 +179,9 @@ public class JavaLangReflectProxyClassAdapter extends ClassVisitor implements Op
       if (RETURN == opcode) {
         mv.visitTypeInsn(NEW, "java/lang/reflect/Proxy");
         mv.visitInsn(DUP);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/reflect/Proxy", "<init>", "()V");
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getInterfaces", "()[Ljava/lang/Class;");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/reflect/Proxy", "<init>", "()V", false);
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getInterfaces", "()[Ljava/lang/Class;", false);
         mv.visitFieldInsn(PUTSTATIC, "java/lang/reflect/Proxy", PROXY_INTERFACES_FIELD_NAME, "[Ljava/lang/Class;");
       }
       super.visitInsn(opcode);

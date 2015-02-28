@@ -12,11 +12,11 @@ import com.tc.object.bytecode.ClassAdapterFactory;
 public class SystemInitializationAdapter extends ClassVisitor implements ClassAdapterFactory {
 
   public SystemInitializationAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   public SystemInitializationAdapter() {
-    super(Opcodes.ASM4);
+    super(Opcodes.ASM5);
   }
 
   @Override
@@ -32,17 +32,17 @@ public class SystemInitializationAdapter extends ClassVisitor implements ClassAd
   private static class LastChanceHookAdapter extends MethodVisitor implements Opcodes {
 
     public LastChanceHookAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
 
       // The important bit with this particular location is that it happens
       // before the jmx remote agent thread is started
       if ((opcode == INVOKESTATIC) && "getProperties".equals(name) && "java/lang/System".equals(owner)) {
-        super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "systemLoaderInitialized", "()V");
+        super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "systemLoaderInitialized", "()V", false);
       }
     }
   }

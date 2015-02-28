@@ -18,7 +18,7 @@ public class AtomicLongAdapter extends ClassVisitor implements Opcodes {
   public static final String VALUE_FIELD_NAME = "java.util.concurrent.atomic.AtomicLong.value";
 
   public AtomicLongAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     Vm.assertIsIbm();
   }
 
@@ -50,7 +50,7 @@ public class AtomicLongAdapter extends ClassVisitor implements Opcodes {
       mv.visitVarInsn(LLOAD, long_var_store);
       mv.visitInsn(ICONST_M1);
       mv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "longFieldChanged",
-                         "(Ljava/lang/String;Ljava/lang/String;JI)V");
+                         "(Ljava/lang/String;Ljava/lang/String;JI)V", true);
       mv.visitJumpInsn(GOTO, labelCommitVolatile);
     }
 

@@ -10,7 +10,7 @@ import com.tc.asm.Opcodes;
 public class JavaUtilConcurrentCyclicBarrierClassAdapter extends ClassVisitor implements Opcodes {
 
   public JavaUtilConcurrentCyclicBarrierClassAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -25,22 +25,22 @@ public class JavaUtilConcurrentCyclicBarrierClassAdapter extends ClassVisitor im
 
   private static class NextGenerationMethodAdapter extends MethodVisitor implements Opcodes {
     public NextGenerationMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
-    public void visitMethodInsn(final int opcode, final String owner, final String name, final String desc)
+    public void visitMethodInsn(final int opcode, final String owner, final String name, final String desc, boolean itf)
     {
       if ((!"java/util/concurrent/locks/Condition".equals(owner))
           || (!"signalAll".equals(name)) || (!desc.equals("()V"))) {
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
       }
     }
 
     @Override
     public void visitInsn(int opcode) {
       if (opcode == RETURN) {
-        super.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/locks/Condition", "signalAll", "()V");
+        super.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/locks/Condition", "signalAll", "()V", true);
       }
       super.visitInsn(opcode);
     }

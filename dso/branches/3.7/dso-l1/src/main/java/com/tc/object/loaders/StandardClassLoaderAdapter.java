@@ -26,7 +26,7 @@ public class StandardClassLoaderAdapter extends ClassVisitor implements Opcodes 
   private String              className;
 
   public StandardClassLoaderAdapter(ClassVisitor cv, String loaderName, String sysProp) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     this.loaderName = loaderName;
     this.sysProp = sysProp;
   }
@@ -86,7 +86,7 @@ public class StandardClassLoaderAdapter extends ClassVisitor implements Opcodes 
     mv.visitInsn(DUP);
     mv.visitLdcInsn("Classloader names cannot be set programmatically. Please use -D" +
                     BootJarTool.SYSTEM_CLASSLOADER_NAME_PROPERTY + " to specify a custom name to the Standard Class Loader");
-    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/AssertionError", "<init>", "(Ljava/lang/Object;)V");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/AssertionError", "<init>", "(Ljava/lang/Object;)V", false);
     mv.visitInsn(ATHROW);
 
     mv.visitMaxs(0, 0);
@@ -97,14 +97,14 @@ public class StandardClassLoaderAdapter extends ClassVisitor implements Opcodes 
     mv.visitLdcInsn(sysProp);
     mv.visitLdcInsn(loaderName);
     mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "getProperty",
-                       "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
+                       "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;", false);
     mv.visitFieldInsn(PUTSTATIC, className, LOADER_NAME, "Ljava/lang/String;");
   }
 
   private class StaticInitAdapter extends AdviceAdapter {
 
     public StaticInitAdapter(MethodVisitor mv, int access, String name, String desc) {
-      super(Opcodes.ASM4, mv, access, name, desc);
+      super(Opcodes.ASM5, mv, access, name, desc);
     }
 
     @Override

@@ -27,11 +27,11 @@ public class AQSSubclassStrongReferenceAdapter extends ClassVisitor implements C
   private String              className;
 
   public AQSSubclassStrongReferenceAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   public AQSSubclassStrongReferenceAdapter() {
-    super(Opcodes.ASM4);
+    super(Opcodes.ASM5);
   }
 
   @Override
@@ -86,7 +86,7 @@ public class AQSSubclassStrongReferenceAdapter extends ClassVisitor implements C
                                          JavaUtilConcurrentLocksAQSAdapter.TC_STAGE_CHANGED_DESC, null, null);
     mv.visitCode();
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKEINTERFACE, ByteCodeUtil.MANAGEABLE_CLASS, "__tc_managed", "()Lcom/tc/object/TCObject;");
+    mv.visitMethodInsn(INVOKEINTERFACE, ByteCodeUtil.MANAGEABLE_CLASS, "__tc_managed", "()Lcom/tc/object/TCObject;", true);
     mv.visitVarInsn(ASTORE, 2);
     mv.visitVarInsn(ALOAD, 2);
     Label notManaged = new Label();
@@ -97,7 +97,7 @@ public class AQSSubclassStrongReferenceAdapter extends ClassVisitor implements C
     mv.visitJumpInsn(IFNONNULL, nonNullToggleRef);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitVarInsn(ALOAD, 2);
-    mv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "getOrCreateToggleRef", "()" + TOGGLE_REF_TYPE);
+    mv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "getOrCreateToggleRef", "()" + TOGGLE_REF_TYPE, true);
     mv.visitFieldInsn(PUTFIELD, className, TOGGLE_REF_FIELD, TOGGLE_REF_TYPE);
     mv.visitLabel(nonNullToggleRef);
     mv.visitVarInsn(ILOAD, 1);
@@ -105,13 +105,13 @@ public class AQSSubclassStrongReferenceAdapter extends ClassVisitor implements C
     mv.visitJumpInsn(IFNE, stateNonZero);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, className, TOGGLE_REF_FIELD, TOGGLE_REF_TYPE);
-    mv.visitMethodInsn(INVOKEINTERFACE, TOGGLE_REF_CLASS, "clearStrongRef", "()V");
+    mv.visitMethodInsn(INVOKEINTERFACE, TOGGLE_REF_CLASS, "clearStrongRef", "()V", true);
     mv.visitJumpInsn(GOTO, notManaged);
     mv.visitLabel(stateNonZero);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, className, TOGGLE_REF_FIELD, TOGGLE_REF_TYPE);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKEINTERFACE, TOGGLE_REF_CLASS, "strongRef", "(Ljava/lang/Object;)V");
+    mv.visitMethodInsn(INVOKEINTERFACE, TOGGLE_REF_CLASS, "strongRef", "(Ljava/lang/Object;)V", false);
     mv.visitLabel(notManaged);
     mv.visitInsn(RETURN);
     mv.visitMaxs(0, 0);

@@ -78,7 +78,7 @@ public class ClassLoaderPreProcessorImpl {
     private String className;
 
     public IBMClassLoaderAdapter(ClassVisitor cv) {
-      super(Opcodes.ASM4, cv);
+      super(Opcodes.ASM5, cv);
     }
 
     @Override
@@ -97,13 +97,13 @@ public class ClassLoaderPreProcessorImpl {
       } else if (CLASSLOADER_CLASS_NAME.equals(className) && "getResource".equals(name)
                  && "(Ljava/lang/String;)Ljava/net/URL;".equals(desc)) { return new GetResourceVisitor(mv); }
 
-      return new MethodVisitor(Opcodes.ASM4, mv) {
+      return new MethodVisitor(Opcodes.ASM5, mv) {
         @Override
-        public void visitMethodInsn(int opcode, String owner, String mname, String mdesc) {
+        public void visitMethodInsn(int opcode, String owner, String mname, String mdesc, boolean itf) {
           if (CLASSLOADER_CLASS_NAME.equals(owner) && "defineClassImpl".equals(mname)) {
             mname = "__tc_defineClassImpl";
           }
-          super.visitMethodInsn(opcode, owner, mname, mdesc);
+          super.visitMethodInsn(opcode, owner, mname, mdesc, itf);
         }
       };
     }
@@ -123,7 +123,7 @@ public class ClassLoaderPreProcessorImpl {
       mv.visitVarInsn(ALOAD, 5);
       mv.visitTypeInsn(CHECKCAST, "java/security/ProtectionDomain");
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "defineClass0Pre",
-                         "(Ljava/lang/ClassLoader;Ljava/lang/String;[BIILjava/security/ProtectionDomain;)[B");
+                         "(Ljava/lang/ClassLoader;Ljava/lang/String;[BIILjava/security/ProtectionDomain;)[B", false);
 
       mv.visitVarInsn(ASTORE, 6); // byte[] b = CPH.defineClass0Pre(..);
       // If instrumented use the new array, otherwise pass straight through
@@ -139,7 +139,7 @@ public class ClassLoaderPreProcessorImpl {
       mv.visitInsn(ARRAYLENGTH);
       mv.visitVarInsn(ALOAD, 5);
       mv.visitMethodInsn(INVOKESPECIAL, "java/lang/ClassLoader", "defineClassImpl",
-                         "(Ljava/lang/String;[BIILjava/lang/Object;)Ljava/lang/Class;");
+                         "(Ljava/lang/String;[BIILjava/lang/Object;)Ljava/lang/Class;", false);
       mv.visitJumpInsn(Opcodes.GOTO, postDefine);
       mv.visitLabel(notInstrumented); // } else {
       mv.visitVarInsn(ALOAD, 0);
@@ -149,13 +149,13 @@ public class ClassLoaderPreProcessorImpl {
       mv.visitVarInsn(ILOAD, 4);
       mv.visitVarInsn(ALOAD, 5);
       mv.visitMethodInsn(INVOKESPECIAL, "java/lang/ClassLoader", "defineClassImpl",
-                         "(Ljava/lang/String;[BIILjava/lang/Object;)Ljava/lang/Class;");
+                         "(Ljava/lang/String;[BIILjava/lang/Object;)Ljava/lang/Class;", false);
       mv.visitLabel(postDefine);
       mv.visitVarInsn(ASTORE, 7);
       mv.visitVarInsn(ALOAD, 7);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "defineClass0Post",
-                         "(Ljava/lang/Class;Ljava/lang/ClassLoader;)V");
+                         "(Ljava/lang/Class;Ljava/lang/ClassLoader;)V", false);
       mv.visitVarInsn(ALOAD, 7);
       mv.visitInsn(ARETURN);
       mv.visitMaxs(0, 0);
@@ -171,7 +171,7 @@ public class ClassLoaderPreProcessorImpl {
     private boolean getClassLoadingLockExists = false;
 
     public ClassLoaderVisitor(ClassVisitor cv) {
-      super(Opcodes.ASM4, cv);
+      super(Opcodes.ASM5, cv);
     }
 
     @Override
@@ -217,7 +217,7 @@ public class ClassLoaderPreProcessorImpl {
         mv.visitVarInsn(Opcodes.ALOAD, 0);
         mv.visitVarInsn(Opcodes.ALOAD, 1);
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/ClassLoader", "getClassLoadingLock",
-                           "(Ljava/lang/String;)Ljava/lang/Object;");
+                           "(Ljava/lang/String;)Ljava/lang/Object;", false);
         mv.visitInsn(Opcodes.ARETURN);
       } else {
         mv.visitVarInsn(Opcodes.ALOAD, 0);
@@ -231,7 +231,7 @@ public class ClassLoaderPreProcessorImpl {
   private static class SclSetAdapter extends MethodVisitor implements Opcodes {
 
     public SclSetAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -279,7 +279,7 @@ public class ClassLoaderPreProcessorImpl {
         super.visitFieldInsn(GETSTATIC, owner, "scl", "Ljava/lang/ClassLoader;");
         super.visitJumpInsn(IFNULL, l);
         super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper",
-                              "systemLoaderInitialized", "()V");
+                              "systemLoaderInitialized", "()V", false);
         super.visitLabel(l);
       }
     }
@@ -297,7 +297,7 @@ public class ClassLoaderPreProcessorImpl {
     private boolean isInstrumented = false;
 
     public GetResourceVisitor(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -318,7 +318,7 @@ public class ClassLoaderPreProcessorImpl {
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper", "getTCResource",
-                         "(Ljava/lang/String;Ljava/lang/ClassLoader;)Ljava/net/URL;");
+                         "(Ljava/lang/String;Ljava/lang/ClassLoader;)Ljava/net/URL;", false);
       mv.visitVarInsn(ASTORE, 2);
 
       mv.visitVarInsn(ALOAD, 2);
@@ -342,7 +342,7 @@ public class ClassLoaderPreProcessorImpl {
   public static class LoadClassAdapter extends AdviceAdapter {
 
     public LoadClassAdapter(MethodVisitor mv, int access, String name, String desc) {
-      super(Opcodes.ASM4, mv, access, name, desc);
+      super(Opcodes.ASM5, mv, access, name, desc);
     }
 
     @Override
@@ -366,7 +366,7 @@ public class ClassLoaderPreProcessorImpl {
       mv.visitVarInsn(ALOAD, classnameSlot);
       mv.visitVarInsn(ALOAD, thisSlot);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper",
-                         "loadClassInternalHook", "(Ljava/lang/String;Ljava/lang/ClassLoader;)[B");
+                         "loadClassInternalHook", "(Ljava/lang/String;Ljava/lang/ClassLoader;)[B", false);
       mv.visitVarInsn(ASTORE, classbytesSlot);
 
       mv.visitVarInsn(ALOAD, classbytesSlot);
@@ -375,7 +375,7 @@ public class ClassLoaderPreProcessorImpl {
       mv.visitVarInsn(ALOAD, thisSlot);
       mv.visitVarInsn(ALOAD, classnameSlot);
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ClassLoader", "__tc_getClassLoadingLock",
-                         "(Ljava/lang/String;)Ljava/lang/Object;");
+                         "(Ljava/lang/String;)Ljava/lang/Object;", false);
       mv.visitVarInsn(ASTORE, lockSlot);
 
       // synchronized start
@@ -386,7 +386,7 @@ public class ClassLoaderPreProcessorImpl {
       mv.visitVarInsn(ALOAD, thisSlot);
       mv.visitVarInsn(ALOAD, classnameSlot);
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ClassLoader", "findLoadedClass",
-                         "(Ljava/lang/String;)Ljava/lang/Class;");
+                         "(Ljava/lang/String;)Ljava/lang/Class;", false);
       mv.visitVarInsn(ASTORE, loadedclassSlot);
 
       mv.visitVarInsn(ALOAD, loadedclassSlot);
@@ -399,7 +399,7 @@ public class ClassLoaderPreProcessorImpl {
       mv.visitVarInsn(ALOAD, classbytesSlot);
       mv.visitInsn(ARRAYLENGTH);
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ClassLoader", "defineClass",
-                         "(Ljava/lang/String;[BII)Ljava/lang/Class;");
+                         "(Ljava/lang/String;[BII)Ljava/lang/Class;", false);
       mv.visitVarInsn(ASTORE, loadedclassSlot);
 
       mv.visitLabel(foundClass);
@@ -439,18 +439,18 @@ public class ClassLoaderPreProcessorImpl {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
       boolean insertPostCall = false;
 
       if ((DEFINECLASS0_METHOD_NAME.equals(name) || (DEFINECLASS1_METHOD_NAME.equals(name)))
           && CLASSLOADER_CLASS_NAME.equals(owner)) {
         insertPostCall = true;
-        wrapCallToDefineClass01(opcode, owner, name, desc);
+        wrapCallToDefineClass01(opcode, owner, name, desc, itf);
       } else if (DEFINECLASS2_METHOD_NAME.equals(name) && CLASSLOADER_CLASS_NAME.equals(owner)) {
         insertPostCall = true;
-        wrapCallToDefineClass2(opcode, owner, name, desc);
+        wrapCallToDefineClass2(opcode, owner, name, desc, itf);
       } else {
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
       }
 
       if (insertPostCall) {
@@ -458,11 +458,11 @@ public class ClassLoaderPreProcessorImpl {
         super.visitVarInsn(Opcodes.ALOAD, 0);
         // The newly defined class object should be on the stack at this point
         super.visitMethodInsn(Opcodes.INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper",
-                              "defineClass0Post", "(Ljava/lang/Class;Ljava/lang/ClassLoader;)V");
+                              "defineClass0Post", "(Ljava/lang/Class;Ljava/lang/ClassLoader;)V", false);
       }
     }
 
-    private void wrapCallToDefineClass01(int opcode, String owner, String name, String desc) throws Error {
+    private void wrapCallToDefineClass01(int opcode, String owner, String name, String desc, boolean itf) throws Error {
       Type[] args = Type.getArgumentTypes(desc);
       if (args.length < 5 || !desc.startsWith(DESC_PREFIX)) { //
         throw new Error("non supported JDK, native call not supported: " + desc);
@@ -477,7 +477,7 @@ public class ClassLoaderPreProcessorImpl {
         mv.visitVarInsn(args[i].getOpcode(Opcodes.ILOAD), locals[i]);
       }
       super.visitMethodInsn(Opcodes.INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelper",
-                            "defineClass0Pre", DESC_HELPER);
+                            "defineClass0Pre", DESC_HELPER, false);
       int returnLocalByteArray = nextLocal(args[1].getSize());
       mv.visitVarInsn(Opcodes.ASTORE, returnLocalByteArray);
       mv.visitVarInsn(Opcodes.ALOAD, locals[1]); // bytes
@@ -498,7 +498,7 @@ public class ClassLoaderPreProcessorImpl {
       for (int i = 5; i < args.length; i++) {
         mv.visitVarInsn(args[i].getOpcode(Opcodes.ILOAD), locals[i]);
       }
-      super.visitMethodInsn(opcode, owner, name, desc);
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       Label l2 = new Label();
       mv.visitJumpInsn(Opcodes.GOTO, l2);
       mv.visitLabel(l1);
@@ -506,11 +506,11 @@ public class ClassLoaderPreProcessorImpl {
       for (int i = 0; i < args.length; i++) {
         mv.visitVarInsn(args[i].getOpcode(Opcodes.ILOAD), locals[i]);
       }
-      super.visitMethodInsn(opcode, owner, name, desc);
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       mv.visitLabel(l2);
     }
 
-    private void wrapCallToDefineClass2(int opcode, String owner, String name, String desc) throws Error {
+    private void wrapCallToDefineClass2(int opcode, String owner, String name, String desc, boolean itf) throws Error {
       Type[] args = Type.getArgumentTypes(desc);
       if (args.length < 5 || !desc.startsWith(DESC_BYTEBUFFER_PREFIX)) { //
         throw new Error("non supported JDK, bytebuffer native call not supported: " + desc);
@@ -524,19 +524,19 @@ public class ClassLoaderPreProcessorImpl {
         mv.visitVarInsn(args[i].getOpcode(Opcodes.ILOAD), locals[i]);
       }
       super.visitMethodInsn(Opcodes.INVOKESTATIC, "com/tc/object/bytecode/hook/impl/ClassProcessorHelperJDK15",
-                            "defineClass0Pre", DESC_BYTEBUFFER_HELPER);
+                            "defineClass0Pre", DESC_BYTEBUFFER_HELPER, false);
       mv.visitVarInsn(Opcodes.ASTORE, locals[1]);
       mv.visitVarInsn(Opcodes.ALOAD, 0);
       mv.visitVarInsn(Opcodes.ALOAD, locals[0]); // name
       mv.visitVarInsn(Opcodes.ALOAD, locals[1]); // bytes
       mv.visitInsn(Opcodes.ICONST_0); // offset
       mv.visitVarInsn(Opcodes.ALOAD, locals[1]);
-      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/nio/ByteBuffer", "remaining", "()I");
+      mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/nio/ByteBuffer", "remaining", "()I", false);
       mv.visitVarInsn(Opcodes.ALOAD, locals[4]); // protection domain
       for (int i = 5; i < args.length; i++) {
         mv.visitVarInsn(args[i].getOpcode(Opcodes.ILOAD), locals[i]);
       }
-      super.visitMethodInsn(opcode, owner, name, desc);
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
     }
   }
 
@@ -546,12 +546,12 @@ public class ClassLoaderPreProcessorImpl {
     private final IntRef check = new IntRef();
 
     public RemappingMethodVisitor(MethodVisitor v, int access, String desc) {
-      super(Opcodes.ASM4, v);
+      super(Opcodes.ASM5, v);
       state = new State(access, Type.getArgumentTypes(desc));
     }
 
     public RemappingMethodVisitor(RemappingMethodVisitor wrap) {
-      super(Opcodes.ASM4, wrap.mv);
+      super(Opcodes.ASM5, wrap.mv);
       this.state = wrap.state;
     }
 

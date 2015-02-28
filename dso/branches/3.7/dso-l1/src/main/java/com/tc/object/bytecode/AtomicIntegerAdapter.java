@@ -18,7 +18,7 @@ public class AtomicIntegerAdapter extends ClassVisitor implements Opcodes {
   public static final String VALUE_FIELD_NAME = "java.util.concurrent.atomic.AtomicInteger.value";
 
   public AtomicIntegerAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     Vm.assertIsIbm();
   }
 
@@ -50,7 +50,7 @@ public class AtomicIntegerAdapter extends ClassVisitor implements Opcodes {
       mv.visitVarInsn(ILOAD, int_var_store);
       mv.visitInsn(ICONST_M1);
       mv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "intFieldChanged",
-                         "(Ljava/lang/String;Ljava/lang/String;II)V");
+                         "(Ljava/lang/String;Ljava/lang/String;II)V", true);
       mv.visitJumpInsn(GOTO, labelCommitVolatile);
     }
 

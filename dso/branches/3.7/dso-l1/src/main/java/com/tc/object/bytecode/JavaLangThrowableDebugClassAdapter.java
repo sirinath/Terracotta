@@ -17,7 +17,7 @@ import com.tc.asm.Opcodes;
 public class JavaLangThrowableDebugClassAdapter extends ClassVisitor implements Opcodes {
 
   public JavaLangThrowableDebugClassAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -32,30 +32,30 @@ public class JavaLangThrowableDebugClassAdapter extends ClassVisitor implements 
   
   private static class DebugConstructorMethodVisitor extends MethodVisitor implements Opcodes {
     public DebugConstructorMethodVisitor(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
     public void visitInsn(int opcode) {
       if (RETURN == opcode) {
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;");
-        mv.visitMethodInsn(INVOKESTATIC, "sun/misc/MessageUtils", "toStderr", "(Ljava/lang/String;)V");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;", false);
+        mv.visitMethodInsn(INVOKESTATIC, "sun/misc/MessageUtils", "toStderr", "(Ljava/lang/String;)V", false);
 
         Label label_nomsg = new Label();
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Throwable", "getMessage", "()Ljava/lang/String;");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Throwable", "getMessage", "()Ljava/lang/String;", false);
         mv.visitJumpInsn(IFNULL, label_nomsg);
         mv.visitLdcInsn(": ");
-        mv.visitMethodInsn(INVOKESTATIC, "sun/misc/MessageUtils", "toStderr", "(Ljava/lang/String;)V");
+        mv.visitMethodInsn(INVOKESTATIC, "sun/misc/MessageUtils", "toStderr", "(Ljava/lang/String;)V", false);
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Throwable", "getMessage", "()Ljava/lang/String;");
-        mv.visitMethodInsn(INVOKESTATIC, "sun/misc/MessageUtils", "toStderr", "(Ljava/lang/String;)V");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Throwable", "getMessage", "()Ljava/lang/String;", false);
+        mv.visitMethodInsn(INVOKESTATIC, "sun/misc/MessageUtils", "toStderr", "(Ljava/lang/String;)V", false);
 
         mv.visitLabel(label_nomsg);
         mv.visitLdcInsn("\n");
-        mv.visitMethodInsn(INVOKESTATIC, "sun/misc/MessageUtils", "toStderr", "(Ljava/lang/String;)V");
+        mv.visitMethodInsn(INVOKESTATIC, "sun/misc/MessageUtils", "toStderr", "(Ljava/lang/String;)V", false);
       }
       
       super.visitInsn(opcode);
