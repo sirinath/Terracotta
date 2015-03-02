@@ -9,10 +9,14 @@
   <groupId>org.terracotta.api</groupId>
   <name>tim-api-root</name>
   <artifactId>tim-api-root</artifactId>
-  <version>1.4.1-SNAPSHOT</version>
+  <version>1.4.1</version>
   <packaging>pom</packaging>
 
   <properties>
+  
+    <metadata.build.jenkins.url>http://jenkins.terracotta.eur.ad.sag:8080/job/tim_api_releaser/2/</metadata.build.jenkins.url>
+    <metadata.build.maven.active.profiles>terracotta-repositories,release,tc-publish</metadata.build.maven.active.profiles>
+    <metadata.svn.revision>26132</metadata.svn.revision>
   </properties>
 
   <modules>
@@ -66,10 +70,10 @@
 
   <scm>
     <connection>
-      scm:svn:http://svn.terracotta.org/svn/tc/tim-api/trunk
+      scm:svn:http://svn.terracotta.org/svn/tc/tim-api/tags/release-1.4.1
     </connection>
     <developerConnection>
-      scm:svn:https://svn.terracotta.org/repo/tc/tim-api/trunk
+      scm:svn:https://svn.terracotta.org/repo/tc/tim-api/tags/release-1.4.1
     </developerConnection>
   </scm>
 
