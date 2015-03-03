@@ -42,7 +42,7 @@ public class LinkedHashMapClassAdapter extends ChangeClassNameHierarchyAdapter i
 
   private final static class AddEntryMethodAdapter extends MethodVisitor implements Opcodes {
     public AddEntryMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     /**
@@ -51,7 +51,7 @@ public class LinkedHashMapClassAdapter extends ChangeClassNameHierarchyAdapter i
      * instrumented class extends java.util.LinkedHashMap and overrides the removeEldestEntry method.
      */
     @Override
-    public final void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public final void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
       if ((opcode == INVOKEVIRTUAL)
           && (owner.equals("java/util/LinkedHashMap") && (name.equals("removeEldestEntry")) && (desc
               .equals("(Ljava/util/Map$Entry;)Z")))) {
@@ -63,9 +63,9 @@ public class LinkedHashMapClassAdapter extends ChangeClassNameHierarchyAdapter i
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ALOAD, 5);
         mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap$EntryWrapper", "<init>",
-                           "(Ljava/util/HashMap;Ljava/util/Map$Entry;)V");
+                           "(Ljava/util/HashMap;Ljava/util/Map$Entry;)V", false);
       }
-      super.visitMethodInsn(opcode, owner, name, desc);
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
     }
   }
 

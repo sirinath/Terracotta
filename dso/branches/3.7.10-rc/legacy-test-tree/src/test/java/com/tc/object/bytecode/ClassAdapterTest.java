@@ -1365,7 +1365,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
     };
 
     public CustomClassAdapter1(ClassVisitor visitor) {
-      super(Opcodes.ASM4, visitor);
+      super(Opcodes.ASM5, visitor);
     }
 
     @Override
@@ -1379,7 +1379,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
     
     static class CustomMethodAdapter1 extends MethodVisitor implements Opcodes {
       public CustomMethodAdapter1(MethodVisitor mv) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM5, mv);
       }
 
       @Override
@@ -1401,7 +1401,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
     };
 
     public CustomClassAdapter2(ClassVisitor visitor) {
-      super(Opcodes.ASM4, visitor);
+      super(Opcodes.ASM5, visitor);
     }
 
     @Override
@@ -1415,7 +1415,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
     
     static class CustomMethodAdapter2 extends MethodVisitor implements Opcodes {
       public CustomMethodAdapter2(MethodVisitor mv) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM5, mv);
       }
 
       @Override
@@ -1438,7 +1438,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
     };
 
     public CustomClassAdapter3(ClassVisitor visitor) {
-      super(Opcodes.ASM4, visitor);
+      super(Opcodes.ASM5, visitor);
     }
 
     @Override
@@ -1452,7 +1452,7 @@ public class ClassAdapterTest extends ClassAdapterTestBase {
     
     static class CustomMethodAdapter3 extends MethodVisitor implements Opcodes {
       public CustomMethodAdapter3(MethodVisitor mv) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM5, mv);
       }
 
       @Override

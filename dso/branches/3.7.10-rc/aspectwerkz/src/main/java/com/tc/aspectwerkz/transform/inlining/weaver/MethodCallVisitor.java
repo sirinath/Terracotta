@@ -60,7 +60,7 @@ public class MethodCallVisitor extends ClassVisitor implements TransformationCon
                            final ClassLoader loader,
                            final ClassInfo classInfo,
                            final InstrumentationContext ctx) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     m_loader = loader;
     m_callerClassInfo = classInfo;
     m_ctx = ctx;
@@ -169,7 +169,8 @@ public class MethodCallVisitor extends ClassVisitor implements TransformationCon
     public void visitMethodInsn(final int opcode,
                                 String calleeClassName,
                                 final String calleeMethodName,
-                                final String calleeMethodDesc) {
+                                final String calleeMethodDesc,
+                                final boolean itf) {
 
       if (m_callerMemberInfo == null) {
         System.err.println(
@@ -178,7 +179,7 @@ public class MethodCallVisitor extends ClassVisitor implements TransformationCon
                         + m_callerClassInfo.getName().replace('/', '.')
                         + '.' + m_callerMethodName + ':' + m_callerMethodDesc + ']'
         );
-        super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc);
+        super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc, itf);
         return;
       }
 
@@ -186,7 +187,7 @@ public class MethodCallVisitor extends ClassVisitor implements TransformationCon
               CLINIT_METHOD_NAME.equals(calleeMethodName) ||
               calleeMethodName.startsWith(ASPECTWERKZ_PREFIX)
               || calleeClassName.endsWith(JOIN_POINT_CLASS_SUFFIX)) {
-        super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc);
+        super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc, itf);
         return;
       }
 
@@ -194,13 +195,13 @@ public class MethodCallVisitor extends ClassVisitor implements TransformationCon
       if (opcode == INVOKESPECIAL
               && !calleeClassName.equals(m_callerClassName)
               && ClassInfoHelper.extendsSuperClass(m_callerClassInfo, calleeClassName.replace('/', '.'))) {
-        super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc);
+        super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc, itf);
         return;
       }
 
       // check if object initialization has been reached
       if (!m_isObjectInitialized) {
-        super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc);
+        super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc, itf);
         return;
       }
 
@@ -219,14 +220,14 @@ public class MethodCallVisitor extends ClassVisitor implements TransformationCon
                         + m_callerClassInfo.getName() + '.' + m_callerMethodName + "(..)]"
         );
         // bail out
-        super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc);
+        super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc, itf);
         return;
       }
 
       ExpressionContext ctx = new ExpressionContext(PointcutType.CALL, calleeMethodInfo, m_callerMemberInfo);
 
       if (methodFilter(m_ctx.getDefinitions(), ctx, calleeMethodInfo)) {
-        super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc);
+        super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc, itf);
       } else {
         m_ctx.markAsAdvised();
 
@@ -255,7 +256,8 @@ public class MethodCallVisitor extends ClassVisitor implements TransformationCon
                 TransformationUtil.getInvokeSignatureForCodeJoinPoints(
                         calleeMethodInfo.getModifiers(), calleeMethodDesc,
                         m_callerClassName, calleeClassName
-                )
+                ),
+                false
         );
 
         // emit the joinpoint

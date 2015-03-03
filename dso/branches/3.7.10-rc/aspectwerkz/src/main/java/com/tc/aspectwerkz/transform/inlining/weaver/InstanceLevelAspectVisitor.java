@@ -42,7 +42,7 @@ public class InstanceLevelAspectVisitor extends ClassVisitor implements Transfor
   public InstanceLevelAspectVisitor(final ClassVisitor cv,
                                     final ClassInfo classInfo,
                                     final InstrumentationContext ctx) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     m_classInfo = classInfo;
     m_ctx = (InstrumentationContext) ctx;
   }
@@ -172,7 +172,8 @@ public class InstanceLevelAspectVisitor extends ClassVisitor implements Transfor
 //                INVOKESPECIAL,
 //                HASH_MAP_CLASS_NAME,
 //                INIT_METHOD_NAME,
-//                NO_PARAM_RETURN_VOID_SIGNATURE
+//                NO_PARAM_RETURN_VOID_SIGNATURE,
+//                false
 //        );
 //        cv.visitFieldInsn(
 //                PUTFIELD,
@@ -191,7 +192,7 @@ public class InstanceLevelAspectVisitor extends ClassVisitor implements Transfor
 //        );
 //
 //        cv.visitVarInsn(ALOAD, 2);//qName
-//        cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, GET_METHOD_NAME, GET_METHOD_SIGNATURE);
+//        cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, GET_METHOD_NAME, GET_METHOD_SIGNATURE, true);
 //        cv.visitVarInsn(ASTORE, 4);
 //        cv.visitVarInsn(ALOAD, 4);
 //        Label ifNullNotLabel = new Label();
@@ -203,13 +204,14 @@ public class InstanceLevelAspectVisitor extends ClassVisitor implements Transfor
 //                INVOKESTATIC,
 //                ASPECTS_CLASS_NAME,
 //                ASPECT_OF_METHOD_NAME,
-//                ASPECT_OF_PER_INSTANCE_METHOD_SIGNATURE
+//                ASPECT_OF_PER_INSTANCE_METHOD_SIGNATURE,
+//                false
 //        );
 //        cv.visitVarInsn(ASTORE, 4);
     //cv.visitVarInsn(ALOAD, 0);
     //--
     cv.visitVarInsn(ALOAD, 1);
-    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, GET_METHOD_NAME, GET_METHOD_SIGNATURE);
+    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, GET_METHOD_NAME, GET_METHOD_SIGNATURE, true);
     //--
 //        cv.visitFieldInsn(
 //                GETFIELD,
@@ -220,7 +222,7 @@ public class InstanceLevelAspectVisitor extends ClassVisitor implements Transfor
     cv.visitInsn(ARETURN);
 //        cv.visitVarInsn(ALOAD, 2);
 //        cv.visitVarInsn(ALOAD, 4);
-//        cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, PUT_METHOD_NAME, PUT_METHOD_SIGNATURE);
+//        cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, PUT_METHOD_NAME, PUT_METHOD_SIGNATURE, true);
 //        cv.visitInsn(POP);
 //        cv.visitLabel(ifNullNotLabel);
 //        cv.visitVarInsn(ALOAD, 4);
@@ -252,8 +254,8 @@ public class InstanceLevelAspectVisitor extends ClassVisitor implements Transfor
     cv.visitInsn(IRETURN);
     cv.visitLabel(ifMapNonNull);
     cv.visitVarInsn(ALOAD, 1);
-    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, "containsKey", "(Ljava/lang/Object;)Z");
-    //cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, GET_METHOD_NAME, GET_METHOD_SIGNATURE);
+    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, "containsKey", "(Ljava/lang/Object;)Z", true);
+    //cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, GET_METHOD_NAME, GET_METHOD_SIGNATURE, true);
 //
 //        Label ifNullLabel = new Label();
 //        cv.visitJumpInsn(IFNULL, ifNullLabel);
@@ -293,7 +295,8 @@ public class InstanceLevelAspectVisitor extends ClassVisitor implements Transfor
             INVOKESPECIAL,
             HASH_MAP_CLASS_NAME,
             INIT_METHOD_NAME,
-            NO_PARAM_RETURN_VOID_SIGNATURE
+            NO_PARAM_RETURN_VOID_SIGNATURE,
+            false
     );
     cv.visitFieldInsn(
             PUTFIELD,
@@ -312,7 +315,7 @@ public class InstanceLevelAspectVisitor extends ClassVisitor implements Transfor
     );
     cv.visitVarInsn(ALOAD, 1);
     cv.visitVarInsn(ALOAD, 2);
-    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, PUT_METHOD_NAME, PUT_METHOD_SIGNATURE);
+    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, PUT_METHOD_NAME, PUT_METHOD_SIGNATURE, true);
     cv.visitVarInsn(ALOAD, 2);
     cv.visitInsn(ARETURN);
   }
@@ -407,8 +410,9 @@ public class InstanceLevelAspectVisitor extends ClassVisitor implements Transfor
     public void visitMethodInsn(int opcode,
                                 String owner,
                                 String name,
-                                String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+                                String desc,
+                                boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       if (opcode == INVOKESPECIAL && m_isObjectInitialized && !m_done) {
         m_done = true;
 
@@ -420,7 +424,8 @@ public class InstanceLevelAspectVisitor extends ClassVisitor implements Transfor
                 INVOKESPECIAL,
                 HASH_MAP_CLASS_NAME,
                 INIT_METHOD_NAME,
-                NO_PARAM_RETURN_VOID_SIGNATURE
+                NO_PARAM_RETURN_VOID_SIGNATURE,
+                false
         );
         mv.visitFieldInsn(
                 PUTFIELD,

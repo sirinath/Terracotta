@@ -20,7 +20,7 @@ import com.tc.asm.commons.SerialVersionUIDAdder;
 public class SafeSerialVersionUIDAdder extends SerialVersionUIDAdder {
 
     public SafeSerialVersionUIDAdder(ClassVisitor cv) {
-        super(Opcodes.ASM4, cv);
+        super(Opcodes.ASM5, cv);
     }
 
     @Override

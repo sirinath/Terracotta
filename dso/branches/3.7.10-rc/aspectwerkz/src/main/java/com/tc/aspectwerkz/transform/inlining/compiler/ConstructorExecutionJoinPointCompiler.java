@@ -68,7 +68,8 @@ public class ConstructorExecutionJoinPointCompiler extends AbstractJoinPointComp
             INVOKESTATIC,
             SIGNATURE_FACTORY_CLASS,
             NEW_CONSTRUCTOR_SIGNATURE_METHOD_NAME,
-            NEW_CONSTRUCTOR_SIGNATURE_METHOD_SIGNATURE
+            NEW_CONSTRUCTOR_SIGNATURE_METHOD_SIGNATURE,
+            false
     );
     cv.visitFieldInsn(
             PUTSTATIC, m_joinPointClassName, SIGNATURE_FIELD_NAME,
@@ -94,7 +95,7 @@ public class ConstructorExecutionJoinPointCompiler extends AbstractJoinPointComp
     loadArgumentMemberFields(cv, input.argStartIndex);
     String bodyName = TransformationUtil.getConstructorBodyMethodName(m_calleeClassName);
     String bodyDesc = TransformationUtil.getConstructorBodyMethodSignature(m_calleeMemberDesc, m_calleeClassName);
-    cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, bodyName, bodyDesc);
+    cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, bodyName, bodyDesc, false);
   }
 
   /**
@@ -114,7 +115,7 @@ public class ConstructorExecutionJoinPointCompiler extends AbstractJoinPointComp
     loadArguments(cv);
     String bodyName = TransformationUtil.getConstructorBodyMethodName(m_calleeClassName);
     String bodyDesc = TransformationUtil.getConstructorBodyMethodSignature(m_calleeMemberDesc, m_calleeClassName);
-    cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, bodyName, bodyDesc);
+    cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, bodyName, bodyDesc, false);
   }
 
   /**
@@ -153,7 +154,7 @@ public class ConstructorExecutionJoinPointCompiler extends AbstractJoinPointComp
     cv.visitFieldInsn(GETFIELD, m_joinPointClassName, CALLEE_INSTANCE_FIELD_NAME, m_calleeClassSignature);
     cv.visitMethodInsn(
             INVOKESPECIAL, CONSTRUCTOR_RTTI_IMPL_CLASS_NAME, INIT_METHOD_NAME,
-            CONSTRUCTOR_RTTI_IMPL_INIT_SIGNATURE
+            CONSTRUCTOR_RTTI_IMPL_INIT_SIGNATURE, false
     );
 
     // set the arguments
@@ -162,7 +163,7 @@ public class ConstructorExecutionJoinPointCompiler extends AbstractJoinPointComp
     cv.visitVarInsn(ALOAD, 1);
     cv.visitMethodInsn(
             INVOKEVIRTUAL, CONSTRUCTOR_RTTI_IMPL_CLASS_NAME, SET_PARAMETER_VALUES_METHOD_NAME,
-            SET_PARAMETER_VALUES_METHOD_SIGNATURE
+            SET_PARAMETER_VALUES_METHOD_SIGNATURE, false
     );
 
     cv.visitInsn(ARETURN);

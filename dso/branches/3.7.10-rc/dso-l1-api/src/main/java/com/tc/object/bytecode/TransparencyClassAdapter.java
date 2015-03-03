@@ -353,7 +353,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
     Label l1 = new Label();
     if (skipLocalJVMLock) {
       ByteCodeUtil.pushThis(c);
-      c.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isDsoMonitored", "(Ljava/lang/Object;)Z");
+      c.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isDsoMonitored", "(Ljava/lang/Object;)Z", false);
       c.visitJumpInsn(IFEQ, l1);
     }
 
@@ -465,9 +465,9 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
     // Call the renamed original method.
     ByteCodeUtil.prepareStackForMethodCall(callingMethodModifier, desc, c);
     if (Modifier.isStatic(callingMethodModifier)) {
-      c.visitMethodInsn(INVOKESTATIC, spec.getClassNameSlashes(), ByteCodeUtil.METHOD_RENAME_PREFIX + name, desc);
+      c.visitMethodInsn(INVOKESTATIC, spec.getClassNameSlashes(), ByteCodeUtil.METHOD_RENAME_PREFIX + name, desc, false);
     } else {
-      c.visitMethodInsn(INVOKESPECIAL, spec.getClassNameSlashes(), ByteCodeUtil.METHOD_RENAME_PREFIX + name, desc);
+      c.visitMethodInsn(INVOKESPECIAL, spec.getClassNameSlashes(), ByteCodeUtil.METHOD_RENAME_PREFIX + name, desc, false);
     }
   }
 
@@ -554,7 +554,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
       } else if (!lock.isAutolock()) {
         c.visitLdcInsn(ByteCodeUtil.generateNamedLockName(lock.getLockName()));
         c.visitLdcInsn(Integer.valueOf(lock.getLockLevelAsInt()));
-        c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "commitLock", "(Ljava/lang/String;I)V");
+        c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "commitLock", "(Ljava/lang/String;I)V", false);
       }
     }
     c.visitLabel(returnLabel);
@@ -563,20 +563,20 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
   private void callTCCommitWithLockName(final String lockName, final int type, final MethodVisitor mv) {
     mv.visitLdcInsn(lockName);
     mv.visitLdcInsn(Integer.valueOf(type));
-    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "commitLock", "(Ljava/lang/String;I)V");
+    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "commitLock", "(Ljava/lang/String;I)V", false);
   }
 
   private void callTCBeginWithLock(final LockDefinition lock, final MethodVisitor c) {
     c.visitLdcInsn(ByteCodeUtil.generateNamedLockName(lock.getLockName()));
     c.visitLdcInsn(Integer.valueOf(lock.getLockLevelAsInt()));
     c.visitLdcInsn(lock.getLockContextInfo());
-    c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "beginLock", "(Ljava/lang/String;ILjava/lang/String;)V");
+    c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "beginLock", "(Ljava/lang/String;ILjava/lang/String;)V", false);
   }
 
   private void callTCBeginWithLockName(final String lockName, final int lockLevel, final MethodVisitor mv) {
     mv.visitLdcInsn(lockName);
     mv.visitLdcInsn(Integer.valueOf(lockLevel));
-    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "beginLock", "(Ljava/lang/String;I)V");
+    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "beginLock", "(Ljava/lang/String;I)V", false);
   }
 
   private void callVolatileBegin(final String fieldName, final int lockLevel, final MethodVisitor mv) {
@@ -584,7 +584,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
     mv.visitLdcInsn(fieldName);
     mv.visitIntInsn(BIPUSH, lockLevel);
     mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "beginVolatile",
-                       "(Lcom/tc/object/TCObjectExternal;Ljava/lang/String;I)V");
+                       "(Lcom/tc/object/TCObjectExternal;Ljava/lang/String;I)V", false);
   }
 
   private void callVolatileCommit(final String fieldName, final int lockLevel, final MethodVisitor mv) {
@@ -592,7 +592,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
     mv.visitLdcInsn(fieldName);
     mv.visitIntInsn(BIPUSH, lockLevel);
     mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "commitVolatile",
-                       "(Lcom/tc/object/TCObjectExternal;Ljava/lang/String;I)V");
+                       "(Lcom/tc/object/TCObjectExternal;Ljava/lang/String;I)V", false);
   }
 
   private void createPlainGetter(final int methodAccess, final int fieldAccess, final String name, final String desc) {
@@ -655,38 +655,38 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
     mv.visitTypeInsn(NEW, "java/lang/StringBuffer");
     mv.visitInsn(DUP);
     mv.visitLdcInsn("The field '");
-    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuffer", "<init>", "(Ljava/lang/String;)V");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuffer", "<init>", "(Ljava/lang/String;)V", false);
     mv.visitLdcInsn(fieldName);
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
+                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);
     mv.visitLdcInsn("' with root name '");
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
+                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);
     mv.visitLdcInsn(rootName);
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
+                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);
     mv.visitLdcInsn("' cannot be assigned to a variable of type ");
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
+                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);
     mv.visitLdcInsn(targetType);
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
+                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);
     mv.visitLdcInsn(". This root has a type ");
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
+                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);
     mv.visitVarInsn(ALOAD, loadVariableNumber);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;", false);
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
+                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);
     mv.visitLdcInsn(". ");
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
+                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);
     mv.visitLdcInsn("Perhaps you have the same root name assigned more than once to variables of different types.");
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "toString", "()Ljava/lang/String;");
-    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/ClassCastException", "<init>", "(Ljava/lang/String;)V");
+                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "toString", "()Ljava/lang/String;", false);
+    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/ClassCastException", "<init>", "(Ljava/lang/String;)V", false);
     mv.visitInsn(ATHROW);
 
   }
@@ -724,7 +724,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
 
       mv.visitLabel(l3);
       mv.visitLdcInsn(rootName);
-      mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "lookupRoot", "(Ljava/lang/String;)Ljava/lang/Object;");
+      mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "lookupRoot", "(Ljava/lang/String;)Ljava/lang/Object;", false);
       mv.visitVarInsn(ASTORE, 1);
 
       mv.visitVarInsn(ALOAD, 1);
@@ -807,7 +807,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
         callVolatileBegin(spec.getClassNameDots() + '.' + name, LockLevel.READ.toInt(), gv);
       }
       gv.visitVarInsn(ALOAD, TC_OBJECT_SLOT);
-      gv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "getResolveLock", "()Ljava/lang/Object;");
+      gv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "getResolveLock", "()Ljava/lang/Object;", true);
       gv.visitInsn(DUP);
       gv.visitVarInsn(ASTORE, RESOLVE_LOCK_SLOT);
       gv.visitInsn(MONITORENTER);
@@ -821,7 +821,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
       // resolve the reference (possibly talk to the server)
       gv.visitVarInsn(ALOAD, TC_OBJECT_SLOT);
       gv.visitLdcInsn(spec.getClassNameDots() + '.' + name);
-      gv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "resolveReference", "(Ljava/lang/String;)V");
+      gv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "resolveReference", "(Ljava/lang/String;)V", true);
 
       // read the resolved field
       gv.visitLabel(resolved);
@@ -890,7 +890,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
 
   private void getManaged(final MethodVisitor mv) {
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKEVIRTUAL, spec.getClassNameSlashes(), MANAGED_METHOD, "()" + MANAGED_FIELD_TYPE);
+    mv.visitMethodInsn(INVOKEVIRTUAL, spec.getClassNameSlashes(), MANAGED_METHOD, "()" + MANAGED_FIELD_TYPE, false);
   }
 
   private void createPlainSetter(final int methodAccess, final int fieldAccess, final String name, final String desc) {
@@ -1027,10 +1027,10 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
       }
       if (isDSOFinal) {
         scv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "lookupOrCreateRoot",
-                            "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
+                            "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", false);
       } else {
         scv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "createOrReplaceRoot",
-                            "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
+                            "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", false);
       }
 
       int localVar = rootInstance + 1;
@@ -1086,7 +1086,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
     if (isPrimitive(targetType)) {
       mv.visitTypeInsn(CHECKCAST, ByteCodeUtil.sortToWrapperName(targetType.getSort()));
       mv.visitMethodInsn(INVOKEVIRTUAL, ByteCodeUtil.sortToWrapperName(targetType.getSort()),
-                         ByteCodeUtil.sortToPrimitiveMethodName(targetType.getSort()), "()" + desc);
+                         ByteCodeUtil.sortToPrimitiveMethodName(targetType.getSort()), "()" + desc, false);
     } else {
       mv.visitTypeInsn(CHECKCAST, convertToCheckCastDesc(desc));
     }
@@ -1172,7 +1172,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
       scv.visitVarInsn(ALOAD, 1);
       scv.visitInsn(ICONST_M1);
       scv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", "objectFieldChanged",
-                          "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;I)V");
+                          "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;I)V", true);
 
       if (isVolatile) {
         generateCodeForVolativeTransactionCommit(l1, l2, scv, 3, 4, spec.getClassNameDots() + "." + name,
@@ -1226,7 +1226,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
       mv.visitInsn(ICONST_M1);
       String method = ByteCodeUtil.codeToName(desc) + "FieldChanged";
       mv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObject", method, "(Ljava/lang/String;Ljava/lang/String;"
-                                                                            + desc + "I)V");
+                                                                            + desc + "I)V", true);
 
       if (isVolatile) {
         generateCodeForVolativeTransactionCommit(l1, l2, mv, 2 + t.getSize(), 3 + t.getSize(), spec.getClassNameDots()
@@ -1253,14 +1253,14 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
     Assert.eval("Can't call tc monitorenter from a static method.", !Modifier.isStatic(callingMethodModifier));
     ByteCodeUtil.pushThis(c);
     c.visitLdcInsn(Integer.valueOf(def.getLockLevelAsInt()));
-    c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "instrumentationMonitorExit", "(Ljava/lang/Object;I)V");
+    c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "instrumentationMonitorExit", "(Ljava/lang/Object;I)V", false);
   }
 
   private void callTCMonitorEnter(final int callingMethodModifier, final LockDefinition def, final MethodVisitor c) {
     Assert.eval("Can't call tc monitorexit from a static method.", !Modifier.isStatic(callingMethodModifier));
     ByteCodeUtil.pushThis(c);
     c.visitLdcInsn(Integer.valueOf(def.getLockLevelAsInt()));
-    c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "instrumentationMonitorEnter", "(Ljava/lang/Object;I)V");
+    c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "instrumentationMonitorEnter", "(Ljava/lang/Object;I)V", false);
   }
 
   private void addPrimitiveTypeZeroCompare(final MethodVisitor mv, final Type type, final Label notZeroLabel) {
@@ -1285,6 +1285,7 @@ public class TransparencyClassAdapter extends ClassAdapterBase implements Transp
     }
   }
 
+  @Override
   public MethodVisitor basicVisitMethodHack(int access, String name, String desc, String signature, String[] exceptions) {
     return basicVisitMethod(access, name, desc, signature, exceptions);
   }

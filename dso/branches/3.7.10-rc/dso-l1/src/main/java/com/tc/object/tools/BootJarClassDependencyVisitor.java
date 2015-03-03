@@ -40,7 +40,7 @@ public class BootJarClassDependencyVisitor extends ClassVisitor {
   }
 
   public BootJarClassDependencyVisitor(Set bootJarClassNames, Map offendingClasses) {
-    super(Opcodes.ASM4);
+    super(Opcodes.ASM5);
     this.bootJarClassNames = bootJarClassNames;
     this.offendingClasses  = offendingClasses;
   }
@@ -115,7 +115,7 @@ public class BootJarClassDependencyVisitor extends ClassVisitor {
   private class BootJarClassDependencyMethodVisitor extends MethodVisitor implements Opcodes {
 
     public BootJarClassDependencyMethodVisitor() {
-      super(Opcodes.ASM4);
+      super(Opcodes.ASM5);
     }
 
     @Override
@@ -207,7 +207,7 @@ public class BootJarClassDependencyVisitor extends ClassVisitor {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
       check(owner, "reference in either virtual, interface, constructor, or static invocation");
     }
 

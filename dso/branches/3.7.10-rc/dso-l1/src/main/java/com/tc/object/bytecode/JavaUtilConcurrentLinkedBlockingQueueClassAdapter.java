@@ -13,7 +13,7 @@ public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassVisi
   private static final String GET_ITEM_METHOD_DESC   = "()Ljava/lang/Object;";
 
   public JavaUtilConcurrentLinkedBlockingQueueClassAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -42,7 +42,7 @@ public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassVisi
       index += t.getSize();
     }
     
-    mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/LinkedBlockingQueue", to, desc);
+    mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/LinkedBlockingQueue", to, desc, false);
 
     Type ret = Type.getReturnType(desc);
     mv.visitInsn(ret.getOpcode(IRETURN));
@@ -53,14 +53,14 @@ public class JavaUtilConcurrentLinkedBlockingQueueClassAdapter extends ClassVisi
   
   static class NodeMethodAdapter extends MethodVisitor implements Opcodes {
     public NodeMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
       if (GETFIELD == opcode && "java/util/concurrent/LinkedBlockingQueue$Node".equals(owner) && "item".equals(name)
           && "Ljava/lang/Object;".equals(desc)) {
-        mv.visitMethodInsn(INVOKEVIRTUAL, owner, GET_ITEM_METHOD_NAME, GET_ITEM_METHOD_DESC);
+        mv.visitMethodInsn(INVOKEVIRTUAL, owner, GET_ITEM_METHOD_NAME, GET_ITEM_METHOD_DESC, false);
       } else {
         super.visitFieldInsn(opcode, owner, name, desc);
       }

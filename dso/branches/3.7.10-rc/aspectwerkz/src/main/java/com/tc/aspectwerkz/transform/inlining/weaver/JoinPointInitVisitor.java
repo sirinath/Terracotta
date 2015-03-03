@@ -38,7 +38,7 @@ public class JoinPointInitVisitor extends ClassVisitor implements Transformation
    * @param ctx
    */
   public JoinPointInitVisitor(final ClassVisitor cv, final InstrumentationContext ctx) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     m_ctx = ctx;
   }
 
@@ -169,17 +169,17 @@ public class JoinPointInitVisitor extends ClassVisitor implements Transformation
   public class InsertBeforeClinitCodeAdapter extends MethodVisitor {
 
     public InsertBeforeClinitCodeAdapter(MethodVisitor ca) {
-      super(Opcodes.ASM4, ca);
+      super(Opcodes.ASM5, ca);
       if (!m_hasClassField && !m_ctx.isProxy()) {
         mv.visitLdcInsn(m_ctx.getClassName().replace('/', '.'));
-        mv.visitMethodInsn(INVOKESTATIC, CLASS_CLASS, FOR_NAME_METHOD_NAME, FOR_NAME_METHOD_SIGNATURE);
+        mv.visitMethodInsn(INVOKESTATIC, CLASS_CLASS, FOR_NAME_METHOD_NAME, FOR_NAME_METHOD_SIGNATURE, false);
         mv.visitFieldInsn(PUTSTATIC, m_ctx.getClassName(), TARGET_CLASS_FIELD_NAME, CLASS_CLASS_SIGNATURE);
       }
       if (!m_hasEmittedJoinPointsField && (m_ctx.isMadeAdvisable() || m_ctx.isProxy())) {
         // aw$emittedJoinPoints = new HashMap()
         mv.visitTypeInsn(NEW, "java/util/HashMap");
         mv.visitInsn(DUP);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false);
         mv.visitFieldInsn(PUTSTATIC, m_ctx.getClassName(), EMITTED_JOINPOINTS_FIELD_NAME, "Ljava/util/HashMap;");
       }
       if (!m_hasClassField) {
@@ -187,7 +187,8 @@ public class JoinPointInitVisitor extends ClassVisitor implements Transformation
                 INVOKESTATIC,
                 m_ctx.getClassName(),
                 INIT_JOIN_POINTS_METHOD_NAME,
-                NO_PARAM_RETURN_VOID_SIGNATURE
+                NO_PARAM_RETURN_VOID_SIGNATURE,
+                false
         );
       }
     }
@@ -202,7 +203,7 @@ public class JoinPointInitVisitor extends ClassVisitor implements Transformation
   public class InsertBeforeInitJoinPointsCodeAdapter extends MethodVisitor {
 
     public InsertBeforeInitJoinPointsCodeAdapter(MethodVisitor ca) {
-      super(Opcodes.ASM4, ca);
+      super(Opcodes.ASM5, ca);
 
       // loop over emitted jp and insert call to "JoinPointManager.loadJoinPoint(...)"
       // add calls to aw$emittedJoinPoints.put(.. new EmittedJoinPoint) if needed.
@@ -228,7 +229,8 @@ public class JoinPointInitVisitor extends ClassVisitor implements Transformation
                   INVOKESTATIC,
                   JOIN_POINT_MANAGER_CLASS_NAME,
                   LOAD_JOIN_POINT_METHOD_NAME,
-                  LOAD_JOIN_POINT_METHOD_SIGNATURE
+                  LOAD_JOIN_POINT_METHOD_SIGNATURE,
+                  false
           );
         }
 
@@ -240,7 +242,7 @@ public class JoinPointInitVisitor extends ClassVisitor implements Transformation
           mv.visitTypeInsn(NEW, "java/lang/Integer");
           mv.visitInsn(DUP);
           mv.visitLdcInsn(Integer.valueOf(jp.getJoinPointClassName().hashCode()));
-          mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V");
+          mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V", false);
 
           mv.visitTypeInsn(NEW, "com/tc/aspectwerkz/transform/inlining/EmittedJoinPoint");
           mv.visitInsn(DUP);
@@ -261,13 +263,14 @@ public class JoinPointInitVisitor extends ClassVisitor implements Transformation
           mv.visitLdcInsn(jp.getJoinPointClassName());
 
           mv.visitMethodInsn(INVOKESPECIAL, "com/tc/aspectwerkz/transform/inlining/EmittedJoinPoint", "<init>",
-                  "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;IILjava/lang/String;)V"
+                  "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;IILjava/lang/String;)V", false
           );
           mv.visitMethodInsn(
                   INVOKEVIRTUAL,
                   "java/util/HashMap",
                   "put",
-                  "(ILjava/lang/Object;)Ljava/lang/Object;"
+                  "(ILjava/lang/Object;)Ljava/lang/Object;",
+                  false
           );
         }
       }

@@ -152,7 +152,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
     if (!cs.isDirectSubClassOfPhysicalMOState()) {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKESPECIAL, superClassNameSlash, "writeObject", "(Ljava/io/ObjectOutput;)V");
+      mv.visitMethodInsn(INVOKESPECIAL, superClassNameSlash, "writeObject", "(Ljava/io/ObjectOutput;)V", false);
     }
 
     for (FieldType f : fields) {
@@ -161,7 +161,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
       mv.visitFieldInsn(GETFIELD, classNameSlash, f.getLocalFieldName(), f.getType().getTypeDesc());
       LiteralValues fType = f.getType();
       mv.visitMethodInsn(INVOKEINTERFACE, "java/io/ObjectOutput", fType.getOutputMethodName(),
-                         fType.getOutputMethodDescriptor());
+                         fType.getOutputMethodDescriptor(), true);
     }
     mv.visitInsn(RETURN);
     mv.visitMaxs(3, 2);
@@ -190,7 +190,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
     if (!cs.isDirectSubClassOfPhysicalMOState()) {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKESPECIAL, superClassNameSlash, "readObject", "(Ljava/io/ObjectInput;)V");
+      mv.visitMethodInsn(INVOKESPECIAL, superClassNameSlash, "readObject", "(Ljava/io/ObjectInput;)V", false);
     }
 
     for (FieldType f : fields) {
@@ -198,7 +198,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
       mv.visitVarInsn(ALOAD, 1);
       LiteralValues fType = f.getType();
       mv.visitMethodInsn(INVOKEINTERFACE, "java/io/ObjectInput", fType.getInputMethodName(),
-                         fType.getInputMethodDescriptor());
+                         fType.getInputMethodDescriptor(), true);
       mv.visitFieldInsn(PUTFIELD, classNameSlash, f.getLocalFieldName(), f.getType().getTypeDesc());
     }
     mv.visitInsn(RETURN);
@@ -225,7 +225,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
     if (!cs.isDirectSubClassOfPhysicalMOState()) {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKESPECIAL, superClassNameSlash, "addValues", "(Ljava/util/Map;)Ljava/util/Map;");
+      mv.visitMethodInsn(INVOKESPECIAL, superClassNameSlash, "addValues", "(Ljava/util/Map;)Ljava/util/Map;", false);
       mv.visitInsn(POP);
     }
 
@@ -234,7 +234,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
       mv.visitLdcInsn(f.getQualifiedName());
       getObjectFor(mv, classNameSlash, f);
       mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "put",
-                         "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+                         "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
       mv.visitInsn(POP);
     }
     mv.visitVarInsn(ALOAD, 1);
@@ -264,7 +264,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
     if (!cs.isDirectSubClassOfPhysicalMOState()) {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKESPECIAL, superClassNameSlash, "basicDehydrate", "(Lcom/tc/object/dna/api/DNAWriter;)V");
+      mv.visitMethodInsn(INVOKESPECIAL, superClassNameSlash, "basicDehydrate", "(Lcom/tc/object/dna/api/DNAWriter;)V", false);
     }
 
     for (FieldType f : fields) {
@@ -278,7 +278,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
       }
       // XXX:: We are calling DNAWriter methods from instrumented code !
       mv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/dna/api/DNAWriter", "addPhysicalAction",
-                         "(Ljava/lang/String;Ljava/lang/Object;Z)V");
+                         "(Ljava/lang/String;Ljava/lang/Object;Z)V", true);
     }
     mv.visitInsn(RETURN);
 
@@ -314,7 +314,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
     for (FieldType f : fields) {
       mv.visitLdcInsn(f.getQualifiedName());
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
       Label l1 = new Label();
       mv.visitJumpInsn(IFEQ, l1);
       getObjectFor(mv, classNameSlash, f);
@@ -335,19 +335,19 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
       mv.visitTypeInsn(NEW, "java/lang/StringBuffer");
       mv.visitInsn(DUP);
       mv.visitLdcInsn("Not found ! field = ");
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuffer", "<init>", "(Ljava/lang/String;)V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuffer", "<init>", "(Ljava/lang/String;)V", false);
       mv.visitVarInsn(ALOAD, 1);
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                         "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
+                         "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);
       mv.visitLdcInsn(" value = ");
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                         "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
+                         "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);
       mv.visitVarInsn(ALOAD, 2);
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                         "(Ljava/lang/Object;)Ljava/lang/StringBuffer;");
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "toString", "()Ljava/lang/String;");
+                         "(Ljava/lang/Object;)Ljava/lang/StringBuffer;", false);
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "toString", "()Ljava/lang/String;", false);
       mv.visitMethodInsn(INVOKESPECIAL, "com/tc/objectserver/managedobject/bytecode/ClassNotCompatableException",
-                         "<init>", "(Ljava/lang/String;)V");
+                         "<init>", "(Ljava/lang/String;)V", false);
       mv.visitInsn(ATHROW);
     } else {
       // Call super class's implementation
@@ -355,7 +355,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ALOAD, 2);
       mv.visitMethodInsn(INVOKESPECIAL, superClassNameSlash, "basicSet",
-                         "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
+                         "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", false);
       mv.visitInsn(ARETURN);
     }
 
@@ -373,7 +373,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
     mv.visitTypeInsn(CHECKCAST, classOnStack);
     mv.visitMethodInsn(INVOKEVIRTUAL, classOnStack, f.getType().getMethodNameForPrimitives(), "()"
                                                                                               + f.getType()
-                                                                                                  .getTypeDesc());
+                                                                                                  .getTypeDesc(), false);
 
   }
 
@@ -393,7 +393,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
     mv.visitInsn(DUP);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, classNameSlash, f.getLocalFieldName(), fieldTypeDesc);
-    mv.visitMethodInsn(INVOKESPECIAL, classToReturn, "<init>", constructorDesc);
+    mv.visitMethodInsn(INVOKESPECIAL, classToReturn, "<init>", constructorDesc, false);
 
   }
 
@@ -442,16 +442,16 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
     mv.visitTypeInsn(NEW, "java/util/HashSet");
     mv.visitInsn(DUP);
     mv.visitLdcInsn(Integer.valueOf(size));
-    mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashSet", "<init>", "(I)V");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashSet", "<init>", "(I)V", false);
     mv.visitVarInsn(ASTORE, 1);
 
     if (!cs.isDirectSubClassOfPhysicalMOState()) {
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKESPECIAL, superClassNameSlash, "getObjectReferences", "()Ljava/util/Set;");
+      mv.visitMethodInsn(INVOKESPECIAL, superClassNameSlash, "getObjectReferences", "()Ljava/util/Set;", false);
       mv.visitVarInsn(ASTORE, 2);
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "addAll", "(Ljava/util/Collection;)Z");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "addAll", "(Ljava/util/Collection;)Z", true);
       mv.visitInsn(POP);
     }
 
@@ -465,12 +465,12 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, classNameSlash, f.getLocalFieldName(), f.getType().getTypeDesc());
       mv.visitTypeInsn(CHECKCAST, "com/tc/object/ObjectID");
-      mv.visitMethodInsn(INVOKEVIRTUAL, "com/tc/object/ObjectID", "isNull", "()Z");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "com/tc/object/ObjectID", "isNull", "()Z", false);
       mv.visitJumpInsn(IFNE, l2);
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, classNameSlash, f.getLocalFieldName(), f.getType().getTypeDesc());
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "add", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "add", "(Ljava/lang/Object;)Z", true);
       mv.visitInsn(POP);
       mv.visitLabel(l2);
     }
@@ -479,7 +479,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, classNameSlash, PARENT_ID_FIELD, "Lcom/tc/object/ObjectID;");
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "add", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "add", "(Ljava/lang/Object;)Z", true);
       mv.visitInsn(POP);
     }
     mv.visitVarInsn(ALOAD, 1);
@@ -543,7 +543,7 @@ public class PhysicalStateClassLoader extends ClassLoader implements Opcodes {
     MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
     mv.visitCode();
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKESPECIAL, superClassNameSlash, "<init>", "()V");
+    mv.visitMethodInsn(INVOKESPECIAL, superClassNameSlash, "<init>", "()V", false);
     mv.visitInsn(RETURN);
     mv.visitMaxs(2, 2);
     mv.visitEnd();

@@ -11,7 +11,7 @@ import com.tc.asm.Opcodes;
 
 public class JavaUtilConcurrentHashMapWriteThroughEntryAdapter extends ClassVisitor implements Opcodes {
   public JavaUtilConcurrentHashMapWriteThroughEntryAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -39,13 +39,13 @@ public class JavaUtilConcurrentHashMapWriteThroughEntryAdapter extends ClassVisi
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "java/util/concurrent/ConcurrentHashMap$WriteThroughEntry", "this$0", "Ljava/util/concurrent/ConcurrentHashMap;");
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap$WriteThroughEntry", "getKey", "()Ljava/lang/Object;");
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap", "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap$WriteThroughEntry", "getKey", "()Ljava/lang/Object;", false);
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap", "get", "(Ljava/lang/Object;)Ljava/lang/Object;", false);
     mv.visitInsn(POP);
 
     // but we can't trust the get return since it might not be valid for our uses (SUN BUG: 6312056)
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKESPECIAL, "java/util/AbstractMap$SimpleEntry", "getValue", "()Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/util/AbstractMap$SimpleEntry", "getValue", "()Ljava/lang/Object;", false);
     mv.visitVarInsn(ASTORE, 1);
     mv.visitVarInsn(ALOAD, 1);
     mv.visitTypeInsn(INSTANCEOF, "com/tc/object/ObjectID");
@@ -53,11 +53,11 @@ public class JavaUtilConcurrentHashMapWriteThroughEntryAdapter extends ClassVisi
     mv.visitJumpInsn(IFEQ, labelNotObjectID);
     mv.visitVarInsn(ALOAD, 1);
     mv.visitTypeInsn(CHECKCAST, "com/tc/object/ObjectID");
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "lookupObject", "(Lcom/tc/object/ObjectID;)Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "lookupObject", "(Lcom/tc/object/ObjectID;)Ljava/lang/Object;", false);
     mv.visitVarInsn(ASTORE, 1);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKESPECIAL, "java/util/AbstractMap$SimpleEntry", "setValue", "(Ljava/lang/Object;)Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/util/AbstractMap$SimpleEntry", "setValue", "(Ljava/lang/Object;)Ljava/lang/Object;", false);
     mv.visitInsn(POP);
     mv.visitLabel(labelNotObjectID);
     mv.visitVarInsn(ALOAD, 1);
@@ -73,16 +73,16 @@ public class JavaUtilConcurrentHashMapWriteThroughEntryAdapter extends ClassVisi
     // set the value in the parent SimpleEntry
     mv.visitVarInsn(ALOAD, 0);
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKESPECIAL, "java/util/AbstractMap$SimpleEntry", "setValue", "(Ljava/lang/Object;)Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/util/AbstractMap$SimpleEntry", "setValue", "(Ljava/lang/Object;)Ljava/lang/Object;", false);
     mv.visitInsn(POP);
 
     // push the new value into the outer ConcurrentHashMap instance
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "java/util/concurrent/ConcurrentHashMap$WriteThroughEntry", "this$0", "Ljava/util/concurrent/ConcurrentHashMap;");
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap$WriteThroughEntry", "getKey", "()Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap$WriteThroughEntry", "getKey", "()Ljava/lang/Object;", false);
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap", "__tc_applicator_put", "(Ljava/lang/Object;Ljava/lang/Object;)V");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap", "__tc_applicator_put", "(Ljava/lang/Object;Ljava/lang/Object;)V", false);
     
     mv.visitInsn(RETURN);
     mv.visitMaxs(2, 2);
@@ -93,7 +93,7 @@ public class JavaUtilConcurrentHashMapWriteThroughEntryAdapter extends ClassVisi
     MethodVisitor mv = super.visitMethod(ACC_PUBLIC | ACC_SYNCHRONIZED, TCMapEntry.TC_ISVALUEFAULTEDIN_METHOD_NAME, TCMapEntry.TC_ISVALUEFAULTEDIN_METHOD_DESC, null, null);
     mv.visitCode();
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKESPECIAL, "java/util/AbstractMap$SimpleEntry", "getValue", "()Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/util/AbstractMap$SimpleEntry", "getValue", "()Ljava/lang/Object;", false);
     mv.visitTypeInsn(INSTANCEOF, "com/tc/object/ObjectID");
     
     Label labelTrue = new Label();

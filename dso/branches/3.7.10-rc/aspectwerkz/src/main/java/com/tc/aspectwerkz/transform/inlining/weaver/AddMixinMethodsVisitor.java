@@ -55,7 +55,7 @@ public class AddMixinMethodsVisitor extends ClassVisitor implements Transformati
                                 final ClassInfo classInfo,
                                 final InstrumentationContext ctx,
                                 final Set addedMethods) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     m_classInfo = classInfo;
     m_ctx = (InstrumentationContext) ctx;
     m_addedMethods = addedMethods;
@@ -210,13 +210,15 @@ public class AddMixinMethodsVisitor extends ClassVisitor implements Transformati
               INVOKEVIRTUAL,
               CLASS_CLASS,
               GETCLASSLOADER_METHOD_NAME,
-              CLASS_CLASS_GETCLASSLOADER_METHOD_SIGNATURE
+              CLASS_CLASS_GETCLASSLOADER_METHOD_SIGNATURE,
+              false
       );
       mv.visitMethodInsn(
               INVOKESTATIC,
               MIXINS_CLASS_NAME,
               MIXIN_OF_METHOD_NAME,
-              MIXIN_OF_METHOD_PER_JVM_SIGNATURE
+              MIXIN_OF_METHOD_PER_JVM_SIGNATURE,
+              false
       );
     } else {
       mv.visitFieldInsn(
@@ -229,7 +231,8 @@ public class AddMixinMethodsVisitor extends ClassVisitor implements Transformati
               INVOKESTATIC,
               MIXINS_CLASS_NAME,
               MIXIN_OF_METHOD_NAME,
-              MIXIN_OF_METHOD_PER_CLASS_SIGNATURE
+              MIXIN_OF_METHOD_PER_CLASS_SIGNATURE,
+              false
       );
     }
     mv.visitTypeInsn(CHECKCAST, fieldInfo.mixinClassInfo.getName().replace('.', '/'));
@@ -255,7 +258,8 @@ public class AddMixinMethodsVisitor extends ClassVisitor implements Transformati
             INVOKESTATIC,
             MIXINS_CLASS_NAME,
             MIXIN_OF_METHOD_NAME,
-            MIXIN_OF_METHOD_PER_INSTANCE_SIGNATURE
+            MIXIN_OF_METHOD_PER_INSTANCE_SIGNATURE,
+            false
     );
     mv.visitTypeInsn(CHECKCAST, fieldInfo.mixinClassInfo.getName().replace('.', '/'));
     mv.visitFieldInsn(
@@ -346,7 +350,8 @@ public class AddMixinMethodsVisitor extends ClassVisitor implements Transformati
               INVOKEVIRTUAL,
               fieldInfo.mixinClassInfo.getName().replace('.', '/'),
               methodName,
-              methodSignature
+              methodSignature,
+              false
       );
       AsmHelper.addReturnStatement(mv, Type.getReturnType(methodSignature));
       mv.visitMaxs(0, 0);
@@ -391,7 +396,7 @@ public class AddMixinMethodsVisitor extends ClassVisitor implements Transformati
   public class PrependToClinitMethodCodeAdapter extends MethodVisitor {
 
     public PrependToClinitMethodCodeAdapter(final MethodVisitor ca) {
-      super(Opcodes.ASM4, ca);
+      super(Opcodes.ASM5, ca);
       for (Iterator i4 = m_mixinFields.values().iterator(); i4.hasNext();) {
         MixinFieldInfo fieldInfo = (MixinFieldInfo) i4.next();
         if (fieldInfo.isStatic) {
@@ -409,7 +414,7 @@ public class AddMixinMethodsVisitor extends ClassVisitor implements Transformati
   public class AppendToInitMethodCodeAdapter extends MethodVisitor {
 
     public AppendToInitMethodCodeAdapter(final MethodVisitor ca) {
-      super(Opcodes.ASM4, ca);
+      super(Opcodes.ASM5, ca);
     }
 
     public void visitInsn(final int opcode) {

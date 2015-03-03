@@ -15,7 +15,7 @@ public class MaxLocalVarStoreDetectingMethodAdapter extends MethodVisitor implem
     private int max_var_store = 0;
     
     public MaxLocalVarStoreDetectingMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
     
     @Override

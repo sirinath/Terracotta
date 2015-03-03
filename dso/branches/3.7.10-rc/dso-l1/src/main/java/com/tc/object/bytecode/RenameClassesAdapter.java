@@ -15,7 +15,7 @@ public class RenameClassesAdapter extends ClassVisitor implements Opcodes {
   private final ClassReplacementMapping mapping;
 
   public RenameClassesAdapter(ClassVisitor cv, ClassReplacementMapping mapping) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     
     this.mapping = mapping;
   }
@@ -41,7 +41,7 @@ public class RenameClassesAdapter extends ClassVisitor implements Opcodes {
 
   class MethodRenamer extends MethodVisitor {
     public MethodRenamer(final MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -55,8 +55,8 @@ public class RenameClassesAdapter extends ClassVisitor implements Opcodes {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      mv.visitMethodInsn(opcode, mapping.getOriginalClassNameSlashes(owner), name, mapping.ensureOriginalAsmTypes(desc));
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      mv.visitMethodInsn(opcode, mapping.getOriginalClassNameSlashes(owner), name, mapping.ensureOriginalAsmTypes(desc), itf);
     }
     
     @Override

@@ -287,7 +287,7 @@ public class DefaultWeavingStrategy implements WeavingStrategy {
         // prepare handler jp, by gathering ALL catch blocks and their exception type
         List catchLabels = new ArrayList();
         if (!filterForHandler) {
-          final ClassVisitor cv = new ClassVisitor(Opcodes.ASM4) {};
+          final ClassVisitor cv = new ClassVisitor(Opcodes.ASM5) {};
           HandlerVisitor.LookaheadCatchLabelsClassAdapter lookForCatches = //
           new HandlerVisitor.LookaheadCatchLabelsClassAdapter(cv, loader, classInfo, context, catchLabels);
           // we must visit exactly as we will do further on with debug info (that produces extra labels)

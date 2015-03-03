@@ -45,12 +45,12 @@ public class PerJVMAspectFactoryCompiler extends AbstractAspectFactoryCompiler {
     cv.visitJumpInsn(IFNONNULL, ifNonNull);
     if (m_hasAspectContainer) {
       cv.visitFieldInsn(GETSTATIC, m_aspectFactoryClassName, FACTORY_CONTAINER_FIELD_NAME, ASPECT_CONTAINER_CLASS_SIGNATURE);
-      cv.visitMethodInsn(INVOKEINTERFACE, ASPECT_CONTAINER_CLASS_NAME, ASPECT_CONTAINER_ASPECTOF_METHOD_NAME, ASPECT_CONTAINER_ASPECTOF_PERJVM_METHOD_SIGNATURE);
+      cv.visitMethodInsn(INVOKEINTERFACE, ASPECT_CONTAINER_CLASS_NAME, ASPECT_CONTAINER_ASPECTOF_METHOD_NAME, ASPECT_CONTAINER_ASPECTOF_PERJVM_METHOD_SIGNATURE, true);
       cv.visitTypeInsn(CHECKCAST, m_aspectClassName);
     } else {
       cv.visitTypeInsn(NEW, m_aspectClassName);
       cv.visitInsn(DUP);
-      cv.visitMethodInsn(INVOKESPECIAL, m_aspectClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE);
+      cv.visitMethodInsn(INVOKESPECIAL, m_aspectClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false);
     }
     cv.visitFieldInsn(PUTSTATIC, m_aspectFactoryClassName, FACTORY_SINGLE_ASPECT_FIELD_NAME, m_aspectClassSignature);
     cv.visitLabel(ifNonNull);

@@ -78,7 +78,7 @@ public class ConstructorCallVisitor extends ClassVisitor implements Transformati
                                 final ClassInfo classInfo,
                                 final InstrumentationContext ctx,
                                 final Map newInvocationsByCallerMemberHash) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     m_loader = loader;
     m_callerClassInfo = classInfo;
     m_ctx = ctx;
@@ -179,7 +179,7 @@ public class ConstructorCallVisitor extends ClassVisitor implements Transformati
                                             final String callerMethodName,
                                             final String callerMethodDesc,
                                             final Map newInvocations) {
-      super(Opcodes.ASM4, ca);
+      super(Opcodes.ASM5, ca);
       m_loader = loader;
       m_callerClassInfo = callerClassInfo;
       m_callerClassName = callerClassName;
@@ -303,30 +303,31 @@ public class ConstructorCallVisitor extends ClassVisitor implements Transformati
     public void visitMethodInsn(final int opcode,
                                 final String calleeClassName,
                                 final String calleeConstructorName,
-                                final String calleeConstructorDesc) {
+                                final String calleeConstructorDesc,
+                                final boolean itf) {
 
       if (m_callerMemberInfo == null) {
-        super.visitMethodInsn(opcode, calleeClassName, calleeConstructorName, calleeConstructorDesc);
+        super.visitMethodInsn(opcode, calleeClassName, calleeConstructorName, calleeConstructorDesc, itf);
         return;
       }
 
       if (!INIT_METHOD_NAME.equals(calleeConstructorName) ||
               calleeClassName.endsWith(TransformationConstants.JOIN_POINT_CLASS_SUFFIX)) {
-        super.visitMethodInsn(opcode, calleeClassName, calleeConstructorName, calleeConstructorDesc);
+        super.visitMethodInsn(opcode, calleeClassName, calleeConstructorName, calleeConstructorDesc, itf);
         return;
       }
 
       // getDefault the info from the invocation stack since all the matching has already been done
       if (m_newInvocationStructStack.isEmpty()) {
         // nothing to weave
-        super.visitMethodInsn(opcode, calleeClassName, calleeConstructorName, calleeConstructorDesc);
+        super.visitMethodInsn(opcode, calleeClassName, calleeConstructorName, calleeConstructorDesc, itf);
         return;
       }
 
       NewInvocationStruct struct = (NewInvocationStruct) m_newInvocationStructStack.pop();
       if (struct == null) {
         // not matched
-        super.visitMethodInsn(opcode, calleeClassName, calleeConstructorName, calleeConstructorDesc);
+        super.visitMethodInsn(opcode, calleeClassName, calleeConstructorName, calleeConstructorDesc, itf);
       } else {
         m_ctx.markAsAdvised();
 
@@ -356,7 +357,8 @@ public class ConstructorCallVisitor extends ClassVisitor implements Transformati
                         calleeConstructorDesc,
                         m_callerClassName,
                         calleeClassName
-                )
+                ),
+                false
         );
 
         // emit the joinpoint
@@ -483,9 +485,10 @@ public class ConstructorCallVisitor extends ClassVisitor implements Transformati
     public void visitMethodInsn(final int opcode,
                                 final String calleeClassName,
                                 final String calleeMethodName,
-                                final String calleeMethodDesc) {
+                                final String calleeMethodDesc,
+                                final boolean itf) {
       // make sure to call super first to compute post object initialization flag
-      super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc);
+      super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc, itf);
 
       if (INIT_METHOD_NAME.equals(calleeMethodName) && opcode == INVOKESPECIAL) {
         if (!m_isObjectInitialized) {

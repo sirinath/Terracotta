@@ -12,7 +12,7 @@ import com.tc.asm.Type;
 
 public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements Opcodes {
   public ReentrantReadWriteLockClassAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -48,7 +48,7 @@ public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements 
     mv.visitLabel(l0);
     mv.visitLineNumber(258, l0);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z");
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z", false);
     Label l1 = new Label();
     mv.visitJumpInsn(IFEQ, l1);
     Label l2 = new Label();
@@ -56,7 +56,7 @@ public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements 
     mv.visitLineNumber(259, l2);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "java/util/concurrent/locks/ReentrantReadWriteLock", "sync", "Ljava/util/concurrent/locks/ReentrantReadWriteLock$Sync;");
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "queueLength", "(Ljava/lang/Object;)I");
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "queueLength", "(Ljava/lang/Object;)I", false);
     mv.visitInsn(ret.getOpcode(IRETURN));
     mv.visitLabel(l1);
     mv.visitLineNumber(261, l1);
@@ -65,7 +65,7 @@ public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements 
     for (int i = 0; i < params.length; i++) {
       mv.visitVarInsn(params[i].getOpcode(ILOAD), i + 1);
     }
-    mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/locks/ReentrantReadWriteLock", getNewName(methodName), methodDesc);
+    mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/locks/ReentrantReadWriteLock", getNewName(methodName), methodDesc, false);
     mv.visitInsn(ret.getOpcode(IRETURN));
     Label l4 = new Label();
     mv.visitLabel(l4);
@@ -81,7 +81,7 @@ public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements 
     mv.visitLabel(l0);
     mv.visitLineNumber(258, l0);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z");
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z", false);
     Label l1 = new Label();
     mv.visitJumpInsn(IFEQ, l1);
     Label l2 = new Label();
@@ -89,7 +89,7 @@ public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements 
     mv.visitLineNumber(259, l2);
     mv.visitTypeInsn(NEW, "com/tc/exception/TCNotSupportedMethodException");
     mv.visitInsn(DUP);
-    mv.visitMethodInsn(INVOKESPECIAL, "com/tc/exception/TCNotSupportedMethodException", "<init>", "()V");
+    mv.visitMethodInsn(INVOKESPECIAL, "com/tc/exception/TCNotSupportedMethodException", "<init>", "()V", false);
     mv.visitInsn(ATHROW);
     mv.visitLabel(l1);
     mv.visitLineNumber(261, l1);
@@ -98,7 +98,7 @@ public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements 
     for (int i = 0; i < params.length; i++) {
       mv.visitVarInsn(params[i].getOpcode(ILOAD), i + 1);
     }
-    mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/locks/ReentrantReadWriteLock", getNewName(methodName), methodDesc);
+    mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/locks/ReentrantReadWriteLock", getNewName(methodName), methodDesc, false);
     mv.visitInsn(ret.getOpcode(IRETURN));
     Label l4 = new Label();
     mv.visitLabel(l4);
@@ -114,7 +114,7 @@ public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements 
     mv.visitLabel(l0);
     mv.visitLineNumber(258, l0);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z");
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z", false);
     Label l1 = new Label();
     mv.visitJumpInsn(IFEQ, l1);
     Label l2 = new Label();
@@ -122,7 +122,7 @@ public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements 
     mv.visitLineNumber(259, l2);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "java/util/concurrent/locks/ReentrantReadWriteLock", "sync", "Ljava/util/concurrent/locks/ReentrantReadWriteLock$Sync;");
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "queueLength", "(Ljava/lang/Object;)I");
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "queueLength", "(Ljava/lang/Object;)I", false);
     Label l3 = new Label();
     mv.visitJumpInsn(IFLE, l3);
     mv.visitInsn(ICONST_1);
@@ -137,7 +137,7 @@ public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements 
     for (int i = 0; i < params.length; i++) {
       mv.visitVarInsn(params[i].getOpcode(ILOAD), i + 1);
     }
-    mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/locks/ReentrantReadWriteLock", getNewName(methodName), methodDesc);
+    mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/locks/ReentrantReadWriteLock", getNewName(methodName), methodDesc, false);
     mv.visitInsn(ret.getOpcode(IRETURN));
     Label l4 = new Label();
     mv.visitLabel(l4);
@@ -147,7 +147,7 @@ public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements 
   
   private final static class InitMethodAdapter extends MethodVisitor implements Opcodes {
     public InitMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
     
     @Override
@@ -165,7 +165,7 @@ public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements 
     }
     
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
       if (opcode == INVOKESPECIAL) {
         if ("java/util/concurrent/locks/ReentrantReadWriteLock$NonfairSync".equals(owner) &&
           "<init>".equals(name) && "()V".equals(desc)) {
@@ -186,7 +186,7 @@ public class ReentrantReadWriteLockClassAdapter extends ClassVisitor implements 
           desc = "(Ljava/util/concurrent/locks/ReentrantReadWriteLock;Ljava/util/concurrent/locks/ReentrantReadWriteLock$Sync;)V";
         }
       }
-      super.visitMethodInsn(opcode, owner, name, desc);
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
     }
   }
 }

@@ -15,7 +15,7 @@ public class StringBufferAdapter extends ClassVisitor implements Opcodes {
   private final VmVersion version;
 
   public StringBufferAdapter(ClassVisitor cv, VmVersion version) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     this.version = version;
   }
 
@@ -45,7 +45,7 @@ public class StringBufferAdapter extends ClassVisitor implements Opcodes {
     mv.visitLabel(l1);
     mv.visitLineNumber(13, l1);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "setShared", "()V");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "setShared", "()V", false);
     Label l2 = new Label();
     mv.visitLabel(l2);
     mv.visitLineNumber(14, l2);
@@ -56,7 +56,7 @@ public class StringBufferAdapter extends ClassVisitor implements Opcodes {
     mv.visitFieldInsn(GETFIELD, "java/lang/StringBuffer", "count", "I");
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "java/lang/StringBuffer", "value", "[C");
-    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/String", "<init>", "(II[C)V");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/String", "<init>", "(II[C)V", false);
     mv.visitVarInsn(ALOAD, 1);
     mv.visitInsn(MONITOREXIT);
     Label l3 = new Label();
@@ -84,7 +84,7 @@ public class StringBufferAdapter extends ClassVisitor implements Opcodes {
     private final VmVersion       version;
 
     public FixUp(ClassVisitor cv, VmVersion version) {
-      super(Opcodes.ASM4, cv);
+      super(Opcodes.ASM5, cv);
       this.version = version;
     }
 
@@ -106,9 +106,9 @@ public class StringBufferAdapter extends ClassVisitor implements Opcodes {
     // from the ThreadLocal
     private static class CloneCharArrayFixup extends MethodVisitor {
       public CloneCharArrayFixup(MethodVisitor mv) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM5, mv);
         mv.visitVarInsn(ALOAD, 1);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "clone", "()Ljava/lang/Object;");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "clone", "()Ljava/lang/Object;", false);
         mv.visitTypeInsn(CHECKCAST, "[C");
         mv.visitVarInsn(ASTORE, 1);
       }

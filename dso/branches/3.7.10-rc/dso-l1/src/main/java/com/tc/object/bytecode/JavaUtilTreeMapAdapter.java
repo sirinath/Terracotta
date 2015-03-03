@@ -14,7 +14,7 @@ import java.lang.reflect.Modifier;
 public class JavaUtilTreeMapAdapter extends ClassVisitor implements Opcodes {
 
   public JavaUtilTreeMapAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -37,7 +37,8 @@ public class JavaUtilTreeMapAdapter extends ClassVisitor implements Opcodes {
     mv.visitCode();
     mv.visitVarInsn(ALOAD, 0);
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKESPECIAL, "java/util/TreeMap", "getEntry", "(Ljava/lang/Object;)Ljava/util/TreeMap$Entry;");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/util/TreeMap", "getEntry", "(Ljava/lang/Object;)Ljava/util/TreeMap$Entry;",
+                       false);
     mv.visitVarInsn(ASTORE, 2);
     mv.visitVarInsn(ALOAD, 2);
     Label entryNotNull = new Label();
@@ -48,16 +49,16 @@ public class JavaUtilTreeMapAdapter extends ClassVisitor implements Opcodes {
     mv.visitTypeInsn(NEW, "java/util/TreeMap$Entry");
     mv.visitInsn(DUP);
     mv.visitVarInsn(ALOAD, 2);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/TreeMap$Entry", "getKey", "()Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/TreeMap$Entry", "getKey", "()Ljava/lang/Object;", false);
     mv.visitVarInsn(ALOAD, 2);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/TreeMap$Entry", "getValue", "()Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/TreeMap$Entry", "getValue", "()Ljava/lang/Object;", false);
     mv.visitInsn(ACONST_NULL);
     mv.visitMethodInsn(INVOKESPECIAL, "java/util/TreeMap$Entry", "<init>",
-                       "(Ljava/lang/Object;Ljava/lang/Object;Ljava/util/TreeMap$Entry;)V");
+                       "(Ljava/lang/Object;Ljava/lang/Object;Ljava/util/TreeMap$Entry;)V", false);
     mv.visitVarInsn(ASTORE, 3);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitVarInsn(ALOAD, 2);
-    mv.visitMethodInsn(INVOKESPECIAL, "java/util/TreeMap", "deleteEntry", "(Ljava/util/TreeMap$Entry;)V");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/util/TreeMap", "deleteEntry", "(Ljava/util/TreeMap$Entry;)V", false);
     mv.visitVarInsn(ALOAD, 3);
     mv.visitInsn(ARETURN);
     mv.visitMaxs(0, 0);
@@ -67,7 +68,7 @@ public class JavaUtilTreeMapAdapter extends ClassVisitor implements Opcodes {
   private static class WriteObjectAdapter extends MethodVisitor implements Opcodes {
 
     public WriteObjectAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -75,9 +76,9 @@ public class JavaUtilTreeMapAdapter extends ClassVisitor implements Opcodes {
       if (opcode == GETFIELD) {
         if ("java/util/TreeMap$Entry".equals(owner)) {
           if ("key".equals(name)) {
-            mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map$Entry", "getKey", "()Ljava/lang/Object;");
+            mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map$Entry", "getKey", "()Ljava/lang/Object;", true);
           } else if ("value".equals(name)) {
-            mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map$Entry", "getValue", "()Ljava/lang/Object;");
+            mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map$Entry", "getValue", "()Ljava/lang/Object;", true);
           } else {
             throw new AssertionError("unknown field name: " + name);
           }

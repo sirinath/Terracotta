@@ -68,7 +68,8 @@ public class FieldSetJoinPointCompiler extends AbstractJoinPointCompiler {
             INVOKESTATIC,
             SIGNATURE_FACTORY_CLASS,
             NEW_FIELD_SIGNATURE_METHOD_NAME,
-            NEW_FIELD_SIGNATURE_METHOD_SIGNATURE
+            NEW_FIELD_SIGNATURE_METHOD_SIGNATURE,
+            false
     );
     cv.visitFieldInsn(PUTSTATIC, m_joinPointClassName, SIGNATURE_FIELD_NAME, FIELD_SIGNATURE_IMPL_CLASS_SIGNATURE);
   }
@@ -112,9 +113,9 @@ public class FieldSetJoinPointCompiler extends AbstractJoinPointCompiler {
       sig.append(')');
       sig.append('V');
       if (Modifier.isStatic(m_calleeMemberModifiers)) {
-        cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, joinPointName, sig.toString());
+        cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, joinPointName, sig.toString(), false);
       } else {
-        cv.visitMethodInsn(INVOKEVIRTUAL, m_calleeClassName, joinPointName, sig.toString());
+        cv.visitMethodInsn(INVOKEVIRTUAL, m_calleeClassName, joinPointName, sig.toString(), false);
       }
     }
 
@@ -157,9 +158,9 @@ public class FieldSetJoinPointCompiler extends AbstractJoinPointCompiler {
       putFieldWrapperDesc.append(')');
       putFieldWrapperDesc.append('V');
       if (Modifier.isStatic(m_calleeMemberModifiers)) {
-        cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, joinPointName, putFieldWrapperDesc.toString());
+        cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, joinPointName, putFieldWrapperDesc.toString(), false);
       } else {
-        cv.visitMethodInsn(INVOKEVIRTUAL, m_calleeClassName, joinPointName, putFieldWrapperDesc.toString());
+        cv.visitMethodInsn(INVOKEVIRTUAL, m_calleeClassName, joinPointName, putFieldWrapperDesc.toString(), false);
       }
     }
 
@@ -199,7 +200,7 @@ public class FieldSetJoinPointCompiler extends AbstractJoinPointCompiler {
     cv.visitVarInsn(ALOAD, 0);
     cv.visitFieldInsn(GETFIELD, m_joinPointClassName, CALLEE_INSTANCE_FIELD_NAME, m_calleeClassSignature);
     cv.visitMethodInsn(
-            INVOKESPECIAL, FIELD_RTTI_IMPL_CLASS_NAME, INIT_METHOD_NAME, FIELD_RTTI_IMPL_INIT_SIGNATURE
+            INVOKESPECIAL, FIELD_RTTI_IMPL_CLASS_NAME, INIT_METHOD_NAME, FIELD_RTTI_IMPL_INIT_SIGNATURE, false
     );
 
     // set the value
@@ -217,7 +218,8 @@ public class FieldSetJoinPointCompiler extends AbstractJoinPointCompiler {
             INVOKEVIRTUAL,
             FIELD_RTTI_IMPL_CLASS_NAME,
             SET_FIELD_VALUE_METHOD_NAME,
-            SET_FIELD_VALUE_METHOD_SIGNATURE
+            SET_FIELD_VALUE_METHOD_SIGNATURE, 
+            false
     );
 
     cv.visitInsn(ARETURN);

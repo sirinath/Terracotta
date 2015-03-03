@@ -37,7 +37,7 @@ public class PerCflowXAspectFactoryCompiler extends LazyPerXFactoryCompiler {
 
     m_clinit.visitTypeInsn(NEW, MAP_CLASS_NAME);
     m_clinit.visitInsn(DUP);
-    m_clinit.visitMethodInsn(INVOKESPECIAL, "java/util/WeakHashMap", INIT_METHOD_NAME, "()V");
+    m_clinit.visitMethodInsn(INVOKESPECIAL, "java/util/WeakHashMap", INIT_METHOD_NAME, "()V", false);
     m_clinit.visitFieldInsn(PUTSTATIC, m_aspectFactoryClassName, "ASPECTS", MAP_CLASS_SIGNATURE);
 
     MethodVisitor cv = m_cw.visitMethod(
@@ -50,7 +50,7 @@ public class PerCflowXAspectFactoryCompiler extends LazyPerXFactoryCompiler {
 
     cv.visitFieldInsn(GETSTATIC, m_aspectFactoryClassName, "ASPECTS", MAP_CLASS_SIGNATURE);
     cv.visitVarInsn(ALOAD, 0);//Thread
-    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, "getDefault", "(Ljava/lang/Object;)Ljava/lang/Object;");
+    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, "getDefault", "(Ljava/lang/Object;)Ljava/lang/Object;", true);
     cv.visitVarInsn(ASTORE, 1);
     cv.visitVarInsn(ALOAD, 1);
     Label ifBound = new Label();
@@ -63,7 +63,8 @@ public class PerCflowXAspectFactoryCompiler extends LazyPerXFactoryCompiler {
             INVOKESPECIAL,
             NO_ASPECT_BOUND_EXCEPTION_CLASS_NAME,
             INIT_METHOD_NAME,
-            "(Ljava/lang/String;Ljava/lang/String;)V"
+            "(Ljava/lang/String;Ljava/lang/String;)V",
+            false
     );
     cv.visitInsn(ATHROW);
 
@@ -81,10 +82,10 @@ public class PerCflowXAspectFactoryCompiler extends LazyPerXFactoryCompiler {
             null
     );
     cv.visitMethodInsn(
-            INVOKESTATIC, Type.getInternalName(Thread.class), "currentThread", "()Ljava/lang/Thread;"
+            INVOKESTATIC, Type.getInternalName(Thread.class), "currentThread", "()Ljava/lang/Thread;", false
     );
     cv.visitMethodInsn(
-            INVOKESTATIC, m_aspectFactoryClassName, "aspectOf", "(Ljava/lang/Thread;)" + getXSignature()
+            INVOKESTATIC, m_aspectFactoryClassName, "aspectOf", "(Ljava/lang/Thread;)" + getXSignature(), false
     );
     cv.visitInsn(ARETURN);
     cv.visitMaxs(0, 0);
@@ -114,20 +115,22 @@ public class PerCflowXAspectFactoryCompiler extends LazyPerXFactoryCompiler {
               INVOKEINTERFACE,
               Type.getInternalName(AspectContainer.class),
               "aspectOf",
-              "(" + getXSignature() + ")Ljava/lang/Object;"
+              "(" + getXSignature() + ")Ljava/lang/Object;",
+              true
       );
       cv.visitTypeInsn(CHECKCAST, m_aspectClassName);
     } else {
       cv.visitTypeInsn(NEW, m_aspectClassName);
       cv.visitInsn(DUP);
-      cv.visitMethodInsn(INVOKESPECIAL, m_aspectClassName, INIT_METHOD_NAME, "()V");
+      cv.visitMethodInsn(INVOKESPECIAL, m_aspectClassName, INIT_METHOD_NAME, "()V", false);
     }
     cv.visitVarInsn(ALOAD, 0);//Thread
     cv.visitMethodInsn(
             INVOKEINTERFACE,
             MAP_CLASS_NAME,
             "put",
-            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"
+            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+            true
     );
     cv.visitInsn(POP);
     cv.visitInsn(RETURN);
@@ -145,7 +148,7 @@ public class PerCflowXAspectFactoryCompiler extends LazyPerXFactoryCompiler {
 
     cv.visitFieldInsn(GETSTATIC, m_aspectFactoryClassName, "ASPECTS", MAP_CLASS_SIGNATURE);
     cv.visitVarInsn(ALOAD, 0);//Thread
-    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, "remove", "(Ljava/lang/Object;)Ljava/lang/Object;");
+    cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, "remove", "(Ljava/lang/Object;)Ljava/lang/Object;", true);
     cv.visitInsn(POP);
     cv.visitInsn(RETURN);
     cv.visitMaxs(0, 0);

@@ -41,7 +41,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
   // MemberInfo memberInfo, String originalName) {
   public TransparencyCodeAdapter(InstrumentationSpec spec, LockDefinition autoLockDefinition, MethodVisitor mv,
                                  MemberInfo memberInfo, String originalName) {
-    super(Opcodes.ASM4, new ExceptionTableOrderingMethodAdapter(mv), memberInfo.getModifiers(), originalName,
+    super(Opcodes.ASM5, new ExceptionTableOrderingMethodAdapter(mv), memberInfo.getModifiers(), originalName,
           memberInfo.getSignature());
     this.spec = spec;
     this.isAutolock = autoLockDefinition != null;
@@ -77,65 +77,65 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
   }
 
   @Override
-  public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+  public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
     if (spec.hasDelegatedToLogicalClass() && isConstructor) {
-      logicalInitVisitMethodInsn(opcode, owner, name, desc);
+      logicalInitVisitMethodInsn(opcode, owner, name, desc, itf);
     } else {
-      basicVisitMethodInsn(opcode, owner, name, desc);
+      basicVisitMethodInsn(opcode, owner, name, desc, itf);
     }
   }
 
-  private void logicalInitVisitMethodInsn(int opcode, String owner, String name, String desc) {
+  private void logicalInitVisitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
     String superClassNameSlashes = spec.getSuperClassNameSlashes();
     if (!logicalInitVisited && INVOKESPECIAL == opcode && owner.equals(superClassNameSlashes) && "<init>".equals(name)) {
       logicalInitVisited = true;
       int[] localVariablesForMethodCall = storeStackValuesToLocalVariables(desc);
       loadLocalVariables(desc, localVariablesForMethodCall);
-      super.visitMethodInsn(opcode, owner, name, desc);
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       super.visitVarInsn(ALOAD, 0);
       super.visitTypeInsn(NEW, spec.getSuperClassNameSlashes());
       super.visitInsn(DUP);
       loadLocalVariables(desc, localVariablesForMethodCall);
 
       String delegateFieldName = ClassAdapterBase.getDelegateFieldName(superClassNameSlashes);
-      super.visitMethodInsn(INVOKESPECIAL, superClassNameSlashes, "<init>", desc);
+      super.visitMethodInsn(INVOKESPECIAL, superClassNameSlashes, "<init>", desc, itf);
       super.visitMethodInsn(INVOKESPECIAL, spec.getClassNameSlashes(),
-                            ByteCodeUtil.fieldSetterMethod(delegateFieldName), "(L" + superClassNameSlashes + ";)V");
+                            ByteCodeUtil.fieldSetterMethod(delegateFieldName), "(L" + superClassNameSlashes + ";)V", false);
 
     } else {
-      basicVisitMethodInsn(opcode, owner, name, desc);
+      basicVisitMethodInsn(opcode, owner, name, desc, itf);
     }
   }
 
-  private void basicVisitMethodInsn(int opcode, String classname, String theMethodName, String desc) {
-    if (handleSubclassOfLogicalClassMethodInsn(opcode, classname, theMethodName, desc)) { return; }
+  private void basicVisitMethodInsn(int opcode, String classname, String theMethodName, String desc, boolean itf) {
+    if (handleSubclassOfLogicalClassMethodInsn(opcode, classname, theMethodName, desc, itf)) { return; }
 
     if ("clone".equals(theMethodName)) {
-      if (handleCloneCall(opcode, classname, theMethodName, desc)) { return; }
+      if (handleCloneCall(opcode, classname, theMethodName, desc, itf)) { return; }
     }
 
     if (codeSpec.isArraycopyInstrumentationReq(classname, theMethodName)) {
       rewriteArraycopy();
     } else if (classname.equals("java/lang/Object")) {
-      handleJavaLangObjectMethodCall(opcode, classname, theMethodName, desc);
+      handleJavaLangObjectMethodCall(opcode, classname, theMethodName, desc, itf);
     } else if (classname.equals("java/lang/String") && "intern".equals(theMethodName)) {
       super.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", ByteCodeUtil.TC_METHOD_PREFIX + "intern",
-                            "()Ljava/lang/String;");
+                            "()Ljava/lang/String;", false);
     } else {
-      super.visitMethodInsn(opcode, classname, theMethodName, desc);
+      super.visitMethodInsn(opcode, classname, theMethodName, desc, itf);
     }
   }
 
-  private boolean handleSubclassOfLogicalClassMethodInsn(int opcode, String classname, String theMethodName, String desc) {
+  private boolean handleSubclassOfLogicalClassMethodInsn(int opcode, String classname, String theMethodName, String desc, boolean itf) {
     if (!spec.hasDelegatedToLogicalClass()) { return false; }
     String logicalExtendingClassName = spec.getSuperClassNameSlashes();
     if (INVOKESPECIAL == opcode && !spec.getClassNameSlashes().equals(classname) && !"<init>".equals(theMethodName)) {
       spec.shouldProceedInstrumentation(memberInfo.getModifiers(), theMethodName, desc);
       int[] localVariablesForMethodCall = storeStackValuesToLocalVariables(desc);
       super.visitMethodInsn(INVOKESPECIAL, spec.getClassNameSlashes(), ByteCodeUtil.fieldGetterMethod(ClassAdapterBase
-          .getDelegateFieldName(logicalExtendingClassName)), "()L" + logicalExtendingClassName + ";");
+          .getDelegateFieldName(logicalExtendingClassName)), "()L" + logicalExtendingClassName + ";", false);
       loadLocalVariables(desc, localVariablesForMethodCall);
-      super.visitMethodInsn(INVOKEVIRTUAL, logicalExtendingClassName, theMethodName, desc);
+      super.visitMethodInsn(INVOKEVIRTUAL, logicalExtendingClassName, theMethodName, desc, false);
       return true;
     }
     return false;
@@ -149,11 +149,11 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     callArrayManagerMethod("arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V");
   }
 
-  private void handleJavaLangObjectMethodCall(int opcode, String classname, String theMethodName, String desc) {
+  private void handleJavaLangObjectMethodCall(int opcode, String classname, String theMethodName, String desc, boolean itf) {
     if (handleJavaLangObjectWaitNotifyCalls(opcode, classname, theMethodName, desc)) {
       return;
     } else {
-      super.visitMethodInsn(opcode, classname, theMethodName, desc);
+      super.visitMethodInsn(opcode, classname, theMethodName, desc, itf);
     }
   }
 
@@ -182,7 +182,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
    * @return
    * @see AbstractMap and HashMap
    */
-  private boolean handleCloneCall(int opcode, String classname, String theMethodName, String desc) {
+  private boolean handleCloneCall(int opcode, String classname, String theMethodName, String desc, boolean itf) {
     if ("clone".equals(theMethodName) && "()Ljava/lang/Object;".equals(desc)
         && (classname.startsWith("[") || classname.equals("java/lang/Object"))) {
       Type objectType = Type.getObjectType("java/lang/Object");
@@ -201,25 +201,25 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
       super.visitTryCatchBlock(l2, l3, l2, null);
       super.visitVarInsn(ALOAD, refToBeCloned);
       super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "lookupExistingOrNull",
-                            "(Ljava/lang/Object;)Lcom/tc/object/TCObjectExternal;");
+                            "(Ljava/lang/Object;)Lcom/tc/object/TCObjectExternal;", false);
       super.visitVarInsn(ASTORE, ref2);
       super.visitVarInsn(ALOAD, ref2);
       Label l8 = new Label();
       super.visitJumpInsn(IFNULL, l8);
       super.visitVarInsn(ALOAD, ref2);
       super
-          .visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObjectExternal", "getResolveLock", "()Ljava/lang/Object;");
+          .visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObjectExternal", "getResolveLock", "()Ljava/lang/Object;", true);
       super.visitInsn(DUP);
       super.visitVarInsn(ASTORE, ref3);
       super.visitInsn(MONITORENTER);
       super.visitLabel(l0);
       super.visitVarInsn(ALOAD, ref2);
-      super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObjectExternal", "resolveAllReferences", "()V");
+      super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObjectExternal", "resolveAllReferences", "()V", true);
       super.visitVarInsn(ALOAD, refToBeCloned);
       super.visitVarInsn(ALOAD, refToBeCloned);
-      super.visitMethodInsn(opcode, classname, theMethodName, desc);
+      super.visitMethodInsn(opcode, classname, theMethodName, desc, itf);
       super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/CloneUtil", "fixTCObjectReferenceOfClonedObject",
-                            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+                            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", false);
       super.visitVarInsn(ASTORE, ref1);
       super.visitVarInsn(ALOAD, ref3);
       super.visitInsn(MONITOREXIT);
@@ -233,7 +233,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
       super.visitInsn(ATHROW);
       super.visitLabel(l8);
       super.visitVarInsn(ALOAD, refToBeCloned);
-      super.visitMethodInsn(opcode, classname, theMethodName, desc);
+      super.visitMethodInsn(opcode, classname, theMethodName, desc, itf);
       super.visitVarInsn(ASTORE, ref1);
       super.visitLabel(l12);
       super.visitVarInsn(ALOAD, ref1);
@@ -302,7 +302,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
   private void callTCBeginWithLock(LockDefinition lock, MethodVisitor c) {
     c.visitLdcInsn(ByteCodeUtil.generateNamedLockName(lock.getLockName()));
     c.visitLdcInsn(Integer.valueOf(lock.getLockLevelAsInt()));
-    c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "beginLock", "(Ljava/lang/String;I)V");
+    c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "beginLock", "(Ljava/lang/String;I)V", false);
   }
 
   private void callTCCommit(MethodVisitor c) {
@@ -311,7 +311,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
       if (!locks[i].isAutolock()) {
         c.visitLdcInsn(ByteCodeUtil.generateNamedLockName(locks[i].getLockName()));
         c.visitLdcInsn(Integer.valueOf(locks[i].getLockLevelAsInt()));
-        c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "commitLock", "(Ljava/lang/String;I)V");
+        c.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "commitLock", "(Ljava/lang/String;I)V", false);
       }
     }
   }
@@ -319,12 +319,12 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
   private void callMonitorEnterWithContextInfo() {
     super.visitLdcInsn(Integer.valueOf(autoLockType));
     // super.visitLdcInsn(autoLockContextInfo);
-    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "instrumentationMonitorEnter", "(Ljava/lang/Object;I)V");
+    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "instrumentationMonitorEnter", "(Ljava/lang/Object;I)V", false);
   }
 
   private void callMonitorExit() {
     super.visitLdcInsn(Integer.valueOf(autoLockType));
-    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "instrumentationMonitorExit", "(Ljava/lang/Object;I)V");
+    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "instrumentationMonitorExit", "(Ljava/lang/Object;I)V", false);
   }
 
   private void visitInsnForReadLock(int opCode) {
@@ -332,7 +332,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
       case MONITORENTER:
         super.visitInsn(DUP);
         super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isDsoMonitored",
-                              "(Ljava/lang/Object;)Z");
+                              "(Ljava/lang/Object;)Z", false);
         Label l1 = new Label();
         super.visitJumpInsn(IFEQ, l1);
         callMonitorEnterWithContextInfo();
@@ -345,7 +345,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
       case MONITOREXIT:
         super.visitInsn(DUP);
         super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isDsoMonitorEntered",
-                              "(Ljava/lang/Object;)Z");
+                              "(Ljava/lang/Object;)Z", false);
         Label l3 = new Label();
         super.visitJumpInsn(IFEQ, l3);
         callMonitorExit();
@@ -410,7 +410,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
           super.visitJumpInsn(IFNULL, notManaged); // ..., array, index, tcobj
           super.visitInsn(DUP); // ..., array, index, tcobj, tcobj
           super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObjectExternal", "getResolveLock",
-                                "()Ljava/lang/Object;"); // ...,
+                                "()Ljava/lang/Object;", true); // ...,
           // array,
           // index,
           // tcobj,
@@ -423,7 +423,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
           super.visitLabel(lockedStart); // ..., array, index, tcobj
           super.visitInsn(DUP2); // ..., array, index, tcobj, index, tcobj
           super.visitInsn(SWAP); // ..., array, index, tcobj, tcobj, index
-          super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObjectExternal", "resolveArrayReference", "(I)V"); // ...,
+          super.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/TCObjectExternal", "resolveArrayReference", "(I)V", true); // ...,
           // array,
           // index,
           // tcobj
@@ -484,7 +484,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
   }
 
   private void callArrayManagerMethod(String name, String desc) {
-    super.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, name, desc);
+    super.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, name, desc, false);
   }
 
   @Override
@@ -511,11 +511,11 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
         return;
       } else if (opcode == PUTSTATIC && isRoot(classname, fieldName)) {
         String sDesc = "(" + desc + ")V";
-        visitMethodInsn(INVOKESTATIC, classname, ByteCodeUtil.fieldSetterMethod(fieldName), sDesc);
+        visitMethodInsn(INVOKESTATIC, classname, ByteCodeUtil.fieldSetterMethod(fieldName), sDesc, false);
         return;
       } else if (opcode == GETSTATIC && isRoot(classname, fieldName)) {
         String gDesc = "()" + desc;
-        visitMethodInsn(INVOKESTATIC, classname, ByteCodeUtil.fieldGetterMethod(fieldName), gDesc);
+        visitMethodInsn(INVOKESTATIC, classname, ByteCodeUtil.fieldGetterMethod(fieldName), gDesc, false);
         return;
       }
       super.visitFieldInsn(opcode, classname, fieldName, desc);
@@ -547,7 +547,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     // System.err.println("Unchecked :: My class : " + spec.getClassNameSlashes() + " set on : " + classname + " field :
     // " + fieldName);
     String sDesc = "(" + desc + ")V";
-    visitMethodInsn(INVOKEVIRTUAL, classname, ByteCodeUtil.fieldSetterMethod(fieldName), sDesc);
+    visitMethodInsn(INVOKEVIRTUAL, classname, ByteCodeUtil.fieldSetterMethod(fieldName), sDesc, false);
   }
 
   /**
@@ -564,11 +564,11 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     swap(reference, fieldType);
     super.visitInsn(DUP);
     Label l1 = new Label();
-    super.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
-    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "isPhysicallyInstrumented", "(Ljava/lang/Class;)Z");
+    super.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "isPhysicallyInstrumented", "(Ljava/lang/Class;)Z", false);
     super.visitJumpInsn(IFEQ, l1);
     swap(fieldType, reference);
-    visitMethodInsn(INVOKEVIRTUAL, classname, ByteCodeUtil.fieldSetterMethod(fieldName), sDesc);
+    visitMethodInsn(INVOKEVIRTUAL, classname, ByteCodeUtil.fieldSetterMethod(fieldName), sDesc, false);
     Label l2 = new Label();
     super.visitJumpInsn(GOTO, l2);
     super.visitLabel(l1);
@@ -600,7 +600,7 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     // System.err.println("Unchecked :: My class: " + spec.getClassNameSlashes() + " get on : " + classname + " field :
     // " + fieldName);
     String gDesc = "()" + desc;
-    visitMethodInsn(INVOKEVIRTUAL, classname, ByteCodeUtil.fieldGetterMethod(fieldName), gDesc);
+    visitMethodInsn(INVOKEVIRTUAL, classname, ByteCodeUtil.fieldGetterMethod(fieldName), gDesc, false);
   }
 
   /**
@@ -611,10 +611,10 @@ public class TransparencyCodeAdapter extends AdviceAdapter implements Opcodes {
     String gDesc = "()" + desc;
     super.visitInsn(DUP);
     Label l1 = new Label();
-    super.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
-    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "isPhysicallyInstrumented", "(Ljava/lang/Class;)Z");
+    super.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+    visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "isPhysicallyInstrumented", "(Ljava/lang/Class;)Z", false);
     super.visitJumpInsn(IFEQ, l1);
-    visitMethodInsn(INVOKEVIRTUAL, classname, ByteCodeUtil.fieldGetterMethod(fieldName), gDesc);
+    visitMethodInsn(INVOKEVIRTUAL, classname, ByteCodeUtil.fieldGetterMethod(fieldName), gDesc, false);
     Label l2 = new Label();
     super.visitJumpInsn(GOTO, l2);
     super.visitLabel(l1);

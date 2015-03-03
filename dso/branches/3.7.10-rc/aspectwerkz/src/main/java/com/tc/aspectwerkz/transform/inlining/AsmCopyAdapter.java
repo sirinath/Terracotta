@@ -26,7 +26,7 @@ public class AsmCopyAdapter {
     private final AnnotationVisitor m_to;
 
     public CopyAnnotationAdapter(AnnotationVisitor from, AnnotationVisitor copyTo) {
-      super(Opcodes.ASM4);
+      super(Opcodes.ASM5);
       m_from = from;
       m_to = copyTo;
     }

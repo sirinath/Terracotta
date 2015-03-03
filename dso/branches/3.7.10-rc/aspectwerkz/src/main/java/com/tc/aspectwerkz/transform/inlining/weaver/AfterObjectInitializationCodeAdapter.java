@@ -23,7 +23,7 @@ public class AfterObjectInitializationCodeAdapter extends MethodVisitor implemen
   protected boolean m_isObjectInitialized = false;
 
   public AfterObjectInitializationCodeAdapter(MethodVisitor cv, String callerMemberName) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     m_callerMemberName = callerMemberName;
     // object initialization matters within constructors only
     if (!m_callerMemberName.equals(INIT_METHOD_NAME)) {
@@ -69,7 +69,8 @@ public class AfterObjectInitializationCodeAdapter extends MethodVisitor implemen
   public void visitMethodInsn(final int opcode,
                               final String calleeClassName,
                               final String calleeMethodName,
-                              final String calleeMethodDesc) {
+                              final String calleeMethodDesc,
+                              final boolean itf) {
     if (opcode == INVOKESPECIAL) {
       m_invokeSpecialCount++;
     }
@@ -87,6 +88,6 @@ public class AfterObjectInitializationCodeAdapter extends MethodVisitor implemen
         }
       }
     }
-    super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc);
+    super.visitMethodInsn(opcode, calleeClassName, calleeMethodName, calleeMethodDesc, itf);
   }
 }

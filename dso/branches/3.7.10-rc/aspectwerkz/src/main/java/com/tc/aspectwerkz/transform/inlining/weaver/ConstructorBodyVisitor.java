@@ -51,7 +51,7 @@ public class ConstructorBodyVisitor extends ClassVisitor implements Transformati
                                 final ClassInfo classInfo,
                                 final InstrumentationContext ctx,
                                 final Set addedMethods) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     m_calleeClassInfo = classInfo;
     m_ctx = (InstrumentationContext) ctx;
     m_addedMethods = addedMethods;
@@ -166,7 +166,8 @@ public class ConstructorBodyVisitor extends ClassVisitor implements Transformati
             INVOKE_METHOD_NAME,
             TransformationUtil.getInvokeSignatureForCodeJoinPoints(
                     access, desc, m_declaringTypeName, m_declaringTypeName
-            )
+            ),
+            false
     );
 
     // emit the joinpoint
@@ -235,7 +236,7 @@ public class ConstructorBodyVisitor extends ClassVisitor implements Transformati
 
     public DispatchCtorBodyCodeAdapter(MethodVisitor proxyCtor, MethodVisitor ctorBodyMethod, final int access,
                                        final String desc) {
-      super(Opcodes.ASM4, proxyCtor);
+      super(Opcodes.ASM5, proxyCtor);
       m_proxyCtorMethodVisitor = proxyCtor;
       m_ctorBodyMethodMethodVisitor = ctorBodyMethod;
       m_constructorAccess = access;
@@ -296,12 +297,13 @@ public class ConstructorBodyVisitor extends ClassVisitor implements Transformati
     public void visitMethodInsn(int opcode,
                                 String owner,
                                 String name,
-                                String desc) {
+                                String desc,
+                                boolean itf) {
       if (!m_proxyCtorCodeDone) {
         if (opcode == INVOKESPECIAL) {
           if (m_newCount == 0) {
             // first INVOKESPECIAL encountered to <init> for a NON new XXX()
-            m_proxyCtorMethodVisitor.visitMethodInsn(opcode, owner, name, desc);
+            m_proxyCtorMethodVisitor.visitMethodInsn(opcode, owner, name, desc, itf);
             // insert the JoinPoint invocation
             insertJoinPointInvoke(m_proxyCtorMethodVisitor, m_constructorAccess, m_constructorDesc);
             m_proxyCtorMethodVisitor.visitInsn(RETURN);
@@ -315,13 +317,13 @@ public class ConstructorBodyVisitor extends ClassVisitor implements Transformati
             }
           } else {
             m_newCount--;
-            mv.visitMethodInsn(opcode, owner, name, desc);
+            mv.visitMethodInsn(opcode, owner, name, desc, itf);
           }
         } else {
-          mv.visitMethodInsn(opcode, owner, name, desc);
+          mv.visitMethodInsn(opcode, owner, name, desc, itf);
         }
       } else {
-        mv.visitMethodInsn(opcode, owner, name, desc);
+        mv.visitMethodInsn(opcode, owner, name, desc, itf);
       }
     }
 

@@ -53,11 +53,11 @@ public class NamedLoaderAdapter extends ClassVisitor implements Opcodes, ClassAd
   private String              owner;
 
   public NamedLoaderAdapter() {
-    super(Opcodes.ASM4);
+    super(Opcodes.ASM5);
   }
 
   private NamedLoaderAdapter(ClassVisitor cv, ClassLoader caller) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -97,17 +97,17 @@ public class NamedLoaderAdapter extends ClassVisitor implements Opcodes, ClassAd
     mv.visitTypeInsn(NEW, "java/lang/StringBuffer");
     mv.visitInsn(DUP);
     mv.visitLdcInsn(CLASSLOADER_NAME_NOT_SET_PREFIX);
-    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuffer", "<init>", "(Ljava/lang/String;)V");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuffer", "<init>", "(Ljava/lang/String;)V", false);
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;", false);
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
+                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);
     mv.visitLdcInsn(CLASSLOADER_NAME_NOT_SET_SUFFIX);
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append",
-                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "toString", "()Ljava/lang/String;");
-    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalStateException", "<init>", "(Ljava/lang/String;)V");
+                       "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "toString", "()Ljava/lang/String;", false);
+    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalStateException", "<init>", "(Ljava/lang/String;)V", false);
     mv.visitInsn(ATHROW);
     mv.visitLabel(l1);
     mv.visitVarInsn(ALOAD, 0);

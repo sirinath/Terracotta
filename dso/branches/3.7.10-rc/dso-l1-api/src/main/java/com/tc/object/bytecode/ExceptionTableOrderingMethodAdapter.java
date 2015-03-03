@@ -43,7 +43,7 @@ public class ExceptionTableOrderingMethodAdapter extends MethodVisitor {
   private int locals;
 
   public ExceptionTableOrderingMethodAdapter(MethodVisitor mv) {
-    super(Opcodes.ASM4, mv);
+    super(Opcodes.ASM5, mv);
   }
 
   /**

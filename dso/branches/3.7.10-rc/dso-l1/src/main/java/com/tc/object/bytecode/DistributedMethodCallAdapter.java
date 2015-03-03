@@ -28,6 +28,7 @@ public class DistributedMethodCallAdapter implements MethodAdapter, Opcodes {
     this.runOnAllNodes = runOnAllNodes;
   }
 
+  @Override
   public MethodVisitor adapt(ClassVisitor classVisitor) {
     final String newMethodName = ByteCodeUtil.DMI_METHOD_RENAME_PREFIX + methodName;
     MethodVisitor codeVisitor = classVisitor.visitMethod(access, newMethodName, description, signature, exceptions);
@@ -57,7 +58,7 @@ public class DistributedMethodCallAdapter implements MethodAdapter, Opcodes {
     // call the renamed method and store it's return value
     mv.visitVarInsn(ALOAD, 0);
     ByteCodeUtil.pushMethodArguments(access, description, mv);
-    mv.visitMethodInsn(INVOKEVIRTUAL, className.replace('.', '/'), newMethodName, description);
+    mv.visitMethodInsn(INVOKEVIRTUAL, className.replace('.', '/'), newMethodName, description, false);
     final Type rvType = Type.getReturnType(description);
     final boolean returnVoid = rvType == Type.VOID_TYPE;
     if (!returnVoid) mv.visitVarInsn(rvType.getOpcode(ISTORE), rvPos);
@@ -80,7 +81,7 @@ public class DistributedMethodCallAdapter implements MethodAdapter, Opcodes {
     mv.visitVarInsn(ILOAD, boolPos);
     Label l7 = new Label();
     mv.visitJumpInsn(IFEQ, l7);
-    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "distributedMethodCallCommit", "()V");
+    mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "distributedMethodCallCommit", "()V", false);
     mv.visitLabel(l7);
     mv.visitVarInsn(RET, pcPos);
     mv.visitMaxs(0, 0);
@@ -97,17 +98,19 @@ public class DistributedMethodCallAdapter implements MethodAdapter, Opcodes {
     ByteCodeUtil.createParametersToArrayByteCode(mv, Type.getArgumentTypes(desc));
     if (runOnAllNodes) {
       mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "distributedMethodCall",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)Z");      
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)Z", false);
     } else {
-      mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "prunedDistributedMethodCall", 
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)Z");            
+      mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "prunedDistributedMethodCall",
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)Z", false);
     }
   }
 
+  @Override
   public boolean doesOriginalNeedAdapting() {
     return true;
   }
 
+  @Override
   public void initialize(int anAccess, String aClassName, String aMethodName,
                          String aOriginalMethodName, String aDescription, String sig, String[] anExceptions,
                          InstrumentationLogger logger, MemberInfo info) {

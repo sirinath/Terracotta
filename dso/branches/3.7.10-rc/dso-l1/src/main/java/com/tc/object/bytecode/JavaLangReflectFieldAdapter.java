@@ -33,11 +33,11 @@ public class JavaLangReflectFieldAdapter extends ClassVisitor implements Opcodes
   }
 
   public JavaLangReflectFieldAdapter() {
-    super(Opcodes.ASM4);
+    super(Opcodes.ASM5);
   }
   
   private JavaLangReflectFieldAdapter(ClassVisitor cv, ClassLoader caller) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -77,8 +77,8 @@ public class JavaLangReflectFieldAdapter extends ClassVisitor implements Opcodes
     mv.visitVarInsn(ALOAD, 0);
     mv.visitVarInsn(ALOAD, 1);
     mv.visitMethodInsn(INVOKESPECIAL, "java/lang/reflect/Field", "getFieldAccessor",
-                       "(Ljava/lang/Object;)Lsun/reflect/FieldAccessor;");
-    mv.visitMethodInsn(INVOKESTATIC, FieldUtils.CLASS, name, FieldUtils.GET_DESC + returnType.getDescriptor());
+                       "(Ljava/lang/Object;)Lsun/reflect/FieldAccessor;", false);
+    mv.visitMethodInsn(INVOKESTATIC, FieldUtils.CLASS, name, FieldUtils.GET_DESC + returnType.getDescriptor(), false);
     mv.visitInsn(returnType.getOpcode(IRETURN));
     mv.visitMaxs(0, 0);
     mv.visitEnd();
@@ -89,7 +89,7 @@ public class JavaLangReflectFieldAdapter extends ClassVisitor implements Opcodes
     private final String desc;
     
     public FieldSetterMethodAdapter(MethodVisitor mv, String name, String desc) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
       this.name = name;
       this.desc = desc;
     }
@@ -102,7 +102,7 @@ public class JavaLangReflectFieldAdapter extends ClassVisitor implements Opcodes
       super.visitVarInsn(ALOAD, 1);
       super.visitVarInsn(type.getOpcode(ILOAD), 2);
       super.visitVarInsn(ALOAD, 0);
-      super.visitMethodInsn(INVOKESTATIC, FieldUtils.CLASS, name, getFieldUtilsSetterDesc(desc));
+      super.visitMethodInsn(INVOKESTATIC, FieldUtils.CLASS, name, getFieldUtilsSetterDesc(desc), false);
       super.visitJumpInsn(IFEQ, notSet);
       super.visitInsn(RETURN);
       super.visitLabel(notSet);

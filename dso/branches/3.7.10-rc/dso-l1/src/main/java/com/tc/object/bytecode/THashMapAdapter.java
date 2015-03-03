@@ -29,14 +29,14 @@ public class THashMapAdapter {
       mv.visitLineNumber(468, l0);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKEINTERFACE, "gnu/trove/TObjectFunction", "execute", "(Ljava/lang/Object;)Ljava/lang/Object;");
+      mv.visitMethodInsn(INVOKEINTERFACE, "gnu/trove/TObjectFunction", "execute", "(Ljava/lang/Object;)Ljava/lang/Object;", true);
       mv.visitVarInsn(ASTORE, 4);
       Label l1 = new Label();
       mv.visitLabel(l1);
       mv.visitLineNumber(469, l1);
       mv.visitVarInsn(ALOAD, 4);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "equals", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false);
       Label l2 = new Label();
       mv.visitJumpInsn(IFNE, l2);
       Label l3 = new Label();
@@ -54,7 +54,7 @@ public class THashMapAdapter {
       mv.visitInsn(ICONST_1);
       mv.visitVarInsn(ALOAD, 4);
       mv.visitInsn(AASTORE);
-      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke", "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke", "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
       mv.visitLabel(l2);
       mv.visitLineNumber(472, l2);
       mv.visitVarInsn(ALOAD, 4);
@@ -73,23 +73,24 @@ public class THashMapAdapter {
     private static class Adapter extends MethodVisitor implements Opcodes {
 
       public Adapter(MethodVisitor mv) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM5, mv);
       }
       
       @Override
       public void visitCode() {
         super.visitCode();
         ByteCodeUtil.pushThis(mv);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "gnu/trove/THashMap", "__tc_managed", "()Lcom/tc/object/TCObject;");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "gnu/trove/THashMap", "__tc_managed", "()Lcom/tc/object/TCObject;", false);
         Label l1 = new Label();
         mv.visitJumpInsn(IFNULL, l1);
         ByteCodeUtil.pushThis(mv);
-        mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "checkWriteAccess", "(Ljava/lang/Object;)V");
+        mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "checkWriteAccess",
+                           "(Ljava/lang/Object;)V", false);
         mv.visitLabel(l1);
       }
 
       @Override
-      public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+      public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
         if ((opcode == INVOKEINTERFACE) && "gnu/trove/TObjectFunction".equals(owner) && "execute".equals(name) &&
             "(Ljava/lang/Object;)Ljava/lang/Object;".equals(desc)) {
           mv.visitVarInsn(ALOAD, 0);
@@ -99,8 +100,9 @@ public class THashMapAdapter {
           opcode = INVOKESTATIC;
           owner = "gnu/trove/THashMap";
           desc = STATIC_EXECUTE_DESC;
+          itf = false;
         }
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
       }
     }
   }

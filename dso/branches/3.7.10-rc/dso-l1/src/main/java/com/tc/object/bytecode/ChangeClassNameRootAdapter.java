@@ -148,7 +148,7 @@ public class ChangeClassNameRootAdapter extends ChangeClassNameHierarchyAdapter 
 
   private class ChangeClassNameMethodAdapter extends MethodVisitor implements Opcodes {
     public ChangeClassNameMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -173,7 +173,7 @@ public class ChangeClassNameRootAdapter extends ChangeClassNameHierarchyAdapter 
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
       ChangeContext context = (ChangeContext) instrumentedContext.get(owner);
       if (context != null) {
         owner = context.convertedClassNameSlashes;
@@ -185,7 +185,7 @@ public class ChangeClassNameRootAdapter extends ChangeClassNameHierarchyAdapter 
       desc = replaceInnerClassName(replaceClassNameInner(desc, srcClassNameSlashes, targetClassNameSlashes),
                                    srcInnerClassName, targetInnerClassName);
 
-      super.visitMethodInsn(opcode, owner, name, desc);
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
     }
 
     @Override

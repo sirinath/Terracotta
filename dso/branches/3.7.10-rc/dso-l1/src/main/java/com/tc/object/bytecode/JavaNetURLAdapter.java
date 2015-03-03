@@ -19,7 +19,7 @@ public class JavaNetURLAdapter extends ClassVisitor implements Opcodes {
   public final static String TCSET_LOGICAL_METHOD_NAME = "__tc_set_logical";
   
   public JavaNetURLAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -76,7 +76,7 @@ public class JavaNetURLAdapter extends ClassVisitor implements Opcodes {
     mv.visitJumpInsn(IFNONNULL, labelHandlerNotNull);
     mv.visitVarInsn(ALOAD, 0);
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKESTATIC, Type.getInternalName(URL.class), "getURLStreamHandler", "(Ljava/lang/String;)Ljava/net/URLStreamHandler;");
+    mv.visitMethodInsn(INVOKESTATIC, Type.getInternalName(URL.class), "getURLStreamHandler", "(Ljava/lang/String;)Ljava/net/URLStreamHandler;", false);
     mv.visitFieldInsn(PUTFIELD, Type.getInternalName(URL.class), "handler", "Ljava/net/URLStreamHandler;");
     mv.visitLabel(labelHandlerNotNull);
     
@@ -90,7 +90,7 @@ public class JavaNetURLAdapter extends ClassVisitor implements Opcodes {
     mv.visitVarInsn(ALOAD, 6);
     mv.visitVarInsn(ALOAD, 7);
     mv.visitVarInsn(ALOAD, 8);
-    mv.visitMethodInsn(INVOKEVIRTUAL, Type.getInternalName(URL.class), TCSET_METHOD_NAME, "(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+    mv.visitMethodInsn(INVOKEVIRTUAL, Type.getInternalName(URL.class), TCSET_METHOD_NAME, "(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", false);
 
     // synchronization
     mv.visitVarInsn(ALOAD, 9);

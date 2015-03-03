@@ -55,7 +55,7 @@ public class StaticInitializationJoinPointCompiler extends AbstractJoinPointComp
     cv.visitMethodInsn(INVOKESTATIC,
             SIGNATURE_FACTORY_CLASS,
             NEW_STATICINITIALIZATION_SIGNATURE_METHOD_NAME,
-            NEW_STATICINITIALIZATION_SIGNATURE_METHOD_SIGNATURE);
+            NEW_STATICINITIALIZATION_SIGNATURE_METHOD_SIGNATURE, false);
     cv.visitFieldInsn(PUTSTATIC,
             m_joinPointClassName,
             SIGNATURE_FIELD_NAME,
@@ -75,7 +75,7 @@ public class StaticInitializationJoinPointCompiler extends AbstractJoinPointComp
                                                   final CompilerInput input) {
     String joinPointName = TransformationUtil.getPrefixedOriginalClinitName(m_calleeClassName);
 
-    cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, joinPointName, m_calleeMemberDesc);
+    cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, joinPointName, m_calleeMemberDesc, false);
   }
 
   /**
@@ -88,7 +88,7 @@ public class StaticInitializationJoinPointCompiler extends AbstractJoinPointComp
 
     // load the target instance member field unless calleeMember is static
     String joinPointName = TransformationUtil.getPrefixedOriginalClinitName(m_calleeClassName);
-    cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, joinPointName, m_calleeMemberDesc);
+    cv.visitMethodInsn(INVOKESTATIC, m_calleeClassName, joinPointName, m_calleeMemberDesc, false);
   }
 
   /**
@@ -130,7 +130,7 @@ public class StaticInitializationJoinPointCompiler extends AbstractJoinPointComp
     cv.visitMethodInsn(INVOKESPECIAL,
             STATICINITIALIZATION_RTTI_IMPL_CLASS_NAME,
             INIT_METHOD_NAME,
-            STATICINITIALIZATION_RTTI_IMPL_INIT_SIGNATURE
+            STATICINITIALIZATION_RTTI_IMPL_INIT_SIGNATURE, false
     );
 
     cv.visitInsn(ARETURN);

@@ -46,7 +46,7 @@ public class MethodExecutionJoinPointRedefiner extends MethodExecutionJoinPointC
             }
     );
     AsmHelper.loadArgumentTypes(cv, Type.getArgumentTypes(invokeDesc), true);
-    cv.visitMethodInsn(INVOKESTATIC, m_redefinedModel.getJoinPointClassName(), INVOKE_METHOD_NAME, invokeDesc);
+    cv.visitMethodInsn(INVOKESTATIC, m_redefinedModel.getJoinPointClassName(), INVOKE_METHOD_NAME, invokeDesc, false);
     AsmHelper.addReturnStatement(cv, Type.getReturnType(invokeDesc));
     cv.visitMaxs(0, 0);
   }
