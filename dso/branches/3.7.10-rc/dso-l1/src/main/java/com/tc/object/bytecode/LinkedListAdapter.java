@@ -34,7 +34,7 @@ public class LinkedListAdapter {
       }
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/LinkedList", "remove", "(Ljava/util/LinkedList$Entry;)" + retType);
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/LinkedList", "remove", "(Ljava/util/LinkedList$Entry;)" + retType, false);
       if (hasReturnValue) {
         mv.visitVarInsn(ASTORE, 3);
       }
@@ -50,7 +50,7 @@ public class LinkedListAdapter {
       mv.visitVarInsn(ALOAD, hasReturnValue ? 3 : 4);
       mv.visitInsn(AASTORE);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
       mv.visitLabel(notShared);
       if (hasReturnValue) {
         mv.visitVarInsn(ALOAD, 3);
@@ -80,7 +80,7 @@ public class LinkedListAdapter {
     private static class Adapter extends MethodVisitor implements Opcodes {
 
       public Adapter(MethodVisitor mv) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM5, mv);
       }
 
       @Override
@@ -88,7 +88,7 @@ public class LinkedListAdapter {
         super.visitCode();
 
         ByteCodeUtil.pushThis(this);
-        super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z");
+        super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z", false);
         super.visitVarInsn(ISTORE, 4);
 
         super.visitVarInsn(ILOAD, 4);
@@ -96,12 +96,12 @@ public class LinkedListAdapter {
         super.visitJumpInsn(IFEQ, notShared);
         ByteCodeUtil.pushThis(this);
         super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "checkWriteAccess",
-                              "(Ljava/lang/Object;)V");
+                              "(Ljava/lang/Object;)V", false);
         super.visitLabel(notShared);
       }
 
       @Override
-      public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+      public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
         if (opcode == INVOKESPECIAL && "remove".equals(name) && "java/util/LinkedList".equals(owner)
             && desc.startsWith("(Ljava/util/LinkedList$Entry;)")) {
 
@@ -110,7 +110,7 @@ public class LinkedListAdapter {
           super.visitVarInsn(ILOAD, 4);
         }
 
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
       }
     }
 
@@ -132,7 +132,7 @@ public class LinkedListAdapter {
     private static class Adapter extends MethodVisitor implements Opcodes {
 
       public Adapter(MethodVisitor mv) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM5, mv);
         mv.visitTypeInsn(NEW, "com/tc/util/ListIteratorWrapper");
         mv.visitInsn(DUP);
         mv.visitVarInsn(ALOAD, 0);
@@ -142,7 +142,7 @@ public class LinkedListAdapter {
       public void visitInsn(int opcode) {
         if (ARETURN == opcode) {
           mv.visitMethodInsn(INVOKESPECIAL, "com/tc/util/ListIteratorWrapper", "<init>",
-                             "(Ljava/util/List;Ljava/util/ListIterator;)V");
+                             "(Ljava/util/List;Ljava/util/ListIterator;)V", false);
         }
         super.visitInsn(opcode);
       }

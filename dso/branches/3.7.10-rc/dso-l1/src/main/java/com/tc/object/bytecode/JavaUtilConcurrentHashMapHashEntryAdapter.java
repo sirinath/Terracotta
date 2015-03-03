@@ -19,7 +19,7 @@ public class JavaUtilConcurrentHashMapHashEntryAdapter extends ClassVisitor impl
   static final String         GET_VALUE_RAW                = PREFIX + "getValueRaw";
   
   public JavaUtilConcurrentHashMapHashEntryAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -56,7 +56,7 @@ public class JavaUtilConcurrentHashMapHashEntryAdapter extends ClassVisitor impl
       mv.visitCode();
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_0);
-      mv.visitMethodInsn(INVOKESPECIAL, THIS_TYPE, GET_VALUE, "(Z)Ljava/lang/Object;");
+      mv.visitMethodInsn(INVOKESPECIAL, THIS_TYPE, GET_VALUE, "(Z)Ljava/lang/Object;", false);
       mv.visitInsn(ARETURN);
       mv.visitMaxs(0, 0);
       mv.visitEnd();
@@ -67,7 +67,7 @@ public class JavaUtilConcurrentHashMapHashEntryAdapter extends ClassVisitor impl
       mv.visitCode();
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_1);
-      mv.visitMethodInsn(INVOKESPECIAL, THIS_TYPE, GET_VALUE, "(Z)Ljava/lang/Object;");
+      mv.visitMethodInsn(INVOKESPECIAL, THIS_TYPE, GET_VALUE, "(Z)Ljava/lang/Object;", false);
       mv.visitInsn(ARETURN);
       mv.visitMaxs(0, 0);
       mv.visitEnd();
@@ -102,7 +102,7 @@ public class JavaUtilConcurrentHashMapHashEntryAdapter extends ClassVisitor impl
     mv.visitVarInsn(ALOAD, 2);
     mv.visitTypeInsn(CHECKCAST, "com/tc/object/ObjectID");
     mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "lookupObject",
-                       "(Lcom/tc/object/ObjectID;)Ljava/lang/Object;");
+                       "(Lcom/tc/object/ObjectID;)Ljava/lang/Object;", false);
     mv.visitVarInsn(ASTORE, 2);
     mv.visitVarInsn(ILOAD, 1);
     Label l5 = new Label();

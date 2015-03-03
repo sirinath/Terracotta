@@ -15,11 +15,11 @@ public class JavaUtilConcurrentLocksAQSAdapter extends ClassVisitor implements C
   public static final String TC_STAGE_CHANGED_DESC = "(I)V";
 
   public JavaUtilConcurrentLocksAQSAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   public JavaUtilConcurrentLocksAQSAdapter() {
-    super(Opcodes.ASM4);
+    super(Opcodes.ASM5);
   }
 
   @Override
@@ -56,7 +56,7 @@ public class JavaUtilConcurrentLocksAQSAdapter extends ClassVisitor implements C
   private static class CompareAndSetStateAdapter extends MethodVisitor implements Opcodes {
 
     public CompareAndSetStateAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -69,7 +69,7 @@ public class JavaUtilConcurrentLocksAQSAdapter extends ClassVisitor implements C
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ILOAD, 2);
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/AbstractQueuedSynchronizer", TC_STAGE_CHANGED,
-                           TC_STAGE_CHANGED_DESC);
+                           TC_STAGE_CHANGED_DESC, false);
         mv.visitLabel(returningFalse);
         mv.visitVarInsn(ILOAD, 3);
       }
@@ -83,7 +83,7 @@ public class JavaUtilConcurrentLocksAQSAdapter extends ClassVisitor implements C
   private static class SetStateAdapter extends MethodVisitor implements Opcodes {
 
     public SetStateAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -92,7 +92,7 @@ public class JavaUtilConcurrentLocksAQSAdapter extends ClassVisitor implements C
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ILOAD, 1);
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/AbstractQueuedSynchronizer", TC_STAGE_CHANGED,
-                           TC_STAGE_CHANGED_DESC);
+                           TC_STAGE_CHANGED_DESC, false);
       }
       super.visitInsn(opcode);
     }

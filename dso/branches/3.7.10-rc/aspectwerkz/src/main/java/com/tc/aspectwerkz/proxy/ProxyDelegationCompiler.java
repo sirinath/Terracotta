@@ -149,7 +149,7 @@ public class ProxyDelegationCompiler implements TransformationConstants {
               null
       );
       init.visitVarInsn(ALOAD, 0);
-      init.visitMethodInsn(INVOKESPECIAL, OBJECT_CLASS_NAME, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE);
+      init.visitMethodInsn(INVOKESPECIAL, OBJECT_CLASS_NAME, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false);
       for (int i = 0; i < interfaceClassNames.length; i++) {
         init.visitVarInsn(ALOAD, 0);
         init.visitVarInsn(ALOAD, 1 + i);
@@ -195,7 +195,8 @@ public class ProxyDelegationCompiler implements TransformationConstants {
               INVOKEINTERFACE,
               m_interfaceClassNames[currentInterfaceIndex],
               name,
-              desc
+              desc,
+              true
       );
       AsmHelper.addReturnStatement(cv, Type.getReturnType(desc));
       cv.visitMaxs(0, 0);

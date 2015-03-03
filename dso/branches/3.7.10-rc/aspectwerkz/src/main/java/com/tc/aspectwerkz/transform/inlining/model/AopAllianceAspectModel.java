@@ -130,7 +130,7 @@ public class AopAllianceAspectModel implements AspectModel, TransformationConsta
               new String[]{THROWABLE_CLASS_NAME}
       );
       cv.visitVarInsn(ALOAD, 0);
-      cv.visitMethodInsn(INVOKEVIRTUAL, className, PROCEED_METHOD_NAME, PROCEED_METHOD_SIGNATURE);
+      cv.visitMethodInsn(INVOKEVIRTUAL, className, PROCEED_METHOD_NAME, PROCEED_METHOD_SIGNATURE, false);
       cv.visitInsn(ARETURN);
       cv.visitMaxs(0, 0);
     }
@@ -147,7 +147,7 @@ public class AopAllianceAspectModel implements AspectModel, TransformationConsta
       cv.visitTypeInsn(CHECKCAST, METHOD_SIGNATURE_IMPL_CLASS_NAME);
       cv.visitMethodInsn(
               INVOKEVIRTUAL, METHOD_SIGNATURE_IMPL_CLASS_NAME, GET_METHOD_METHOD_NAME,
-              GET_METHOD_METHOD_SIGNATURE
+              GET_METHOD_METHOD_SIGNATURE, false
       );
       cv.visitInsn(ARETURN);
       cv.visitMaxs(1, 1);
@@ -166,7 +166,7 @@ public class AopAllianceAspectModel implements AspectModel, TransformationConsta
       cv.visitTypeInsn(CHECKCAST, METHOD_SIGNATURE_IMPL_CLASS_NAME);
       cv.visitMethodInsn(
               INVOKEVIRTUAL, METHOD_SIGNATURE_IMPL_CLASS_NAME, GET_METHOD_METHOD_NAME,
-              GET_METHOD_METHOD_SIGNATURE
+              GET_METHOD_METHOD_SIGNATURE, false
       );
       cv.visitInsn(ARETURN);
       cv.visitMaxs(1, 1);
@@ -181,13 +181,14 @@ public class AopAllianceAspectModel implements AspectModel, TransformationConsta
               null, null
       );
       cv.visitVarInsn(ALOAD, 0);
-      cv.visitMethodInsn(INVOKESPECIAL, className, GET_RTTI_METHOD_NAME, GET_RTTI_METHOD_SIGNATURE);
+      cv.visitMethodInsn(INVOKESPECIAL, className, GET_RTTI_METHOD_NAME, GET_RTTI_METHOD_SIGNATURE, false);
       cv.visitTypeInsn(CHECKCAST, METHOD_RTTI_IMPL_CLASS_NAME);
       cv.visitMethodInsn(
               INVOKEVIRTUAL,
               METHOD_RTTI_IMPL_CLASS_NAME,
               GET_PARAMETER_VALUES_METHOD_NAME,
-              GET_ARGUMENTS_METHOD_SIGNATURE
+              GET_ARGUMENTS_METHOD_SIGNATURE,
+              false
       );
       cv.visitInsn(ARETURN);
       cv.visitMaxs(1, 1);

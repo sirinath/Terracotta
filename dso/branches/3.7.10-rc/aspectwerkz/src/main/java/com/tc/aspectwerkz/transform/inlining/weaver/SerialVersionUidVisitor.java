@@ -104,7 +104,7 @@ public class SerialVersionUidVisitor extends ClassVisitor implements Opcodes {
   }
 
   SerialVersionUidVisitor(final ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   /**
@@ -428,7 +428,7 @@ public class SerialVersionUidVisitor extends ClassVisitor implements Opcodes {
     private ClassInfo m_classInfo;
 
     public Add(ClassVisitor classVisitor, InstrumentationContext ctx, ClassInfo classInfo) {
-      super(Opcodes.ASM4, classVisitor);
+      super(Opcodes.ASM5, classVisitor);
       m_ctx = ctx;
       m_classInfo = classInfo;
     }

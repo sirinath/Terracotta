@@ -45,7 +45,7 @@ public class HashMapClassAdapter extends ClassVisitor implements Opcodes {
   private final String entrySetMethodName;
 
   public HashMapClassAdapter(ClassVisitor cv, String entrySetMethodName) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
     this.entrySetMethodName = entrySetMethodName;
   }
 
@@ -62,7 +62,7 @@ public class HashMapClassAdapter extends ClassVisitor implements Opcodes {
 
   private final static class EntrySetMethodAdapter extends MethodVisitor implements Opcodes {
     public EntrySetMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     /**
@@ -86,7 +86,8 @@ public class HashMapClassAdapter extends ClassVisitor implements Opcodes {
         mv.visitInsn(DUP);
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ALOAD, 1);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap$EntrySetWrapper", "<init>", "(Ljava/util/HashMap;Ljava/util/Set;)V");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap$EntrySetWrapper", "<init>",
+                           "(Ljava/util/HashMap;Ljava/util/Set;)V", false);
       }
       super.visitInsn(opcode);
     }

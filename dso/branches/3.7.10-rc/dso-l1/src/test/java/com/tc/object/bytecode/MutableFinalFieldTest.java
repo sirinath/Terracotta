@@ -75,7 +75,7 @@ public class MutableFinalFieldTest extends TCTestCase {
   private static class Adapter extends ClassVisitor implements Opcodes {
 
     public Adapter(ClassVisitor cv) {
-      super(Opcodes.ASM4, cv);
+      super(Opcodes.ASM5, cv);
     }
 
     @Override

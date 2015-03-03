@@ -19,7 +19,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
     //private final static String MANAGED_RELEASE_SHARED                      = "managedReleaseShared";
 
     public JavaUtilConcurrentFutureTaskSyncClassAdapter(ClassVisitor cv) {
-      super(Opcodes.ASM4, cv);
+      super(Opcodes.ASM5, cv);
     }
 
     @Override
@@ -82,20 +82,20 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       Label l0 = new Label();
       mv.visitLabel(l0);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I", false);
       mv.visitVarInsn(ISTORE, 2);
       Label l1 = new Label();
       mv.visitLabel(l1);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ILOAD, 2);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z", false);
       Label l2 = new Label();
       mv.visitJumpInsn(IFEQ, l2);
       mv.visitInsn(RETURN);
       mv.visitLabel(l2);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "setState", "(I)V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "setState", "(I)V", false);
       Label l3 = new Label();
       mv.visitLabel(l3);
       mv.visitVarInsn(ALOAD, 0);
@@ -104,13 +104,13 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       Label l4 = new Label();
       mv.visitLabel(l4);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "managedTryReleaseShared", "()Z");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "managedTryReleaseShared", "()Z", false);
       mv.visitInsn(POP);
       Label l5 = new Label();
       mv.visitLabel(l5);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "this$0", "Ljava/util/concurrent/FutureTask;");
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask", "done", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask", "done", "()V", false);
       Label l6 = new Label();
       mv.visitLabel(l6);
       mv.visitInsn(RETURN);
@@ -125,7 +125,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       Label l0 = new Label();
       mv.visitLabel(l0);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "managedTryReleaseShared", "()Z");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "managedTryReleaseShared", "()Z", false);
       mv.visitInsn(POP);
       Label l1 = new Label();
       mv.visitLabel(l1);
@@ -169,18 +169,19 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_0);
       mv.visitInsn(ICONST_1);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "compareAndSetState", "(II)Z");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "compareAndSetState", "(II)Z", false);
       Label l17 = new Label();
       mv.visitJumpInsn(IFNE, l17);
       mv.visitInsn(RETURN);
       mv.visitLabel(l17);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "this$0", "Ljava/util/concurrent/FutureTask;");
-      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z",
+                         false);
       mv.visitJumpInsn(IFEQ, l14);
       mv.visitLabel(l12);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;");
+      mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
       mv.visitFieldInsn(PUTFIELD, "java/util/concurrent/FutureTask$Sync", "runner", "Ljava/lang/Thread;");
       Label l18 = new Label();
       mv.visitLabel(l18);
@@ -197,7 +198,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "runner", "Ljava/lang/Thread;");
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "toString", "()Ljava/lang/String;");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "toString", "()Ljava/lang/String;", false);
       mv.visitFieldInsn(PUTFIELD, "java/util/concurrent/FutureTask$Sync", "proxyRunner", "Ljava/lang/Object;");
       Label l20 = new Label();
       mv.visitLabel(l20);
@@ -207,7 +208,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLdcInsn("InnerRun state1: ");
       mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I", false);
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;");
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V");
@@ -215,7 +216,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       Label l21 = new Label();
       mv.visitLabel(l21);
       mv.visitLdcInsn(Long.valueOf(10L));
-      mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "sleep", "(J)V");
+      mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "sleep", "(J)V", false);
       Label l22 = new Label();
       mv.visitLabel(l22);
       mv.visitFieldInsn(GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
@@ -224,7 +225,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLdcInsn("InnerRun state2: ");
       mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I", false);
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;");
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V");
@@ -232,7 +233,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       Label l23 = new Label();
       mv.visitLabel(l23);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I", false);
       mv.visitInsn(ICONST_1);
       Label l24 = new Label();
       mv.visitJumpInsn(IF_ICMPNE, l24);
@@ -263,7 +264,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l29);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "callable", "Ljava/util/concurrent/Callable;");
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/Callable", "call", "()Ljava/lang/Object;");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/Callable", "call", "()Ljava/lang/Object;", true);
       mv.visitVarInsn(ASTORE, 2);
       Label l30 = new Label();
       mv.visitLabel(l30);
@@ -275,7 +276,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l4);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "managedInnerSet", "(Ljava/lang/Object;)V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "managedInnerSet", "(Ljava/lang/Object;)V", false);
       Label l31 = new Label();
       mv.visitLabel(l31);
       mv.visitVarInsn(ALOAD, 3);
@@ -297,7 +298,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitInsn(MONITORENTER);
       mv.visitLabel(l8);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "managedTryReleaseShared", "()Z");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "managedTryReleaseShared", "()Z", false);
       mv.visitInsn(POP);
       Label l33 = new Label();
       mv.visitLabel(l33);
@@ -323,21 +324,21 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l35);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "innerSetException", "(Ljava/lang/Throwable;)V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "innerSetException", "(Ljava/lang/Throwable;)V", false);
       Label l36 = new Label();
       mv.visitLabel(l36);
       mv.visitJumpInsn(GOTO, l32);
       mv.visitLabel(l14);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;");
+      mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
       mv.visitFieldInsn(PUTFIELD, "java/util/concurrent/FutureTask$Sync", "runner", "Ljava/lang/Thread;");
       Label l37 = new Label();
       mv.visitLabel(l37);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "callable", "Ljava/util/concurrent/Callable;");
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/Callable", "call", "()Ljava/lang/Object;");
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "innerSet", "(Ljava/lang/Object;)V");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/Callable", "call", "()Ljava/lang/Object;", true);
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "innerSet", "(Ljava/lang/Object;)V", false);
       mv.visitJumpInsn(GOTO, l32);
       mv.visitLabel(l15);
       mv.visitVarInsn(ASTORE, 1);
@@ -345,7 +346,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l38);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "innerSetException", "(Ljava/lang/Throwable;)V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "innerSetException", "(Ljava/lang/Throwable;)V", false);
       mv.visitLabel(l32);
       mv.visitInsn(RETURN);
       Label l39 = new Label();
@@ -367,7 +368,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l4);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "this$0", "Ljava/util/concurrent/FutureTask;");
-      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z", false);
       Label l5 = new Label();
       mv.visitJumpInsn(IFEQ, l5);
       Label l6 = new Label();
@@ -380,8 +381,8 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l0);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I");
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I", false);
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z", false);
       Label l7 = new Label();
       mv.visitJumpInsn(IFEQ, l7);
       mv.visitVarInsn(ALOAD, 0);
@@ -405,8 +406,8 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l5);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I");
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I", false);
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z", false);
       Label l9 = new Label();
       mv.visitJumpInsn(IFEQ, l9);
       mv.visitVarInsn(ALOAD, 0);
@@ -445,7 +446,8 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l10);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "this$0", "Ljava/util/concurrent/FutureTask;");
-      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z",
+                         false);
       Label l11 = new Label();
       mv.visitJumpInsn(IFEQ, l11);
       Label l12 = new Label();
@@ -457,13 +459,13 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitInsn(MONITORENTER);
       mv.visitLabel(l0);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I", false);
       mv.visitVarInsn(ISTORE, 3);
       Label l13 = new Label();
       mv.visitLabel(l13);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ILOAD, 3);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z", false);
       mv.visitJumpInsn(IFEQ, l3);
       mv.visitVarInsn(ALOAD, 2);
       mv.visitInsn(MONITOREXIT);
@@ -472,7 +474,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l3);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "setState", "(I)V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "setState", "(I)V", false);
       Label l14 = new Label();
       mv.visitLabel(l14);
       mv.visitVarInsn(ALOAD, 0);
@@ -486,13 +488,13 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       Label l16 = new Label();
       mv.visitLabel(l16);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "managedTryReleaseShared", "()Z");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "managedTryReleaseShared", "()Z", false);
       mv.visitInsn(POP);
       Label l17 = new Label();
       mv.visitLabel(l17);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "this$0", "Ljava/util/concurrent/FutureTask;");
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask", "done", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask", "done", "()V", false);
       Label l18 = new Label();
       mv.visitLabel(l18);
       mv.visitVarInsn(ALOAD, 2);
@@ -510,13 +512,13 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitJumpInsn(GOTO, l19);
       mv.visitLabel(l11);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I", false);
       mv.visitVarInsn(ISTORE, 2);
       Label l21 = new Label();
       mv.visitLabel(l21);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ILOAD, 2);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z", false);
       Label l22 = new Label();
       mv.visitJumpInsn(IFEQ, l22);
       mv.visitInsn(RETURN);
@@ -524,7 +526,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ILOAD, 2);
       mv.visitInsn(ICONST_2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "compareAndSetState", "(II)Z");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "compareAndSetState", "(II)Z", false);
       mv.visitJumpInsn(IFEQ, l11);
       Label l23 = new Label();
       mv.visitJumpInsn(GOTO, l23);
@@ -550,7 +552,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l6);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "releaseShared", "(I)Z");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "releaseShared", "(I)Z", false);
       mv.visitInsn(POP);
       Label l27 = new Label();
       mv.visitLabel(l27);
@@ -567,7 +569,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l28);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "this$0", "Ljava/util/concurrent/FutureTask;");
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask", "done", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask", "done", "()V", false);
       mv.visitLabel(l19);
       mv.visitInsn(RETURN);
       Label l29 = new Label();
@@ -595,7 +597,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l8);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "this$0", "Ljava/util/concurrent/FutureTask;");
-      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z", false);
       Label l9 = new Label();
       mv.visitJumpInsn(IFEQ, l9);
       Label l10 = new Label();
@@ -608,7 +610,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l0);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "managedInnerSet", "(Ljava/lang/Object;)V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "managedInnerSet", "(Ljava/lang/Object;)V", false);
       Label l11 = new Label();
       mv.visitLabel(l11);
       mv.visitVarInsn(ALOAD, 2);
@@ -624,13 +626,13 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitJumpInsn(GOTO, l12);
       mv.visitLabel(l9);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I", false);
       mv.visitVarInsn(ISTORE, 2);
       Label l13 = new Label();
       mv.visitLabel(l13);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ILOAD, 2);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z", false);
       Label l14 = new Label();
       mv.visitJumpInsn(IFEQ, l14);
       mv.visitInsn(RETURN);
@@ -638,7 +640,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ILOAD, 2);
       mv.visitInsn(ICONST_2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "compareAndSetState", "(II)Z");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "compareAndSetState", "(II)Z", false);
       mv.visitJumpInsn(IFEQ, l9);
       Label l15 = new Label();
       mv.visitJumpInsn(GOTO, l15);
@@ -659,7 +661,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l4);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "releaseShared", "(I)Z");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "releaseShared", "(I)Z", false);
       mv.visitInsn(POP);
       Label l18 = new Label();
       mv.visitLabel(l18);
@@ -676,7 +678,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l19);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "this$0", "Ljava/util/concurrent/FutureTask;");
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask", "done", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask", "done", "()V", false);
       mv.visitLabel(l12);
       mv.visitInsn(RETURN);
       Label l20 = new Label();
@@ -698,7 +700,8 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l4);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "this$0", "Ljava/util/concurrent/FutureTask;");
-      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z",
+                         false);
       Label l5 = new Label();
       mv.visitJumpInsn(IFEQ, l5);
       Label l6 = new Label();
@@ -709,7 +712,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitVarInsn(ASTORE, 3);
       mv.visitInsn(MONITORENTER);
       mv.visitLabel(l0);
-      mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "nanoTime", "()J");
+      mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "nanoTime", "()J", false);
       mv.visitVarInsn(LSTORE, 4);
       Label l7 = new Label();
       mv.visitLabel(l7);
@@ -721,10 +724,10 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "managedLock", "Ljava/lang/Object;");
       mv.visitVarInsn(LLOAD, 1);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/TimeUnit", "timedWait", "(Ljava/lang/Object;J)V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/TimeUnit", "timedWait", "(Ljava/lang/Object;J)V", false);
       Label l10 = new Label();
       mv.visitLabel(l10);
-      mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "nanoTime", "()J");
+      mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "nanoTime", "()J", false);
       mv.visitVarInsn(LSTORE, 6);
       Label l11 = new Label();
       mv.visitLabel(l11);
@@ -737,7 +740,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l8);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "tryAcquireShared", "(I)I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "tryAcquireShared", "(I)I", false);
       Label l12 = new Label();
       mv.visitJumpInsn(IFGE, l12);
       mv.visitVarInsn(LLOAD, 1);
@@ -747,12 +750,12 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l12);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "tryAcquireShared", "(I)I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "tryAcquireShared", "(I)I", false);
       Label l13 = new Label();
       mv.visitJumpInsn(IFGE, l13);
       mv.visitTypeInsn(NEW, "java/util/concurrent/TimeoutException");
       mv.visitInsn(DUP);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/TimeoutException", "<init>", "()V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/TimeoutException", "<init>", "()V", false);
       mv.visitInsn(ATHROW);
       mv.visitLabel(l13);
       mv.visitVarInsn(ALOAD, 3);
@@ -772,21 +775,21 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_0);
       mv.visitVarInsn(LLOAD, 1);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "tryAcquireSharedNanos", "(IJ)Z");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "tryAcquireSharedNanos", "(IJ)Z", false);
       mv.visitJumpInsn(IFNE, l14);
       mv.visitTypeInsn(NEW, "java/util/concurrent/TimeoutException");
       mv.visitInsn(DUP);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/TimeoutException", "<init>", "()V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/TimeoutException", "<init>", "()V", false);
       mv.visitInsn(ATHROW);
       mv.visitLabel(l14);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I", false);
       mv.visitInsn(ICONST_4);
       Label l16 = new Label();
       mv.visitJumpInsn(IF_ICMPNE, l16);
       mv.visitTypeInsn(NEW, "java/util/concurrent/CancellationException");
       mv.visitInsn(DUP);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/CancellationException", "<init>", "()V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/CancellationException", "<init>", "()V", false);
       mv.visitInsn(ATHROW);
       mv.visitLabel(l16);
       mv.visitVarInsn(ALOAD, 0);
@@ -797,7 +800,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitInsn(DUP);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "exception", "Ljava/lang/Throwable;");
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/ExecutionException", "<init>", "(Ljava/lang/Throwable;)V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/ExecutionException", "<init>", "(Ljava/lang/Throwable;)V", false);
       mv.visitInsn(ATHROW);
       mv.visitLabel(l17);
       mv.visitVarInsn(ALOAD, 0);
@@ -824,7 +827,8 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv
           .visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "this$0",
                           "Ljava/util/concurrent/FutureTask;");
-      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z",
+                         false);
       Label l5 = new Label();
       mv.visitJumpInsn(IFEQ, l5);
       Label l6 = new Label();
@@ -843,11 +847,11 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", MANAGED_OBJECT_LOCK_FIELD_NAME,
                         "Ljava/lang/Object;");
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "wait", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "wait", "()V", false);
       mv.visitLabel(l7);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "tryAcquireShared", "(I)I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "tryAcquireShared", "(I)I", false);
       mv.visitJumpInsn(IFLT, l8);
       Label l9 = new Label();
       mv.visitLabel(l9);
@@ -865,16 +869,16 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l5);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "acquireSharedInterruptibly", "(I)V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "acquireSharedInterruptibly", "(I)V", false);
       mv.visitLabel(l10);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I", false);
       mv.visitInsn(ICONST_4);
       Label l11 = new Label();
       mv.visitJumpInsn(IF_ICMPNE, l11);
       mv.visitTypeInsn(NEW, "java/util/concurrent/CancellationException");
       mv.visitInsn(DUP);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/CancellationException", "<init>", "()V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/CancellationException", "<init>", "()V", false);
       mv.visitInsn(ATHROW);
       mv.visitLabel(l11);
       mv.visitVarInsn(ALOAD, 0);
@@ -887,7 +891,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "exception", "Ljava/lang/Throwable;");
       mv
           .visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/ExecutionException", "<init>",
-                           "(Ljava/lang/Throwable;)V");
+                         "(Ljava/lang/Throwable;)V", false);
       mv.visitInsn(ATHROW);
       mv.visitLabel(l12);
       mv.visitVarInsn(ALOAD, 0);
@@ -927,7 +931,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitInsn(MONITORENTER);
       mv.visitLabel(l0);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "getState", "()I", false);
       mv.visitVarInsn(ISTORE, 2);
       Label l10 = new Label();
       mv.visitLabel(l10);
@@ -944,7 +948,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l11);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ILOAD, 2);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "ranOrCancelled", "(I)Z", false);
       Label l12 = new Label();
       mv.visitJumpInsn(IFEQ, l12);
       mv.visitInsn(ICONST_0);
@@ -953,7 +957,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ILOAD, 2);
       mv.visitInsn(ICONST_4);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "compareAndSetState", "(II)Z");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "compareAndSetState", "(II)Z", false);
       mv.visitJumpInsn(IFEQ, l8);
       Label l13 = new Label();
       mv.visitJumpInsn(GOTO, l13);
@@ -973,11 +977,11 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       Label l16 = new Label();
       mv.visitLabel(l16);
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "managedInnerCancel", "()V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/FutureTask$Sync", "managedInnerCancel", "()V", false);
       mv.visitLabel(l15);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_0);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "releaseShared", "(I)Z");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask$Sync", "releaseShared", "(I)Z", false);
       mv.visitInsn(POP);
       Label l17 = new Label();
       mv.visitLabel(l17);
@@ -994,7 +998,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l18);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", "this$0", "Ljava/util/concurrent/FutureTask;");
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask", "done", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/FutureTask", "done", "()V", false);
       Label l19 = new Label();
       mv.visitLabel(l19);
       mv.visitInsn(ICONST_1);
@@ -1023,7 +1027,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l2);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/FutureTask$Sync", MANAGED_OBJECT_LOCK_FIELD_NAME, "Ljava/lang/Object;");
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "notifyAll", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "notifyAll", "()V", false);
       Label l3 = new Label();
       mv.visitLabel(l3);
       mv.visitInsn(ICONST_1);
@@ -1054,7 +1058,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       mv.visitLabel(l1);
       mv.visitTypeInsn(NEW, "java/lang/Exception");
       mv.visitInsn(DUP);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Exception", "<init>", "()V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Exception", "<init>", "()V", false);
       mv.visitFieldInsn(GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Exception", "printStackTrace", "(Ljava/io/PrintStream;)V");
       */
@@ -1071,7 +1075,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
       Label l5 = new Label();
       mv.visitLabel(l5);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "interrupt", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "interrupt", "()V", false);
       mv.visitLabel(l4);
       mv.visitInsn(RETURN);
       Label l6 = new Label();
@@ -1082,7 +1086,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
 
     private static class Constructor extends MethodVisitor implements Opcodes {
       public Constructor(MethodVisitor mv) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM5, mv);
       }
 
       @Override
@@ -1093,7 +1097,7 @@ public class JavaUtilConcurrentFutureTaskSyncAdapter implements Opcodes {
           mv.visitVarInsn(ALOAD, 0);
           mv.visitTypeInsn(NEW, "java/lang/Object");
           mv.visitInsn(DUP);
-          mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
+          mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
           mv.visitFieldInsn(PUTFIELD, "java/util/concurrent/FutureTask$Sync", MANAGED_OBJECT_LOCK_FIELD_NAME,
                             "Ljava/lang/Object;");
 

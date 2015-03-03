@@ -46,15 +46,15 @@ public class DateMethodAdapter extends LogicalMethodAdapter {
 
   private static class TimestampMethodAdapter extends MethodVisitor implements Opcodes {
     public TimestampMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
       if ((opcode == INVOKESPECIAL) && ("setTime".equals(name))) {
-        super.visitMethodInsn(opcode, owner, ByteCodeUtil.TC_METHOD_PREFIX + name, desc);
+        super.visitMethodInsn(opcode, owner, ByteCodeUtil.TC_METHOD_PREFIX + name, desc, itf);
       } else {
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
       }
     }
   }
@@ -72,7 +72,7 @@ public class DateMethodAdapter extends LogicalMethodAdapter {
       mv.visitVarInsn(params[i].getOpcode(ILOAD), i + 1);
     }
 
-    mv.visitMethodInsn(INVOKESPECIAL, getOwnerSlashes(), getNewName(), getDescription());
+    mv.visitMethodInsn(INVOKESPECIAL, getOwnerSlashes(), getNewName(), getDescription(), false);
     if (!returnType.equals(Type.VOID_TYPE)) {
       mv.visitVarInsn(returnType.getOpcode(ISTORE), params.length + 1);
     }
@@ -81,7 +81,7 @@ public class DateMethodAdapter extends LogicalMethodAdapter {
 
     ByteCodeUtil.createParametersToArrayByteCode(mv, params);
     mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "logicalInvoke",
-                       "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                       "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
 
     ByteCodeUtil.pushThis(mv);
     mv.visitLdcInsn("setNanos(I)V");
@@ -92,11 +92,11 @@ public class DateMethodAdapter extends LogicalMethodAdapter {
     mv.visitTypeInsn(NEW, "java/lang/Integer");
     mv.visitInsn(DUP);
     ByteCodeUtil.pushThis(mv);
-    mv.visitMethodInsn(INVOKESPECIAL, getOwnerSlashes(), "getNanos", "()I");
-    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V");
+    mv.visitMethodInsn(INVOKESPECIAL, getOwnerSlashes(), "getNanos", "()I", false);
+    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V", false);
     mv.visitInsn(AASTORE);
     mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "logicalInvoke",
-                       "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                       "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
 
     if (!returnType.equals(Type.VOID_TYPE)) {
       mv.visitVarInsn(returnType.getOpcode(ILOAD), params.length + 1);
@@ -120,7 +120,7 @@ public class DateMethodAdapter extends LogicalMethodAdapter {
       mv.visitVarInsn(params[i].getOpcode(ILOAD), i + 1);
     }
 
-    mv.visitMethodInsn(INVOKESPECIAL, getOwnerSlashes(), getNewName(), getDescription());
+    mv.visitMethodInsn(INVOKESPECIAL, getOwnerSlashes(), getNewName(), getDescription(), false);
 
     addSetTimeInstrumentedCode(mv, params.length + 1);
 
@@ -133,7 +133,7 @@ public class DateMethodAdapter extends LogicalMethodAdapter {
     String getTimeDescription = "()J";
     Type getTimeReturnType = Type.getReturnType(getTimeDescription);
     ByteCodeUtil.pushThis(mv);
-    mv.visitMethodInsn(INVOKESPECIAL, getOwnerSlashes(), "getTime", getTimeDescription);
+    mv.visitMethodInsn(INVOKESPECIAL, getOwnerSlashes(), "getTime", getTimeDescription, false);
     mv.visitVarInsn(getTimeReturnType.getOpcode(ISTORE), variableOffset);
 
     String setTimeDescription = "(J)V";
@@ -145,7 +145,7 @@ public class DateMethodAdapter extends LogicalMethodAdapter {
     ByteCodeUtil.createParametersToArrayByteCode(mv, setTimeParams, variableOffset);
 
     mv.visitMethodInsn(INVOKESTATIC, ManagerUtil.CLASS, "logicalInvoke",
-                       "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                       "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
   }
 
 }

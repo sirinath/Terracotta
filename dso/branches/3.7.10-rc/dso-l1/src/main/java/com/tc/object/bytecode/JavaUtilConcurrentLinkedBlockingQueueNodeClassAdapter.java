@@ -10,7 +10,7 @@ import com.tc.asm.Opcodes;
 public class JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter extends ClassVisitor implements Opcodes {
 
   public JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -37,7 +37,7 @@ public class JavaUtilConcurrentLinkedBlockingQueueNodeClassAdapter extends Class
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "java/util/concurrent/LinkedBlockingQueue$Node", "item", "Ljava/lang/Object;");
     mv.visitTypeInsn(CHECKCAST, "com/tc/object/ObjectID");
-    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "lookupObject", "(Lcom/tc/object/ObjectID;)Ljava/lang/Object;");
+    mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "lookupObject", "(Lcom/tc/object/ObjectID;)Ljava/lang/Object;", false);
     mv.visitFieldInsn(PUTFIELD, "java/util/concurrent/LinkedBlockingQueue$Node", "item", "Ljava/lang/Object;");
     mv.visitLabel(l1);
     mv.visitLineNumber(67, l1);

@@ -122,7 +122,8 @@ public class AspectWerkzAspectModel implements AspectModel, Opcodes, Transformat
               INVOKESTATIC,
               aspectClassName,
               CflowCompiler.CFLOW_ASPECTOF_METHOD_NAME,
-              "()" + aspectClassSignature
+              "()" + aspectClassSignature,
+              false
       );
       cv.visitFieldInsn(PUTSTATIC, joinPointClassName, aspectInfo.getAspectFieldName(), aspectClassSignature);
     } else if (deploymentModel.equals(DeploymentModel.PER_JVM)) {
@@ -131,7 +132,8 @@ public class AspectWerkzAspectModel implements AspectModel, Opcodes, Transformat
               INVOKESTATIC,
               aspectInfo.getAspectFactoryClassName(),
               "aspectOf",
-              "()" + aspectClassSignature
+              "()" + aspectClassSignature,
+              false
       );
       cv.visitFieldInsn(PUTSTATIC, joinPointClassName, aspectInfo.getAspectFieldName(), aspectClassSignature);
     } else if (deploymentModel.equals(DeploymentModel.PER_CLASS)) {
@@ -141,7 +143,8 @@ public class AspectWerkzAspectModel implements AspectModel, Opcodes, Transformat
               INVOKESTATIC,
               aspectInfo.getAspectFactoryClassName(),
               "aspectOf",
-              "(Ljava/lang/Class;)" + aspectClassSignature
+              "(Ljava/lang/Class;)" + aspectClassSignature,
+              false
       );
       cv.visitFieldInsn(PUTSTATIC, joinPointClassName, aspectInfo.getAspectFieldName(), aspectClassSignature);
     } else if (AbstractJoinPointCompiler.requiresCallerOrCallee(deploymentModel)) {
@@ -196,7 +199,8 @@ public class AspectWerkzAspectModel implements AspectModel, Opcodes, Transformat
               INVOKESTATIC,
               aspectInfo.getAspectFactoryClassName(),
               "aspectOf",
-              "(Ljava/lang/Object;)" + aspectInfo.getAspectClassSignature()
+              "(Ljava/lang/Object;)" + aspectInfo.getAspectClassSignature(),
+              false
       );
 //            cv.visitLdcInsn(aspectInfo.getAspectClassName().replace('/', '.'));
 //            cv.visitLdcInsn(aspectInfo.getAspectQualifiedName());
@@ -205,7 +209,8 @@ public class AspectWerkzAspectModel implements AspectModel, Opcodes, Transformat
 //                    INVOKEINTERFACE,
 //                    HAS_INSTANCE_LEVEL_ASPECT_INTERFACE_NAME,
 //                    INSTANCE_LEVEL_GETASPECT_METHOD_NAME,
-//                    INSTANCE_LEVEL_GETASPECT_METHOD_SIGNATURE
+//                    INSTANCE_LEVEL_GETASPECT_METHOD_SIGNATURE,
+//                    false
 //            );
 //            cv.visitTypeInsn(CHECKCAST, aspectInfo.getAspectClassName());
       cv.visitFieldInsn(
@@ -341,7 +346,8 @@ public class AspectWerkzAspectModel implements AspectModel, Opcodes, Transformat
             INVOKESTATIC,
             aspectInfo.getAspectFactoryClassName(),
             FACTORY_HASASPECT_METHOD_NAME,
-            FACTORY_HASASPECT_PEROBJECT_METHOD_SIGNATURE
+            FACTORY_HASASPECT_PEROBJECT_METHOD_SIGNATURE,
+            false
     );
     cv.visitJumpInsn(IFEQ, hasAspectCheck);
 
@@ -367,7 +373,8 @@ public class AspectWerkzAspectModel implements AspectModel, Opcodes, Transformat
             INVOKESTATIC,
             aspectInfo.getAspectFactoryClassName(),
             FACTORY_ASPECTOF_METHOD_NAME,
-            "(Ljava/lang/Object;)" + aspectInfo.getAspectClassSignature()
+            "(Ljava/lang/Object;)" + aspectInfo.getAspectClassSignature(),
+            false
     );
 //
 //        cv.visitLdcInsn(aspectInfo.getAspectClassName().replace('/', '.'));
@@ -377,7 +384,8 @@ public class AspectWerkzAspectModel implements AspectModel, Opcodes, Transformat
 //                INVOKEINTERFACE,
 //                HAS_INSTANCE_LEVEL_ASPECT_INTERFACE_NAME,
 //                INSTANCE_LEVEL_GETASPECT_METHOD_NAME,
-//                INSTANCE_LEVEL_GETASPECT_METHOD_SIGNATURE
+//                INSTANCE_LEVEL_GETASPECT_METHOD_SIGNATURE,
+//                false
 //        );
 //
 //        cv.visitTypeInsn(CHECKCAST, aspectInfo.getAspectClassName());
@@ -464,7 +472,8 @@ public class AspectWerkzAspectModel implements AspectModel, Opcodes, Transformat
                 INVOKESPECIAL,
                 compiler.m_joinPointClassName,
                 PROCEED_METHOD_NAME,
-                PROCEED_METHOD_SIGNATURE
+                PROCEED_METHOD_SIGNATURE,
+                false
         );
         AsmHelper.unwrapType(cv, returnType);
       } else {
@@ -473,7 +482,8 @@ public class AspectWerkzAspectModel implements AspectModel, Opcodes, Transformat
                 INVOKESPECIAL,
                 compiler.m_joinPointClassName,
                 PROCEED_METHOD_NAME,
-                PROCEED_METHOD_SIGNATURE
+                PROCEED_METHOD_SIGNATURE,
+                false
         );
         if (!returnType.getClassName().equals(OBJECT_CLASS_SIGNATURE)) {
           cv.visitTypeInsn(CHECKCAST, returnType.getInternalName());

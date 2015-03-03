@@ -29,12 +29,12 @@ public class ArrayListAdapter {
       mv.visitJumpInsn(IFEQ, isSharedCheck1);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ILOAD, 1);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/ArrayList", "get", "(I)Ljava/lang/Object;");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/ArrayList", "get", "(I)Ljava/lang/Object;", false);
       mv.visitVarInsn(ASTORE, 3);
       mv.visitLabel(isSharedCheck1);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ILOAD, 1);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "fastRemove", "(I)V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "fastRemove", "(I)V", false);
       mv.visitVarInsn(ILOAD, 2);
       Label isSharedCheck2 = new Label();
       mv.visitJumpInsn(IFEQ, isSharedCheck2);
@@ -47,7 +47,7 @@ public class ArrayListAdapter {
       mv.visitVarInsn(ALOAD, 3);
       mv.visitInsn(AASTORE);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
       mv.visitLabel(isSharedCheck2);
       mv.visitInsn(RETURN);
       mv.visitMaxs(0, 0);
@@ -71,7 +71,7 @@ public class ArrayListAdapter {
     private static class Adapter extends MethodVisitor implements Opcodes {
 
       public Adapter(MethodVisitor mv) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM5, mv);
       }
 
       @Override
@@ -79,7 +79,7 @@ public class ArrayListAdapter {
         super.visitCode();
 
         ByteCodeUtil.pushThis(this);
-        super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z");
+        super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z", false);
         super.visitVarInsn(ISTORE, 4);
 
         super.visitVarInsn(ILOAD, 4);
@@ -87,12 +87,12 @@ public class ArrayListAdapter {
         super.visitJumpInsn(IFEQ, notShared);
         ByteCodeUtil.pushThis(this);
         super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "checkWriteAccess",
-                              "(Ljava/lang/Object;)V");
+                              "(Ljava/lang/Object;)V", false);
         super.visitLabel(notShared);
       }
 
       @Override
-      public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+      public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
 
         if (opcode == INVOKESPECIAL && "fastRemove".equals(name) && "java/util/ArrayList".equals(owner)
             && "(I)V".equals(desc)) {
@@ -101,7 +101,7 @@ public class ArrayListAdapter {
           super.visitVarInsn(ILOAD, 4);
         }
 
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
       }
 
     }

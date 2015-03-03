@@ -91,16 +91,16 @@ public class SpringAspectModel extends AopAllianceAspectModel {
     final int joinPointIndex = joinPointInstanceIndex;
     cv.visitFieldInsn(GETSTATIC, joinPointClassName, SIGNATURE_FIELD_NAME, METHOD_SIGNATURE_IMPL_CLASS_SIGNATURE);
     cv.visitMethodInsn(INVOKEVIRTUAL, METHOD_SIGNATURE_IMPL_CLASS_NAME, GET_METHOD_METHOD_NAME,
-        GET_METHOD_METHOD_SIGNATURE);
+        GET_METHOD_METHOD_SIGNATURE, false);
 
     if (Type.getArgumentTypes(adviceMethodInfo.getCalleeMemberDesc()).length == 0) {
       cv.visitInsn(ACONST_NULL);
     } else {
       cv.visitVarInsn(ALOAD, joinPointIndex);
-      cv.visitMethodInsn(INVOKEVIRTUAL, joinPointClassName, GET_RTTI_METHOD_NAME, GET_RTTI_METHOD_SIGNATURE);
+      cv.visitMethodInsn(INVOKEVIRTUAL, joinPointClassName, GET_RTTI_METHOD_NAME, GET_RTTI_METHOD_SIGNATURE, false);
       cv.visitTypeInsn(CHECKCAST, METHOD_RTTI_IMPL_CLASS_NAME);
       cv.visitMethodInsn(INVOKEVIRTUAL, METHOD_RTTI_IMPL_CLASS_NAME, GET_PARAMETER_VALUES_METHOD_NAME,
-          GET_ARGUMENTS_METHOD_SIGNATURE);
+          GET_ARGUMENTS_METHOD_SIGNATURE, false);
     }
     cv.visitVarInsn(ALOAD, joinPointIndex);
     cv.visitFieldInsn(GETFIELD, joinPointClassName, CALLEE_INSTANCE_FIELD_NAME, adviceMethodInfo
@@ -123,16 +123,16 @@ public class SpringAspectModel extends AopAllianceAspectModel {
     }
     cv.visitFieldInsn(GETSTATIC, joinPointClassName, SIGNATURE_FIELD_NAME, METHOD_SIGNATURE_IMPL_CLASS_SIGNATURE);
     cv.visitMethodInsn(INVOKEVIRTUAL, METHOD_SIGNATURE_IMPL_CLASS_NAME, GET_METHOD_METHOD_NAME,
-        GET_METHOD_METHOD_SIGNATURE);
+        GET_METHOD_METHOD_SIGNATURE, false);
 
     if (Type.getArgumentTypes(adviceMethodInfo.getCalleeMemberDesc()).length == 0) {
       cv.visitInsn(ACONST_NULL);
     } else {
       cv.visitVarInsn(ALOAD, joinPointIndex);
-      cv.visitMethodInsn(INVOKEVIRTUAL, joinPointClassName, GET_RTTI_METHOD_NAME, GET_RTTI_METHOD_SIGNATURE);
+      cv.visitMethodInsn(INVOKEVIRTUAL, joinPointClassName, GET_RTTI_METHOD_NAME, GET_RTTI_METHOD_SIGNATURE, false);
       cv.visitTypeInsn(CHECKCAST, METHOD_RTTI_IMPL_CLASS_NAME);
       cv.visitMethodInsn(INVOKEVIRTUAL, METHOD_RTTI_IMPL_CLASS_NAME, GET_PARAMETER_VALUES_METHOD_NAME,
-          GET_ARGUMENTS_METHOD_SIGNATURE);
+          GET_ARGUMENTS_METHOD_SIGNATURE, false);
     }
 
     cv.visitVarInsn(ALOAD, joinPointIndex);

@@ -10,7 +10,7 @@ import com.tc.asm.Opcodes;
 public class BufferedWriterAdapter extends ClassVisitor implements Opcodes {
 
   public BufferedWriterAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -23,15 +23,15 @@ public class BufferedWriterAdapter extends ClassVisitor implements Opcodes {
   private static class WriteStringAdatper extends MethodVisitor {
 
     public WriteStringAdatper(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
       if ((INVOKEVIRTUAL == opcode) && ("java/lang/String".equals(owner) && "getChars".equals(name))) {
-        super.visitMethodInsn(opcode, owner, "getCharsFast", desc);
+        super.visitMethodInsn(opcode, owner, "getCharsFast", desc, itf);
       } else {
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
       }
     }
 

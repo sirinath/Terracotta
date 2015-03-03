@@ -13,7 +13,7 @@ import com.tc.object.bytecode.JavaUtilConcurrentLinkedBlockingQueueClassAdapter.
 public class JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter extends ClassVisitor implements Opcodes {
 
   public JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
   
   @Override
@@ -34,7 +34,7 @@ public class JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter extends C
     private boolean logicalInvoke = false;
     
     public RemoveMethodAdapter(int access, String desc, MethodVisitor mv) {
-      super(Opcodes.ASM4, access, desc, mv);
+      super(Opcodes.ASM5, access, desc, mv);
       newLocalVar = newLocal(Type.INT_TYPE);
     }
     
@@ -65,8 +65,8 @@ public class JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter extends C
     }
     
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       if ("unlink".equals(name)) {
         if (!logicalInvoke) {
           addLogicalInvokeMethod();
@@ -78,7 +78,7 @@ public class JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter extends C
     private void addLogicalInvokeMethod() {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, "java/util/concurrent/LinkedBlockingQueue$Itr", "this$0", "Ljava/util/concurrent/LinkedBlockingQueue;");
-      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "isManaged", "(Ljava/lang/Object;)Z", false);
       Label l21 = new Label();
       mv.visitJumpInsn(IFEQ, l21);
       Label l22 = new Label();
@@ -93,9 +93,9 @@ public class JavaUtilConcurrentLinkedBlockingQueueIteratorClassAdapter extends C
       mv.visitTypeInsn(NEW, "java/lang/Integer");
       mv.visitInsn(DUP);
       mv.visitVarInsn(ILOAD, newLocalVar);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V", false);
       mv.visitInsn(AASTORE);
-      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke", "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+      mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke", "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
       mv.visitLabel(l21);
     }
   }

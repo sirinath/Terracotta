@@ -43,7 +43,8 @@ public class PerObjectFactoryCompiler extends AbstractAspectFactoryCompiler {
             INVOKESPECIAL,
             NO_ASPECT_BOUND_EXCEPTION_CLASS_NAME,
             INIT_METHOD_NAME,
-            "(Ljava/lang/String;Ljava/lang/String;)V"
+            "(Ljava/lang/String;Ljava/lang/String;)V",
+            false
     );
     cv.visitInsn(ATHROW);
     cv.visitLabel(ifInstanceOf);
@@ -55,7 +56,8 @@ public class PerObjectFactoryCompiler extends AbstractAspectFactoryCompiler {
             INVOKEINTERFACE,
             HAS_INSTANCE_LEVEL_ASPECT_INTERFACE_NAME,
             INSTANCE_LEVEL_GETASPECT_METHOD_NAME,
-            INSTANCE_LEVEL_GETASPECT_METHOD_SIGNATURE
+            INSTANCE_LEVEL_GETASPECT_METHOD_SIGNATURE,
+            true
     );
     cv.visitVarInsn(ASTORE, 1);
     cv.visitVarInsn(ALOAD, 1);
@@ -69,7 +71,8 @@ public class PerObjectFactoryCompiler extends AbstractAspectFactoryCompiler {
             INVOKESPECIAL,
             NO_ASPECT_BOUND_EXCEPTION_CLASS_NAME,
             INIT_METHOD_NAME,
-            "(Ljava/lang/String;Ljava/lang/String;)V"
+            "(Ljava/lang/String;Ljava/lang/String;)V",
+            false
     );
     cv.visitInsn(ATHROW);
 
@@ -105,7 +108,8 @@ public class PerObjectFactoryCompiler extends AbstractAspectFactoryCompiler {
             INVOKEINTERFACE,
             HAS_INSTANCE_LEVEL_ASPECT_INTERFACE_NAME,
             INSTANCE_LEVEL_HASASPECT_METHOD_NAME,
-            INSTANCE_LEVEL_HASASPECT_METHOD_SIGNATURE
+            INSTANCE_LEVEL_HASASPECT_METHOD_SIGNATURE,
+            true
     );
     cv.visitInsn(IRETURN);
     cv.visitMaxs(0, 0);
@@ -137,7 +141,8 @@ public class PerObjectFactoryCompiler extends AbstractAspectFactoryCompiler {
             INVOKESPECIAL,
             NO_ASPECT_BOUND_EXCEPTION_CLASS_NAME,
             INIT_METHOD_NAME,
-            "(Ljava/lang/String;Ljava/lang/String;)V"
+            "(Ljava/lang/String;Ljava/lang/String;)V",
+            false
     );
     cv.visitInsn(ATHROW);
     cv.visitLabel(ifInstanceOf);
@@ -149,7 +154,8 @@ public class PerObjectFactoryCompiler extends AbstractAspectFactoryCompiler {
             INVOKEINTERFACE,
             HAS_INSTANCE_LEVEL_ASPECT_INTERFACE_NAME,
             INSTANCE_LEVEL_GETASPECT_METHOD_NAME,
-            INSTANCE_LEVEL_GETASPECT_METHOD_SIGNATURE
+            INSTANCE_LEVEL_GETASPECT_METHOD_SIGNATURE,
+            true
     );
     cv.visitVarInsn(ASTORE, 1);
     cv.visitVarInsn(ALOAD, 1);
@@ -167,19 +173,20 @@ public class PerObjectFactoryCompiler extends AbstractAspectFactoryCompiler {
       );
       cv.visitVarInsn(ALOAD, 0);//associated object
       cv.visitMethodInsn(
-              INVOKEINTERFACE, ASPECT_CONTAINER_CLASS_NAME, ASPECT_CONTAINER_ASPECTOF_METHOD_NAME, "(Ljava/lang/Object;)Ljava/lang/Object;"
+              INVOKEINTERFACE, ASPECT_CONTAINER_CLASS_NAME, ASPECT_CONTAINER_ASPECTOF_METHOD_NAME, "(Ljava/lang/Object;)Ljava/lang/Object;", true
       );
       cv.visitTypeInsn(CHECKCAST, m_aspectClassName);
     } else {
       cv.visitTypeInsn(NEW, m_aspectClassName);
       cv.visitInsn(DUP);
-      cv.visitMethodInsn(INVOKESPECIAL, m_aspectClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE);
+      cv.visitMethodInsn(INVOKESPECIAL, m_aspectClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false);
     }
     cv.visitMethodInsn(
             INVOKEINTERFACE,
             HAS_INSTANCE_LEVEL_ASPECT_INTERFACE_NAME,
             INSTANCE_LEVEL_BINDASPECT_METHOD_NAME,
-            INSTANCE_LEVEL_BINDASPECT_METHOD_SIGNATURE
+            INSTANCE_LEVEL_BINDASPECT_METHOD_SIGNATURE,
+            true
     );
     cv.visitInsn(ARETURN);
 
@@ -218,7 +225,8 @@ public class PerObjectFactoryCompiler extends AbstractAspectFactoryCompiler {
               INVOKESPECIAL,
               NO_ASPECT_BOUND_EXCEPTION_CLASS_NAME,
               INIT_METHOD_NAME,
-              "(Ljava/lang/String;Ljava/lang/String;)V"
+              "(Ljava/lang/String;Ljava/lang/String;)V",
+              false
       );
       cv.visitInsn(ATHROW);
       cv.visitLabel(ifInstanceOf);
@@ -230,7 +238,8 @@ public class PerObjectFactoryCompiler extends AbstractAspectFactoryCompiler {
               INVOKEINTERFACE,
               HAS_INSTANCE_LEVEL_ASPECT_INTERFACE_NAME,
               INSTANCE_LEVEL_GETASPECT_METHOD_NAME,
-              INSTANCE_LEVEL_GETASPECT_METHOD_SIGNATURE
+              INSTANCE_LEVEL_GETASPECT_METHOD_SIGNATURE,
+              true
       );
       cv.visitVarInsn(ASTORE, 1);
       cv.visitVarInsn(ALOAD, 1);
@@ -242,7 +251,8 @@ public class PerObjectFactoryCompiler extends AbstractAspectFactoryCompiler {
               INVOKESTATIC,
               m_aspectFactoryClassName,
               "bind",
-              "(Ljava/lang/Object;)Ljava/lang/Object;"
+              "(Ljava/lang/Object;)Ljava/lang/Object;",
+              false
       );
       cv.visitVarInsn(ASTORE, 1);
       cv.visitLabel(ifBound);

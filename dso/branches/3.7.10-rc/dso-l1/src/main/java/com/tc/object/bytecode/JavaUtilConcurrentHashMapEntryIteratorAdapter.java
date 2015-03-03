@@ -13,7 +13,7 @@ import com.tc.util.runtime.Vm;
 public class JavaUtilConcurrentHashMapEntryIteratorAdapter extends ClassVisitor implements Opcodes {
 
   public JavaUtilConcurrentHashMapEntryIteratorAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   @Override
@@ -55,14 +55,14 @@ public class JavaUtilConcurrentHashMapEntryIteratorAdapter extends ClassVisitor 
     mv.visitTypeInsn(NEW, "java/lang/IllegalStateException");
     mv.visitInsn(DUP);
     mv.visitLdcInsn("Entry was removed");
-    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalStateException", "<init>", "(Ljava/lang/String;)V");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalStateException", "<init>", "(Ljava/lang/String;)V", false);
     mv.visitInsn(ATHROW);
     mv.visitLabel(lastReturnedNotNull);
 
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "java/util/concurrent/ConcurrentHashMap$EntryIterator", "lastReturned", "Ljava/util/concurrent/ConcurrentHashMap$HashEntry;");
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/bytecode/TCMapEntry", TCMapEntry.TC_RAWSETVALUE_METHOD_NAME, TCMapEntry.TC_RAWSETVALUE_METHOD_DESC);
+    mv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/bytecode/TCMapEntry", TCMapEntry.TC_RAWSETVALUE_METHOD_NAME, TCMapEntry.TC_RAWSETVALUE_METHOD_DESC, true);
     mv.visitInsn(RETURN);
     mv.visitMaxs(2, 2);
     mv.visitEnd();
@@ -79,13 +79,13 @@ public class JavaUtilConcurrentHashMapEntryIteratorAdapter extends ClassVisitor 
     mv.visitTypeInsn(NEW, "java/lang/IllegalStateException");
     mv.visitInsn(DUP);
     mv.visitLdcInsn("Entry was removed");
-    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalStateException", "<init>", "(Ljava/lang/String;)V");
+    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalStateException", "<init>", "(Ljava/lang/String;)V", false);
     mv.visitInsn(ATHROW);
     mv.visitLabel(lastReturnedNotNull);
 
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, "java/util/concurrent/ConcurrentHashMap$EntryIterator", "lastReturned", "Ljava/util/concurrent/ConcurrentHashMap$HashEntry;");
-    mv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/bytecode/TCMapEntry", TCMapEntry.TC_ISVALUEFAULTEDIN_METHOD_NAME, TCMapEntry.TC_ISVALUEFAULTEDIN_METHOD_DESC);
+    mv.visitMethodInsn(INVOKEINTERFACE, "com/tc/object/bytecode/TCMapEntry", TCMapEntry.TC_ISVALUEFAULTEDIN_METHOD_NAME, TCMapEntry.TC_ISVALUEFAULTEDIN_METHOD_DESC, true);
     mv.visitInsn(IRETURN);
     mv.visitMaxs(1, 1);
     mv.visitEnd();

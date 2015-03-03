@@ -95,7 +95,7 @@ public class CflowCompiler implements Opcodes, TransformationConstants {
     );
     // invoke the constructor of abstract
     ctor.visitVarInsn(ALOAD, 0);
-    ctor.visitMethodInsn(INVOKESPECIAL, ABSTRACT_CFLOW_CLASS, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE);
+    ctor.visitMethodInsn(INVOKESPECIAL, ABSTRACT_CFLOW_CLASS, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false);
     ctor.visitInsn(RETURN);
     ctor.visitMaxs(0, 0);
 
@@ -111,7 +111,7 @@ public class CflowCompiler implements Opcodes, TransformationConstants {
     Label isNull = new Label();
     isInCflow.visitJumpInsn(IFNULL, isNull);
     isInCflow.visitFieldInsn(GETSTATIC, m_className, INSTANCE_CFLOW_FIELD_NAME, m_classSignature);
-    isInCflow.visitMethodInsn(INVOKEVIRTUAL, ABSTRACT_CFLOW_CLASS, IN_CFLOW_METOD_NAME, IN_CFLOW_METOD_SIGNATURE);
+    isInCflow.visitMethodInsn(INVOKEVIRTUAL, ABSTRACT_CFLOW_CLASS, IN_CFLOW_METOD_NAME, IN_CFLOW_METOD_SIGNATURE, false);
     isInCflow.visitInsn(IRETURN);
     isInCflow.visitLabel(isNull);
     isInCflow.visitInsn(ICONST_0);
@@ -131,7 +131,7 @@ public class CflowCompiler implements Opcodes, TransformationConstants {
     aspectOf.visitJumpInsn(IFNONNULL, isNotNull);
     aspectOf.visitTypeInsn(NEW, m_className);
     aspectOf.visitInsn(DUP);
-    aspectOf.visitMethodInsn(INVOKESPECIAL, m_className, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE);
+    aspectOf.visitMethodInsn(INVOKESPECIAL, m_className, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false);
     aspectOf.visitFieldInsn(PUTSTATIC, m_className, INSTANCE_CFLOW_FIELD_NAME, m_classSignature);
     aspectOf.visitLabel(isNotNull);
     aspectOf.visitFieldInsn(GETSTATIC, m_className, INSTANCE_CFLOW_FIELD_NAME, m_classSignature);

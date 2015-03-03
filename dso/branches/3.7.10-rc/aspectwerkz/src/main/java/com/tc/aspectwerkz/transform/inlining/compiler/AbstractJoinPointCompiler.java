@@ -548,7 +548,7 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
     MethodVisitor cv = m_cw.visitMethod(ACC_STATIC, CLINIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, null, null);
     cv.visitMethodInsn(
             INVOKESTATIC, m_joinPointClassName,
-            STATIC_INITIALIZATION_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE
+            STATIC_INITIALIZATION_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false
     );
     cv.visitInsn(RETURN);
     cv.visitMaxs(0, 0);
@@ -578,7 +578,7 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
       aspectModel.createInvocationOfAroundClosureSuperClass(cv);
     } else {
       // invoke the constructor of java.lang.Object
-      cv.visitMethodInsn(INVOKESPECIAL, OBJECT_CLASS_NAME, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE);
+      cv.visitMethodInsn(INVOKESPECIAL, OBJECT_CLASS_NAME, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false);
     }
 
     resetStackFrameCounter(cv);
@@ -656,11 +656,11 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
     Label tryLabel = new Label();
     cv.visitLabel(tryLabel);
     cv.visitLdcInsn(m_calleeClassName.replace('/', '.'));
-    cv.visitMethodInsn(INVOKESTATIC, CLASS_CLASS, FOR_NAME_METHOD_NAME, FOR_NAME_METHOD_SIGNATURE);
+    cv.visitMethodInsn(INVOKESTATIC, CLASS_CLASS, FOR_NAME_METHOD_NAME, FOR_NAME_METHOD_SIGNATURE, false);
     cv.visitFieldInsn(PUTSTATIC, m_joinPointClassName, TARGET_CLASS_FIELD_NAME_IN_JP, CLASS_CLASS_SIGNATURE);
 
     cv.visitLdcInsn(m_callerClassName.replace('/', '.'));
-    cv.visitMethodInsn(INVOKESTATIC, CLASS_CLASS, FOR_NAME_METHOD_NAME, FOR_NAME_METHOD_SIGNATURE);
+    cv.visitMethodInsn(INVOKESTATIC, CLASS_CLASS, FOR_NAME_METHOD_NAME, FOR_NAME_METHOD_SIGNATURE, false);
     cv.visitFieldInsn(PUTSTATIC, m_joinPointClassName, THIS_CLASS_FIELD_NAME_IN_JP, CLASS_CLASS_SIGNATURE);
 
     Label finallyLabel = new Label();
@@ -674,7 +674,7 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
     cv.visitVarInsn(ASTORE, 0);
 
     cv.visitVarInsn(ALOAD, 0);
-    cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Throwable", "printStackTrace", "()V");
+    cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Throwable", "printStackTrace", "()V", false);
 
     cv.visitTypeInsn(NEW, RUNTIME_EXCEPTION_CLASS_NAME);
     cv.visitInsn(DUP);
@@ -687,7 +687,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
             INVOKESPECIAL,
             RUNTIME_EXCEPTION_CLASS_NAME,
             INIT_METHOD_NAME,
-            RUNTIME_EXCEPTION_INIT_METHOD_SIGNATURE
+            RUNTIME_EXCEPTION_INIT_METHOD_SIGNATURE,
+            false
     );
 
     cv.visitInsn(ATHROW);
@@ -699,7 +700,7 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
     // create the metadata map
     cv.visitTypeInsn(NEW, HASH_MAP_CLASS_NAME);
     cv.visitInsn(DUP);
-    cv.visitMethodInsn(INVOKESPECIAL, HASH_MAP_CLASS_NAME, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE);
+    cv.visitMethodInsn(INVOKESPECIAL, HASH_MAP_CLASS_NAME, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false);
     cv.visitFieldInsn(PUTSTATIC, m_joinPointClassName, META_DATA_FIELD_NAME, MAP_CLASS_SIGNATURE);
 
     // create the Signature instance
@@ -708,7 +709,7 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
     // create the static JoinPoint instance
     cv.visitTypeInsn(NEW, m_joinPointClassName);
     cv.visitInsn(DUP);
-    cv.visitMethodInsn(INVOKESPECIAL, m_joinPointClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE);
+    cv.visitMethodInsn(INVOKESPECIAL, m_joinPointClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false);
     cv.visitFieldInsn(
             PUTSTATIC,
             m_joinPointClassName,
@@ -745,13 +746,14 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
         cv.visitInsn(ACONST_NULL);
       }
       cv.visitFieldInsn(GETSTATIC, m_joinPointClassName, THIS_CLASS_FIELD_NAME_IN_JP, CLASS_CLASS_SIGNATURE);
-      cv.visitMethodInsn(INVOKEVIRTUAL, CLASS_CLASS, GETCLASSLOADER_METHOD_NAME, CLASS_CLASS_GETCLASSLOADER_METHOD_SIGNATURE);
+      cv.visitMethodInsn(INVOKEVIRTUAL, CLASS_CLASS, GETCLASSLOADER_METHOD_NAME, CLASS_CLASS_GETCLASSLOADER_METHOD_SIGNATURE, false);
       cv.visitLdcInsn(m_aspectInfo.getDeploymentModel().toString());
       cv.visitMethodInsn(
               INVOKESTATIC,
               Type.getInternalName(AspectFactoryManager.class),
               "loadAspectFactory",
-              "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;)V"
+              "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;)V",
+              false
       );
     }
 
@@ -789,7 +791,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
             INVOKESTATIC,
             SIGNATURE_FACTORY_CLASS,
             NEW_ENCLOSING_SJP_METHOD_NAME,
-            NEW_ENCLOSING_SJP_METHOD_SIGNATURE
+            NEW_ENCLOSING_SJP_METHOD_SIGNATURE,
+            false
     );
     cv.visitFieldInsn(
             PUTSTATIC,
@@ -1101,7 +1104,7 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
                                                final int joinPointInstanceIndex,
                                                final int returnValueIndex) {
     cv.visitVarInsn(ALOAD, joinPointInstanceIndex);
-    cv.visitMethodInsn(INVOKEVIRTUAL, m_joinPointClassName, PROCEED_METHOD_NAME, PROCEED_METHOD_SIGNATURE);
+    cv.visitMethodInsn(INVOKEVIRTUAL, m_joinPointClassName, PROCEED_METHOD_NAME, PROCEED_METHOD_SIGNATURE, false);
     cv.visitVarInsn(ASTORE, returnValueIndex);
   }
 
@@ -1116,7 +1119,7 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
     // create the join point instance
     cv.visitTypeInsn(NEW, m_joinPointClassName);
     cv.visitInsn(DUP);
-    cv.visitMethodInsn(INVOKESPECIAL, m_joinPointClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE);
+    cv.visitMethodInsn(INVOKESPECIAL, m_joinPointClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false);
 
     // store the jp on the stack
     cv.visitVarInsn(ASTORE, input.joinPointInstanceIndex);
@@ -1230,7 +1233,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
               INVOKEVIRTUAL,
               adviceInfo.getAspectInfo().getAspectClassName(),
               adviceInfo.getAdviceInfo().getMethodName(),
-              adviceInfo.getAdviceInfo().getMethodSignature()
+              adviceInfo.getAdviceInfo().getMethodSignature(),
+              false
       );
       cv.visitVarInsn(ASTORE, 1);
 
@@ -1241,7 +1245,7 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
         cv.visitJumpInsn(GOTO, elseInstanceOfLabel);
         endRuntimeCheck(cv, adviceInfo.getAdviceInfo(), endInstanceOflabel);
         cv.visitVarInsn(ALOAD, 0);
-        cv.visitMethodInsn(INVOKESPECIAL, m_joinPointClassName, PROCEED_METHOD_NAME, PROCEED_METHOD_SIGNATURE);
+        cv.visitMethodInsn(INVOKESPECIAL, m_joinPointClassName, PROCEED_METHOD_NAME, PROCEED_METHOD_SIGNATURE, false);
         cv.visitVarInsn(ASTORE, 1);
         cv.visitLabel(elseInstanceOfLabel);
       }
@@ -1259,7 +1263,7 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
       cv.visitInsn(ICONST_0);
       cv.visitFieldInsn(PUTFIELD, m_joinPointClassName, INTERCEPTOR_INDEX_FIELD_NAME, I);
       cv.visitVarInsn(ALOAD, 0);
-      cv.visitMethodInsn(INVOKEVIRTUAL, m_joinPointClassName, PROCEED_METHOD_NAME, PROCEED_METHOD_SIGNATURE);
+      cv.visitMethodInsn(INVOKEVIRTUAL, m_joinPointClassName, PROCEED_METHOD_NAME, PROCEED_METHOD_SIGNATURE, false);
 
       cv.visitLabel(returnLabels[delegationCaseIndex]);
 
@@ -1353,7 +1357,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
               INVOKEVIRTUAL,
               adviceMethodInfo.getAspectInfo().getAspectClassName(),
               adviceMethodInfo.getAdviceInfo().getMethodName(),
-              adviceMethodInfo.getAdviceInfo().getMethodSignature()
+              adviceMethodInfo.getAdviceInfo().getMethodSignature(),
+              false
       );
 
       // end label of runtime checks
@@ -1474,7 +1479,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
             INVOKEVIRTUAL,
             adviceMethodInfo.getAspectInfo().getAspectClassName(),
             adviceMethodInfo.getAdviceInfo().getMethodName(),
-            adviceMethodInfo.getAdviceInfo().getMethodSignature()
+            adviceMethodInfo.getAdviceInfo().getMethodSignature(),
+            false
     );
 
     // end label of runtime checks
@@ -1626,7 +1632,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
               INVOKEINTERFACE,
               MAP_CLASS_NAME,
               PUT_METHOD_NAME,
-              PUT_METHOD_SIGNATURE
+              PUT_METHOD_SIGNATURE,
+              true
       );
       cv.visitInsn(POP);
       cv.visitInsn(RETURN);
@@ -1638,7 +1645,7 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
       cv = m_cw.visitMethod(ACC_PUBLIC, GET_META_DATA_METHOD_NAME, GET_META_DATA_METHOD_SIGNATURE, null, null);
       cv.visitFieldInsn(GETSTATIC, m_joinPointClassName, META_DATA_FIELD_NAME, MAP_CLASS_SIGNATURE);
       cv.visitVarInsn(ALOAD, 1);
-      cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, GET_METHOD_NAME, GET_METHOD_SIGNATURE);
+      cv.visitMethodInsn(INVOKEINTERFACE, MAP_CLASS_NAME, GET_METHOD_NAME, GET_METHOD_SIGNATURE, true);
       cv.visitInsn(ARETURN);
       cv.visitMaxs(0, 0);
     }
@@ -1750,7 +1757,7 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
       AsmHelper.loadIntegerConstant(cv, m_joinPointType);
       cv.visitMethodInsn(
               INVOKESTATIC, Type.getType(JoinPointType.class).getInternalName(), "fromInt",
-              "(I)" + Type.getType(JoinPointType.class).getDescriptor()
+              "(I)" + Type.getType(JoinPointType.class).getDescriptor(), false
       );
       cv.visitInsn(ARETURN);
       cv.visitMaxs(0, 0);
@@ -1792,7 +1799,7 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
 //        cv.visitTypeInsn(NEW, m_joinPointClassName);
 //        cv.visitInsn(DUP);
 //        int joinPointCloneIndex = 1;
-//        cv.visitMethodInsn(INVOKESPECIAL, m_joinPointClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE);
+//        cv.visitMethodInsn(INVOKESPECIAL, m_joinPointClassName, INIT_METHOD_NAME, NO_PARAM_RETURN_VOID_SIGNATURE, false);
 //        cv.visitVarInsn(ASTORE, joinPointCloneIndex);
 //
 //        // set stack frame index
@@ -2136,7 +2143,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
 //                        INVOKESTATIC,
 //                        ASPECTS_CLASS_NAME,
 //                        ASPECT_OF_METHOD_NAME,
-//                        ASPECT_OF_PER_INSTANCE_METHOD_SIGNATURE
+//                        ASPECT_OF_PER_INSTANCE_METHOD_SIGNATURE,
+//                        false
 //                );
 //            } else {
 //                // TODO: should this really happen? we are filtering at early stage now. - REMOVE CODE BLOCK
@@ -2148,7 +2156,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
 //                        INVOKESTATIC,
 //                        ASPECTS_CLASS_NAME,
 //                        ASPECT_OF_METHOD_NAME,
-//                        ASPECT_OF_PER_CLASS_METHOD_SIGNATURE
+//                        ASPECT_OF_PER_CLASS_METHOD_SIGNATURE,
+//                        false
 //                );
 //            }
 //            cv.visitTypeInsn(CHECKCAST, aspectInfo.getAspectClassName());
@@ -2199,7 +2208,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
             INVOKEINTERFACE,
             ADVISABLE_CLASS_NAME,
             GET_AROUND_ADVICE_METHOD_NAME,
-            GET_AROUND_ADVICE_METHOD_SIGNATURE
+            GET_AROUND_ADVICE_METHOD_SIGNATURE,
+            true
     );
     cv.visitFieldInsn(
             PUTFIELD,
@@ -2238,7 +2248,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
             INVOKEINTERFACE,
             ADVISABLE_CLASS_NAME,
             GET_BEFORE_ADVICE_METHOD_NAME,
-            GET_BEFORE_ADVICE_METHOD_SIGNATURE
+            GET_BEFORE_ADVICE_METHOD_SIGNATURE,
+            true
     );
     cv.visitFieldInsn(
             PUTFIELD,
@@ -2277,7 +2288,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
             INVOKEINTERFACE,
             ADVISABLE_CLASS_NAME,
             GET_AFTER_ADVICE_METHOD_NAME,
-            GET_AFTER_ADVICE_METHOD_SIGNATURE
+            GET_AFTER_ADVICE_METHOD_SIGNATURE,
+            true
     );
     cv.visitFieldInsn(
             PUTFIELD,
@@ -2316,7 +2328,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
             INVOKEINTERFACE,
             ADVISABLE_CLASS_NAME,
             GET_AFTER_RETURNING_ADVICE_METHOD_NAME,
-            GET_AFTER_RETURNING_ADVICE_METHOD_SIGNATURE
+            GET_AFTER_RETURNING_ADVICE_METHOD_SIGNATURE,
+            true
     );
     cv.visitFieldInsn(
             PUTFIELD,
@@ -2355,7 +2368,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
             INVOKEINTERFACE,
             ADVISABLE_CLASS_NAME,
             GET_AFTER_THROWING_ADVICE_METHOD_NAME,
-            GET_AFTER_THROWING_ADVICE_METHOD_SIGNATURE
+            GET_AFTER_THROWING_ADVICE_METHOD_SIGNATURE,
+            true
     );
     cv.visitFieldInsn(
             PUTFIELD,
@@ -2412,7 +2426,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
             INVOKEINTERFACE,
             AROUND_ADVICE_CLASS_NAME,
             INTERCEPT_INVOKE_METHOD_NAME,
-            AROUND_ADVICE_INVOKE_METHOD_SIGNATURE
+            AROUND_ADVICE_INVOKE_METHOD_SIGNATURE,
+            true
     );
     cv.visitInsn(ARETURN);
     cv.visitLabel(ifStatementLabel);
@@ -2457,7 +2472,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
             INVOKEINTERFACE,
             BEFORE_ADVICE_CLASS_NAME,
             INTERCEPT_INVOKE_METHOD_NAME,
-            BEFORE_ADVICE_INVOKE_METHOD_SIGNATURE
+            BEFORE_ADVICE_INVOKE_METHOD_SIGNATURE,
+            true
     );
     cv.visitIincInsn(loopIndex, 1);
     cv.visitJumpInsn(GOTO, loopStartLabel);
@@ -2504,7 +2520,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
             INVOKEINTERFACE,
             AFTER_ADVICE_CLASS_NAME,
             INTERCEPT_INVOKE_METHOD_NAME,
-            AFTER_ADVICE_INVOKE_METHOD_SIGNATURE
+            AFTER_ADVICE_INVOKE_METHOD_SIGNATURE,
+            true
     );
     cv.visitIincInsn(loopIndex, -1);
     cv.visitJumpInsn(GOTO, loopLabel1);
@@ -2552,7 +2569,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
             INVOKEINTERFACE,
             AFTER_RETURNING_ADVICE_CLASS_NAME,
             INTERCEPT_INVOKE_METHOD_NAME,
-            AFTER_RETURNING_ADVICE_INVOKE_METHOD_SIGNATURE
+            AFTER_RETURNING_ADVICE_INVOKE_METHOD_SIGNATURE,
+            true
     );
     cv.visitIincInsn(loopIndex, -1);
     cv.visitJumpInsn(GOTO, loopLabel1);
@@ -2600,7 +2618,8 @@ public abstract class AbstractJoinPointCompiler implements JoinPointCompiler, Tr
             INVOKEINTERFACE,
             AFTER_THROWING_ADVICE_CLASS_NAME,
             INTERCEPT_INVOKE_METHOD_NAME,
-            AFTER_THROWING_ADVICE_INVOKE_METHOD_SIGNATURE
+            AFTER_THROWING_ADVICE_INVOKE_METHOD_SIGNATURE,
+            true
     );
     cv.visitIincInsn(loopIndex, -1);
     cv.visitJumpInsn(GOTO, loopLabel1);

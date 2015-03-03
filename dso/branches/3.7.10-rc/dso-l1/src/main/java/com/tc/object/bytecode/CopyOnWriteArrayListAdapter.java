@@ -33,7 +33,7 @@ public class CopyOnWriteArrayListAdapter {
   private static class LockAdapter extends MethodVisitor implements Opcodes {
 
     public LockAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -45,7 +45,7 @@ public class CopyOnWriteArrayListAdapter {
           mv.visitInsn(DUP);
           mv.visitVarInsn(ALOAD, 0);
           mv.visitMethodInsn(INVOKESPECIAL, "com/tc/util/concurrent/locks/CopyOnWriteArrayListLock", "<init>",
-                             "(Ljava/util/concurrent/CopyOnWriteArrayList;)V");
+                             "(Ljava/util/concurrent/CopyOnWriteArrayList;)V", false);
         }
       }
       super.visitFieldInsn(opcode, owner, name, desc);
@@ -69,7 +69,7 @@ public class CopyOnWriteArrayListAdapter {
   private static class AddMethodAdapter extends MethodVisitor implements Opcodes {
 
     public AddMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -83,8 +83,8 @@ public class CopyOnWriteArrayListAdapter {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       if (Vm.isJDK16Compliant()) {
         if ("setArray".equals(name) && "([Ljava/lang/Object;)V".equals(desc)) {
           doVisit();
@@ -102,7 +102,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitVarInsn(ALOAD, 1);
       mv.visitInsn(AASTORE);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
     }
   }
 
@@ -123,7 +123,7 @@ public class CopyOnWriteArrayListAdapter {
   private static class AddAtMethodAdapter extends MethodVisitor implements Opcodes {
 
     public AddAtMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -137,8 +137,8 @@ public class CopyOnWriteArrayListAdapter {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       if (Vm.isJDK16Compliant()) {
         if ("setArray".equals(name) && "([Ljava/lang/Object;)V".equals(desc)) {
           doVisit();
@@ -156,14 +156,14 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitTypeInsn(NEW, "java/lang/Integer");
       mv.visitInsn(DUP);
       mv.visitVarInsn(ILOAD, 1);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V", false);
       mv.visitInsn(AASTORE);
       mv.visitInsn(DUP);
       mv.visitInsn(ICONST_1);
       mv.visitVarInsn(ALOAD, 2);
       mv.visitInsn(AASTORE);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
     }
   }
 
@@ -184,7 +184,7 @@ public class CopyOnWriteArrayListAdapter {
   private static class SetMethodAdapter extends MethodVisitor implements Opcodes {
 
     public SetMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -198,8 +198,8 @@ public class CopyOnWriteArrayListAdapter {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       if (Vm.isJDK16Compliant()) {
         if ("setArray".equals(name) && "([Ljava/lang/Object;)V".equals(desc)) {
           doVisit();
@@ -217,14 +217,14 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitTypeInsn(NEW, "java/lang/Integer");
       mv.visitInsn(DUP);
       mv.visitVarInsn(ILOAD, 1);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V", false);
       mv.visitInsn(AASTORE);
       mv.visitInsn(DUP);
       mv.visitInsn(ICONST_1);
       mv.visitVarInsn(ALOAD, 2);
       mv.visitInsn(AASTORE);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
     }
   }
 
@@ -245,7 +245,7 @@ public class CopyOnWriteArrayListAdapter {
   private static class AddAllMethodAdapter extends MethodVisitor implements Opcodes {
 
     public AddAllMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -259,8 +259,8 @@ public class CopyOnWriteArrayListAdapter {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       if (Vm.isJDK16Compliant()) {
         if ("setArray".equals(name) && "([Ljava/lang/Object;)V".equals(desc)) {
           doVisit();
@@ -278,7 +278,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitVarInsn(ALOAD, 1);
       mv.visitInsn(AASTORE);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
     }
   }
 
@@ -299,7 +299,7 @@ public class CopyOnWriteArrayListAdapter {
   private static class AddAllAtMethodAdapter extends MethodVisitor implements Opcodes {
 
     public AddAllAtMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -313,8 +313,8 @@ public class CopyOnWriteArrayListAdapter {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       if (Vm.isJDK16Compliant()) {
         if ("setArray".equals(name) && "([Ljava/lang/Object;)V".equals(desc)) {
           doVisit();
@@ -332,14 +332,14 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitTypeInsn(NEW, "java/lang/Integer");
       mv.visitInsn(DUP);
       mv.visitVarInsn(ILOAD, 1);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V", false);
       mv.visitInsn(AASTORE);
       mv.visitInsn(DUP);
       mv.visitInsn(ICONST_1);
       mv.visitVarInsn(ALOAD, 2);
       mv.visitInsn(AASTORE);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
     }
   }
 
@@ -360,7 +360,7 @@ public class CopyOnWriteArrayListAdapter {
   private static class AddIfAbsentMethodAdapter extends MethodVisitor implements Opcodes {
 
     public AddIfAbsentMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -374,8 +374,8 @@ public class CopyOnWriteArrayListAdapter {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       if (Vm.isJDK16Compliant()) {
         if ("setArray".equals(name) && "([Ljava/lang/Object;)V".equals(desc)) {
           doVisit();
@@ -393,7 +393,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitVarInsn(ALOAD, 1);
       mv.visitInsn(AASTORE);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
     }
 
   }
@@ -415,7 +415,7 @@ public class CopyOnWriteArrayListAdapter {
   private static class AddAllAbsentMethodAdapter extends MethodVisitor implements Opcodes {
 
     public AddAllAbsentMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -433,7 +433,7 @@ public class CopyOnWriteArrayListAdapter {
           mv.visitInsn(ICONST_0);
           mv.visitVarInsn(ILOAD, 6);
           mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "arraycopy",
-                             "(Ljava/lang/Object;ILjava/lang/Object;II)V");
+                             "(Ljava/lang/Object;ILjava/lang/Object;II)V", false);
 
           mv.visitVarInsn(ALOAD, 0);
           mv.visitLdcInsn("addAll(Ljava/util/Collection;)Z");
@@ -443,18 +443,18 @@ public class CopyOnWriteArrayListAdapter {
           mv.visitInsn(DUP);
           mv.visitInsn(ICONST_0);
           mv.visitVarInsn(ALOAD, 9);
-          mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "asList", "([Ljava/lang/Object;)Ljava/util/List;");
+          mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "asList", "([Ljava/lang/Object;)Ljava/util/List;", false);
           mv.visitInsn(AASTORE);
 
           mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                             "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                             "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
         }
       }
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       if (Vm.isJDK16Compliant()) {
         if ("setArray".equals(name) && "([Ljava/lang/Object;)V".equals(desc)) {
           mv.visitVarInsn(ILOAD, 7);
@@ -467,7 +467,7 @@ public class CopyOnWriteArrayListAdapter {
           mv.visitInsn(ICONST_0);
           mv.visitVarInsn(ILOAD, 7);
           mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "arraycopy",
-                             "(Ljava/lang/Object;ILjava/lang/Object;II)V");
+                             "(Ljava/lang/Object;ILjava/lang/Object;II)V", false);
 
           mv.visitVarInsn(ALOAD, 0);
           mv.visitLdcInsn("addAll(Ljava/util/Collection;)Z");
@@ -477,11 +477,11 @@ public class CopyOnWriteArrayListAdapter {
           mv.visitInsn(DUP);
           mv.visitInsn(ICONST_0);
           mv.visitVarInsn(ALOAD, 9);
-          mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "asList", "([Ljava/lang/Object;)Ljava/util/List;");
+          mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "asList", "([Ljava/lang/Object;)Ljava/util/List;", false);
           mv.visitInsn(AASTORE);
 
           mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                             "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                             "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
         }
       }
     }
@@ -504,7 +504,7 @@ public class CopyOnWriteArrayListAdapter {
   private static class RemoveMethodAdapter extends MethodVisitor implements Opcodes {
 
     public RemoveMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -524,14 +524,14 @@ public class CopyOnWriteArrayListAdapter {
           mv.visitInsn(AASTORE);
 
           mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                             "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                             "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
         }
       }
       super.visitFieldInsn(opcode, owner, name, desc);
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
       if (Vm.isJDK16Compliant()) {
         if ("setArray".equals(name) && "([Ljava/lang/Object;)V".equals(desc)) {
           mv.visitVarInsn(ALOAD, 0);
@@ -545,10 +545,10 @@ public class CopyOnWriteArrayListAdapter {
           mv.visitInsn(AALOAD);
           mv.visitInsn(AASTORE);
           mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                             "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                             "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
         }
       }
-      super.visitMethodInsn(opcode, owner, name, desc);
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
     }
   }
 
@@ -569,7 +569,7 @@ public class CopyOnWriteArrayListAdapter {
   private static class RemoveAtMethodAdapter extends MethodVisitor implements Opcodes {
 
     public RemoveAtMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -583,8 +583,8 @@ public class CopyOnWriteArrayListAdapter {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       if (Vm.isJDK16Compliant()) {
         if ("setArray".equals(name) && "([Ljava/lang/Object;)V".equals(desc)) {
           doVisit();
@@ -602,10 +602,10 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitTypeInsn(NEW, "java/lang/Integer");
       mv.visitInsn(DUP);
       mv.visitVarInsn(ILOAD, 1);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V", false);
       mv.visitInsn(AASTORE);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
     }
   }
 
@@ -626,7 +626,7 @@ public class CopyOnWriteArrayListAdapter {
   private static class RemoveRangeMethodAdapter extends MethodVisitor implements Opcodes {
 
     public RemoveRangeMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -640,8 +640,8 @@ public class CopyOnWriteArrayListAdapter {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       if (Vm.isJDK16Compliant()) {
         if ("setArray".equals(name) && "([Ljava/lang/Object;)V".equals(desc)) {
           doVisit();
@@ -659,17 +659,17 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitTypeInsn(NEW, "java/lang/Integer");
       mv.visitInsn(DUP);
       mv.visitVarInsn(ILOAD, 1);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V", false);
       mv.visitInsn(AASTORE);
       mv.visitInsn(DUP);
       mv.visitInsn(ICONST_1);
       mv.visitTypeInsn(NEW, "java/lang/Integer");
       mv.visitInsn(DUP);
       mv.visitVarInsn(ILOAD, 2);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(I)V", false);
       mv.visitInsn(AASTORE);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
     }
   }
 
@@ -690,7 +690,7 @@ public class CopyOnWriteArrayListAdapter {
   private static class ClearMethodAdapter extends MethodVisitor implements Opcodes {
 
     public ClearMethodAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
@@ -704,8 +704,8 @@ public class CopyOnWriteArrayListAdapter {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
       if (Vm.isJDK16Compliant()) {
         if ("setArray".equals(name) && "([Ljava/lang/Object;)V".equals(desc)) {
           doVisit();
@@ -719,7 +719,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitInsn(ICONST_0);
       mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
     }
   }
 
@@ -759,19 +759,19 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitLabel(l4);
 
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "lock", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "lock", "()V", false);
       mv.visitLabel(l0);
 
       mv.visitTypeInsn(NEW, "java/util/ArrayList");
       mv.visitInsn(DUP);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V", false);
       mv.visitVarInsn(ASTORE, 3);
       Label l5 = new Label();
       mv.visitLabel(l5);
 
       mv.visitVarInsn(ALOAD, 0);
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/CopyOnWriteArrayList", "getArray",
-                         "()[Ljava/lang/Object;");
+                         "()[Ljava/lang/Object;", false);
       mv.visitVarInsn(ASTORE, 4);
       Label l6 = new Label();
       mv.visitLabel(l6);
@@ -820,7 +820,7 @@ public class CopyOnWriteArrayListAdapter {
 
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ALOAD, 9);
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Collection", "contains", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Collection", "contains", "(Ljava/lang/Object;)Z", true);
       Label l16 = new Label();
       mv.visitJumpInsn(IFNE, l16);
       Label l17 = new Label();
@@ -838,7 +838,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitFrame(Opcodes.F_APPEND, 1, new Object[] { "java/lang/Object" }, 0, null);
       mv.visitVarInsn(ALOAD, 3);
       mv.visitVarInsn(ALOAD, 9);
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z", true);
       mv.visitInsn(POP);
       mv.visitLabel(l18);
 
@@ -861,22 +861,22 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 7);
       mv.visitVarInsn(ILOAD, 6);
-      mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "copyOf", "([Ljava/lang/Object;I)[Ljava/lang/Object;");
+      mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "copyOf", "([Ljava/lang/Object;I)[Ljava/lang/Object;", false);
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/CopyOnWriteArrayList", "setArray",
-                         "([Ljava/lang/Object;)V");
+                         "([Ljava/lang/Object;)V", false);
       Label l21 = new Label();
       mv.visitLabel(l21);
 
       mv.visitVarInsn(ALOAD, 0);
       mv.visitLdcInsn("removeAll(Ljava/util/Collection;)Z");
       mv.visitVarInsn(ALOAD, 3);
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "toArray", "()[Ljava/lang/Object;");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "toArray", "()[Ljava/lang/Object;", true);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
       mv.visitLabel(l1);
 
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "unlock", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "unlock", "()V", false);
       Label l22 = new Label();
       mv.visitLabel(l22);
 
@@ -886,7 +886,7 @@ public class CopyOnWriteArrayListAdapter {
 
       mv.visitFrame(Opcodes.F_CHOP, 3, null, 0, null);
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "unlock", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "unlock", "()V", false);
       Label l23 = new Label();
       mv.visitLabel(l23);
 
@@ -902,7 +902,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitLabel(l24);
 
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "unlock", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "unlock", "()V", false);
       Label l25 = new Label();
       mv.visitLabel(l25);
 
@@ -932,7 +932,7 @@ public class CopyOnWriteArrayListAdapter {
 
       mv.visitTypeInsn(NEW, "java/util/ArrayList");
       mv.visitInsn(DUP);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V", false);
       mv.visitVarInsn(ASTORE, 2);
       Label l1 = new Label();
       mv.visitLabel(l1);
@@ -988,7 +988,7 @@ public class CopyOnWriteArrayListAdapter {
 
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ALOAD, 8);
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Collection", "contains", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Collection", "contains", "(Ljava/lang/Object;)Z", true);
       Label l12 = new Label();
       mv.visitJumpInsn(IFNE, l12);
       Label l13 = new Label();
@@ -1005,7 +1005,7 @@ public class CopyOnWriteArrayListAdapter {
 
       mv.visitVarInsn(ALOAD, 2);
       mv.visitVarInsn(ALOAD, 8);
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z", true);
       mv.visitInsn(POP);
       mv.visitLabel(l14);
 
@@ -1039,7 +1039,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitVarInsn(ALOAD, 7);
       mv.visitInsn(ICONST_0);
       mv.visitVarInsn(ILOAD, 6);
-      mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V");
+      mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V", false);
       Label l19 = new Label();
       mv.visitLabel(l19);
 
@@ -1058,12 +1058,12 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitLabel(l22);
 
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "toArray", "()[Ljava/lang/Object;");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "toArray", "()[Ljava/lang/Object;", true);
       Label l23 = new Label();
       mv.visitLabel(l23);
 
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
       Label l24 = new Label();
       mv.visitLabel(l24);
 
@@ -1122,19 +1122,19 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitLabel(l4);
 
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "lock", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "lock", "()V", false);
       mv.visitLabel(l0);
 
       mv.visitTypeInsn(NEW, "java/util/ArrayList");
       mv.visitInsn(DUP);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V", false);
       mv.visitVarInsn(ASTORE, 3);
       Label l5 = new Label();
       mv.visitLabel(l5);
 
       mv.visitVarInsn(ALOAD, 0);
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/CopyOnWriteArrayList", "getArray",
-                         "()[Ljava/lang/Object;");
+                         "()[Ljava/lang/Object;", false);
       mv.visitVarInsn(ASTORE, 4);
       Label l6 = new Label();
       mv.visitLabel(l6);
@@ -1183,7 +1183,7 @@ public class CopyOnWriteArrayListAdapter {
 
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ALOAD, 9);
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Collection", "contains", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Collection", "contains", "(Ljava/lang/Object;)Z", true);
       Label l16 = new Label();
       mv.visitJumpInsn(IFEQ, l16);
       Label l17 = new Label();
@@ -1201,7 +1201,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitFrame(Opcodes.F_APPEND, 1, new Object[] { "java/lang/Object" }, 0, null);
       mv.visitVarInsn(ALOAD, 3);
       mv.visitVarInsn(ALOAD, 9);
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z", true);
       mv.visitInsn(POP);
       mv.visitLabel(l18);
 
@@ -1224,22 +1224,22 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 7);
       mv.visitVarInsn(ILOAD, 6);
-      mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "copyOf", "([Ljava/lang/Object;I)[Ljava/lang/Object;");
+      mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "copyOf", "([Ljava/lang/Object;I)[Ljava/lang/Object;", false);
       mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/CopyOnWriteArrayList", "setArray",
-                         "([Ljava/lang/Object;)V");
+                         "([Ljava/lang/Object;)V", false);
       Label l21 = new Label();
       mv.visitLabel(l21);
 
       mv.visitVarInsn(ALOAD, 0);
       mv.visitLdcInsn("removeAll(Ljava/util/Collection;)Z");
       mv.visitVarInsn(ALOAD, 3);
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "toArray", "()[Ljava/lang/Object;");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "toArray", "()[Ljava/lang/Object;", true);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
       mv.visitLabel(l1);
 
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "unlock", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "unlock", "()V", false);
       Label l22 = new Label();
       mv.visitLabel(l22);
 
@@ -1249,7 +1249,7 @@ public class CopyOnWriteArrayListAdapter {
 
       mv.visitFrame(Opcodes.F_CHOP, 3, null, 0, null);
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "unlock", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "unlock", "()V", false);
       Label l23 = new Label();
       mv.visitLabel(l23);
 
@@ -1265,7 +1265,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitLabel(l24);
 
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "unlock", "()V");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/locks/ReentrantLock", "unlock", "()V", false);
       Label l25 = new Label();
       mv.visitLabel(l25);
 
@@ -1296,7 +1296,7 @@ public class CopyOnWriteArrayListAdapter {
 
       mv.visitTypeInsn(NEW, "java/util/ArrayList");
       mv.visitInsn(DUP);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V");
+      mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V", false);
       mv.visitVarInsn(ASTORE, 2);
       Label l1 = new Label();
       mv.visitLabel(l1);
@@ -1353,7 +1353,7 @@ public class CopyOnWriteArrayListAdapter {
 
       mv.visitVarInsn(ALOAD, 1);
       mv.visitVarInsn(ALOAD, 8);
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Collection", "contains", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Collection", "contains", "(Ljava/lang/Object;)Z", true);
       Label l11 = new Label();
       mv.visitJumpInsn(IFEQ, l11);
       Label l12 = new Label();
@@ -1371,7 +1371,7 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitFrame(Opcodes.F_APPEND, 1, new Object[] { "java/lang/Object" }, 0, null);
       mv.visitVarInsn(ALOAD, 2);
       mv.visitVarInsn(ALOAD, 8);
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z", true);
       mv.visitInsn(POP);
       mv.visitLabel(l13);
 
@@ -1405,7 +1405,8 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitVarInsn(ALOAD, 7);
       mv.visitInsn(ICONST_0);
       mv.visitVarInsn(ILOAD, 6);
-      mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V");
+      mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V",
+                         false);
       Label l17 = new Label();
       mv.visitLabel(l17);
 
@@ -1418,9 +1419,9 @@ public class CopyOnWriteArrayListAdapter {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitLdcInsn("removeAll(Ljava/util/Collection;)Z");
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "toArray", "()[Ljava/lang/Object;");
+      mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "toArray", "()[Ljava/lang/Object;", true);
       mv.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/ManagerUtil", "logicalInvoke",
-                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V");
+                         "(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V", false);
       Label l19 = new Label();
       mv.visitLabel(l19);
 
@@ -1460,10 +1461,10 @@ public class CopyOnWriteArrayListAdapter {
         mv.visitInsn(DUP);
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESPECIAL, "com/tc/util/concurrent/locks/CopyOnWriteArrayListLock", "<init>",
-                           "(Ljava/util/concurrent/CopyOnWriteArrayList;)V");
+                           "(Ljava/util/concurrent/CopyOnWriteArrayList;)V", false);
 
         mv.visitMethodInsn(INVOKEVIRTUAL, "sun/misc/Unsafe", "putObjectVolatile",
-                           "(Ljava/lang/Object;JLjava/lang/Object;)V");
+                           "(Ljava/lang/Object;JLjava/lang/Object;)V", false);
         mv.visitInsn(RETURN);
         mv.visitMaxs(6, 1);
         mv.visitEnd();

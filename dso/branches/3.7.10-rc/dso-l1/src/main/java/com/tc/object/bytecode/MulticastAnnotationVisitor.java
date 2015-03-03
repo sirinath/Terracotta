@@ -15,7 +15,7 @@ public class MulticastAnnotationVisitor extends AnnotationVisitor {
   private final AnnotationVisitor[] visitors;
   
   public MulticastAnnotationVisitor(AnnotationVisitor[] visitors) {
-    super(Opcodes.ASM4);
+    super(Opcodes.ASM5);
     this.visitors = visitors;
   }
 

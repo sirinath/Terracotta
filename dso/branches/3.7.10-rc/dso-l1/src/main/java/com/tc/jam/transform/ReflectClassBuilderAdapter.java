@@ -12,11 +12,11 @@ import com.tc.object.bytecode.ClassAdapterFactory;
 public class ReflectClassBuilderAdapter extends ClassVisitor implements ClassAdapterFactory {
 
   public ReflectClassBuilderAdapter(ClassVisitor cv) {
-    super(Opcodes.ASM4, cv);
+    super(Opcodes.ASM5, cv);
   }
 
   public ReflectClassBuilderAdapter() {
-    super(Opcodes.ASM4);
+    super(Opcodes.ASM5);
   }
 
   @Override
@@ -33,21 +33,21 @@ public class ReflectClassBuilderAdapter extends ClassVisitor implements ClassAda
   private static class HideTCInstrumentationAdapter extends MethodVisitor implements Opcodes {
 
     public HideTCInstrumentationAdapter(MethodVisitor mv) {
-      super(Opcodes.ASM4, mv);
+      super(Opcodes.ASM5, mv);
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-      super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+      super.visitMethodInsn(opcode, owner, name, desc, itf);
 
       if ((opcode == INVOKEVIRTUAL) && "java/lang/Class".equals(owner) && "getInterfaces".equals(name)) {
         super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/TCInterfaces", "purgeTCInterfaces",
-                              "([Ljava/lang/Class;)[Ljava/lang/Class;");
+                              "([Ljava/lang/Class;)[Ljava/lang/Class;", false);
       }
 
       if ((opcode == INVOKEVIRTUAL) && "java/lang/Class".equals(owner) && "getDeclaredMethods".equals(name)) {
         super.visitMethodInsn(INVOKESTATIC, "com/tc/object/bytecode/TCInterfaces", "purgeTCMethods",
-                              "([Ljava/lang/reflect/Method;)[Ljava/lang/reflect/Method;");
+                              "([Ljava/lang/reflect/Method;)[Ljava/lang/reflect/Method;", false);
       }
 
     }

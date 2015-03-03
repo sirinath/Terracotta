@@ -53,7 +53,7 @@ public class HashtableClassAdapter implements Opcodes {
       mv.visitFieldInsn(GETFIELD, "java/util/Hashtable", "table", "[Ljava/util/Hashtable$Entry;");
       mv.visitVarInsn(ASTORE, 2);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I");
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false);
       mv.visitVarInsn(ISTORE, 3);
       mv.visitVarInsn(ILOAD, 3);
       mv.visitLdcInsn(Integer.valueOf(2147483647));
@@ -132,7 +132,7 @@ public class HashtableClassAdapter implements Opcodes {
     mv.visitFieldInsn(GETFIELD, "java/util/Hashtable", "table", "[Ljava/util/Hashtable$Entry;");
     mv.visitVarInsn(ASTORE, 2);
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false);
     mv.visitVarInsn(ISTORE, 3);
     mv.visitVarInsn(ILOAD, 3);
     mv.visitLdcInsn(Integer.valueOf(2147483647));
@@ -213,7 +213,7 @@ public class HashtableClassAdapter implements Opcodes {
                                    "(Ljava/lang/Object;)Ljava/util/Map$Entry;", null, null);
     mv.visitCode();
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false);
     mv.visitVarInsn(ISTORE, 2);
     mv.visitVarInsn(ILOAD, 2);
     mv.visitLdcInsn(Integer.valueOf(2147483647));

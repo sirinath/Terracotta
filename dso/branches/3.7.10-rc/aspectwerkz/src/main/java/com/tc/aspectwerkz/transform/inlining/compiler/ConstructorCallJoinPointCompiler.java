@@ -67,7 +67,8 @@ public class ConstructorCallJoinPointCompiler extends AbstractJoinPointCompiler 
             INVOKESTATIC,
             SIGNATURE_FACTORY_CLASS,
             NEW_CONSTRUCTOR_SIGNATURE_METHOD_NAME,
-            NEW_CONSTRUCTOR_SIGNATURE_METHOD_SIGNATURE
+            NEW_CONSTRUCTOR_SIGNATURE_METHOD_SIGNATURE,
+            false
     );
     cv.visitFieldInsn(
             PUTSTATIC, m_joinPointClassName, SIGNATURE_FIELD_NAME,
@@ -95,7 +96,8 @@ public class ConstructorCallJoinPointCompiler extends AbstractJoinPointCompiler 
                       m_calleeClassName,
                       INVOKE_WRAPPER_METHOD_PREFIX
               ),
-              Type.getMethodDescriptor(Type.getType(m_calleeClassSignature), m_argumentTypes)
+              Type.getMethodDescriptor(Type.getType(m_calleeClassSignature), m_argumentTypes),
+              false
       );
     } else {
       cv.visitTypeInsn(NEW, m_calleeClassName);
@@ -103,7 +105,7 @@ public class ConstructorCallJoinPointCompiler extends AbstractJoinPointCompiler 
       loadArgumentMemberFields(cv, input.argStartIndex);
       cv.visitMethodInsn(
               INVOKESPECIAL, m_calleeClassName, INIT_METHOD_NAME,
-              m_calleeMemberDesc
+              m_calleeMemberDesc, false
       );
     }
     // assign to CALLEE
@@ -133,7 +135,8 @@ public class ConstructorCallJoinPointCompiler extends AbstractJoinPointCompiler 
                       m_calleeClassName,
                       INVOKE_WRAPPER_METHOD_PREFIX
               ),
-              Type.getMethodDescriptor(Type.getType(m_calleeClassSignature), m_argumentTypes)
+              Type.getMethodDescriptor(Type.getType(m_calleeClassSignature), m_argumentTypes),
+              false
       );
     } else {
       cv.visitTypeInsn(NEW, m_calleeClassName);
@@ -141,7 +144,7 @@ public class ConstructorCallJoinPointCompiler extends AbstractJoinPointCompiler 
       loadArguments(cv);
       cv.visitMethodInsn(
               INVOKESPECIAL, m_calleeClassName, INIT_METHOD_NAME,
-              m_calleeMemberDesc
+              m_calleeMemberDesc, false
       );
     }
 
@@ -189,7 +192,7 @@ public class ConstructorCallJoinPointCompiler extends AbstractJoinPointCompiler 
     cv.visitFieldInsn(GETFIELD, m_joinPointClassName, RETURN_VALUE_FIELD_NAME, m_calleeClassSignature);
     cv.visitMethodInsn(
             INVOKESPECIAL, CONSTRUCTOR_RTTI_IMPL_CLASS_NAME, INIT_METHOD_NAME,
-            CONSTRUCTOR_RTTI_IMPL_INIT_SIGNATURE
+            CONSTRUCTOR_RTTI_IMPL_INIT_SIGNATURE, false
     );
 
     // set the arguments
@@ -198,7 +201,7 @@ public class ConstructorCallJoinPointCompiler extends AbstractJoinPointCompiler 
     cv.visitVarInsn(ALOAD, 1);
     cv.visitMethodInsn(
             INVOKEVIRTUAL, CONSTRUCTOR_RTTI_IMPL_CLASS_NAME, SET_PARAMETER_VALUES_METHOD_NAME,
-            SET_PARAMETER_VALUES_METHOD_SIGNATURE
+            SET_PARAMETER_VALUES_METHOD_SIGNATURE, false
     );
 
     cv.visitInsn(ARETURN);

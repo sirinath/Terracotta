@@ -13,7 +13,7 @@ class JavaUtilConcurrentHashMapLazyValuesMethodAdapter extends LocalVariablesSor
 
   public JavaUtilConcurrentHashMapLazyValuesMethodAdapter(final int access, final String desc, final MethodVisitor mv,
                                                           final boolean storeOnlyNonNull) {
-    super(Opcodes.ASM4, access, desc, mv);
+    super(Opcodes.ASM5, access, desc, mv);
 
     this.storeOnlyNonNull = storeOnlyNonNull;
   }
@@ -24,15 +24,15 @@ class JavaUtilConcurrentHashMapLazyValuesMethodAdapter extends LocalVariablesSor
 
       if (storeOnlyNonNull) {
         visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap$HashEntry",
-                        JavaUtilConcurrentHashMapHashEntryAdapter.GET_VALUE_STORE_ONLY_NONNULL, "()Ljava/lang/Object;");
+                        JavaUtilConcurrentHashMapHashEntryAdapter.GET_VALUE_STORE_ONLY_NONNULL, "()Ljava/lang/Object;", false);
       } else {
         visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap$HashEntry",
-                        JavaUtilConcurrentHashMapHashEntryAdapter.GET_VALUE, "()Ljava/lang/Object;");
+                        JavaUtilConcurrentHashMapHashEntryAdapter.GET_VALUE, "()Ljava/lang/Object;", false);
       }
     } else if (PUTFIELD == opcode && "java/util/concurrent/ConcurrentHashMap$HashEntry".equals(owner)
                && "value".equals(name) && "Ljava/lang/Object;".equals(desc)) {
       visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/ConcurrentHashMap$HashEntry",
-                      TCMapEntry.TC_RAWSETVALUE_METHOD_NAME, TCMapEntry.TC_RAWSETVALUE_METHOD_DESC);
+                      TCMapEntry.TC_RAWSETVALUE_METHOD_NAME, TCMapEntry.TC_RAWSETVALUE_METHOD_DESC, false);
     } else {
       super.visitFieldInsn(opcode, owner, name, desc);
     }
