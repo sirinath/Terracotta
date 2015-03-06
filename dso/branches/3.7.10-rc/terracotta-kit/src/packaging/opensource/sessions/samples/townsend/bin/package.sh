@@ -27,7 +27,7 @@ if [ ! -f $ehcache_core ]; then
   echo "Couldn't find ehcache-core jar. Do you have a full kit?"
   exit 1
 fi
-classpath=target/classes:$tc_install_dir/lib/servlet-api-2.5-6.1.8.jar:$ehcache_core
+classpath=target/classes:$tc_install_dir/lib/gf.javax.servlet-api-3.0.1.jar:$ehcache_core
 for jar in src/main/webapp/WEB-INF/lib/*.jar; do
   classpath=$classpath:$jar
 done

@@ -26,7 +26,7 @@ if not exist %ehcache_core% (
   exit /b 1
 )
 
-set classpath=target\classes;%tc_install_dir%\lib\servlet-api-2.5-6.1.8.jar;%ehcache_core%
+set classpath=target\classes;%tc_install_dir%\lib\gf.javax.servlet-api-3.0.1.jar;%ehcache_core%
 
 for %%f in (src\main\webapp\WEB-INF\lib\*.jar) do (
   set classpath=%classpath%;%%f
