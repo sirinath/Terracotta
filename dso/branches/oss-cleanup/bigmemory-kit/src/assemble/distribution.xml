@@ -1,5 +1,7 @@
 <assembly>
+
   <id>distribution</id>
+
   <formats>
     <format>dir</format>
     <format>tar.gz</format>
@@ -10,6 +12,7 @@
       <directory>target</directory>
       <includes>
         <include>*.jar</include>
+        <include>*.war</include>
       </includes>
       <excludes>
         <exclude>*sources.jar</exclude>
@@ -50,6 +53,7 @@
       <directory>${project.build.directory}/ehcache-${ehcache.version}/javadoc</directory>
       <outputDirectory>/apis/ehcache/javadoc</outputDirectory>
     </fileSet>
+
     <fileSet>
       <directory>${project.build.directory}/ehcache-${ehcache.version}</directory>
       <outputDirectory>/config-samples</outputDirectory>
