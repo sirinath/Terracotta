@@ -4,13 +4,14 @@
 
 package com.tc.objectserver.persistence.offheap;
 
+import org.terracotta.corestorage.bigmemory.BigMemoryKeyValueStorageConfig;
+
 import com.tc.logging.CustomerLogging;
 import com.tc.logging.TCLogger;
 import com.tc.objectserver.persistence.StorageManagerFactory;
 import com.tc.properties.TCPropertiesConsts;
 import com.tc.properties.TCPropertiesImpl;
 import com.tc.util.Conversion;
-import com.terracottatech.corestorage.bigmemory.BigMemoryKeyValueStorageConfig;
 
 /**
  *
@@ -39,7 +40,7 @@ public class DataStorageConfig extends OffHeapConfig {
   public DataStorageConfig(boolean offHeapEnabled, String maxOffHeapSize, boolean hybridEnabled, String maxDataSize) {
     this(offHeapEnabled, maxOffHeapSize, hybridEnabled, maxDataSize,TCPropertiesImpl.getProperties()
         .getBoolean(TCPropertiesConsts.L2_OFFHEAP_SKIP_JVMARG_CHECK, false));
-  }  
+  }
   
   public DataStorageConfig(boolean offHeapEnabled, String maxOffHeapSize, boolean hybridEnabled, String maxDataSize, boolean skipJVMArgs) {
     super(offHeapEnabled, maxOffHeapSize, skipJVMArgs);

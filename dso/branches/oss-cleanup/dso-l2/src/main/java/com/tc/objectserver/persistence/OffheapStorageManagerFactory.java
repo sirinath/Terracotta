@@ -4,12 +4,12 @@ import org.terracotta.corestorage.ImmutableKeyValueStorageConfig;
 import org.terracotta.corestorage.KeyValueStorageConfig;
 import org.terracotta.corestorage.StorageManager;
 import org.terracotta.corestorage.TransformerLookup;
+import org.terracotta.corestorage.bigmemory.ImmutableBigMemoryKeyValueStorageConfig;
+import org.terracotta.corestorage.bigmemory.OffHeapStorageManager;
 import org.terracotta.corestorage.monitoring.MonitoredResource;
+import org.terracotta.offheapstore.util.MemoryUnit;
 
 import com.tc.objectserver.persistence.offheap.DataStorageConfig;
-import com.terracottatech.corestorage.bigmemory.ImmutableBigMemoryKeyValueStorageConfig;
-import com.terracottatech.corestorage.bigmemory.OffHeapStorageManager;
-import com.terracottatech.offheapstore.util.MemoryUnit;
 
 import java.io.IOException;
 import java.util.ArrayList;
