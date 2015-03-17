@@ -31,7 +31,7 @@
     <jetty.version>8.1.15.v20140411</jetty.version>
     <javax.servlet.version>3.0.0.v201112011016</javax.servlet.version>
     <slf4j.version>1.7.7</slf4j.version>
-    <search.version>1.4.13</search.version>
+    <search.version>1.4.14-SNAPSHOT</search.version>
     <security-version>2.0.14</security-version>
     <management-core-version>2.0.12</management-core-version>
     <management.apps.parent.version>1.4.0-SNAPSHOT</management.apps.parent.version>
@@ -103,13 +103,6 @@
         <groupId>org.terracotta.internal</groupId>
         <artifactId>bigmemory-core-storage</artifactId>
         <version>${bigmemory-core-storage.version}</version>
-        <!-- Exclusion below is required to pass sag-finder for the moment -->
-        <!--<exclusions>-->
-          <!--<exclusion>-->
-            <!--<groupId>asm</groupId>-->
-            <!--<artifactId>*</artifactId>-->
-          <!--</exclusion>-->
-        <!--</exclusions>-->
       </dependency>
       <dependency>
         <groupId>org.terracotta</groupId>
