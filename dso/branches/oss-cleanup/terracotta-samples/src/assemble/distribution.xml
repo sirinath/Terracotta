@@ -1,0 +1,30 @@
+<assembly>
+  <id>distribution</id>
+  <formats>
+    <format>dir</format>
+    <format>tar.gz</format>
+  </formats>
+
+  <fileSets>
+    <fileSet>
+      <directory>${project.basedir}</directory>
+      <useDefaultExcludes>true</useDefaultExcludes>
+      <excludes>
+        <exclude>**/target/**</exclude>
+      </excludes>
+    </fileSet>
+  </fileSets>
+
+  <dependencySets>
+    <dependencySet>
+      <outputDirectory>lib</outputDirectory>
+      <useProjectArtifact>true</useProjectArtifact>
+      <includes>
+        <include>${project.groupId}:${project.artifactId}</include>
+        <include>org.slf4j:slf4j-jdk14</include>
+        <include>commons-lang:commons-lang</include>
+        <include>com.google.guava:guava</include>
+      </includes>
+    </dependencySet>
+  </dependencySets>
+</assembly>

@@ -1,0 +1,15 @@
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd"
+         name="config">
+
+  <cache name="readWriteThroughCache"
+         maxBytesLocalHeap="128M">
+    <terracotta/>
+    <cacheWriter writeMode="write-through">
+      <cacheWriterFactory class="com.bigmemory.samples.readwritethrough.MyCacheWriterFactory"/>
+    </cacheWriter>
+    <cacheLoaderFactory class="com.bigmemory.samples.readwritethrough.MyCacheLoaderFactory"/>
+  </cache>
+  <terracottaConfig url="localhost:9510" rejoin="false"/>
+
+</ehcache>

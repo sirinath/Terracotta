@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tc:tc-config xmlns:tc="http://www.terracotta.org/config"
+    >
+
+  <servers>
+    <server host="localhost">
+      <offheap>
+        <enabled>true</enabled>
+        <maxDataSize>512m</maxDataSize>
+      </offheap>
+    </server>
+    <restartable enabled="true"/>
+  </servers>
+
+  <clients>
+  </clients>
+
+</tc:tc-config>
