@@ -23,6 +23,7 @@
     <ehcache.version>2.10.0-SNAPSHOT</ehcache.version>
     <toolkit-api.version>2.1.0</toolkit-api.version>
     <bigmemory.version>4.3.0-SNAPSHOT</bigmemory.version>
+    <sessions.version>4.3.0-SNAPSHOT</sessions.version>
     <escrow-maven-plugin.version>1.0.0</escrow-maven-plugin.version>
 
     <terracotta.license>LICENSE.txt</terracotta.license>
@@ -74,17 +75,21 @@
         </exclusion>
       </exclusions>
     </dependency>
-
     <dependency>
       <groupId>com.terracotta</groupId>
       <artifactId>terracotta-samples</artifactId>
       <version>${bigmemory.version}</version>
     </dependency>
-
     <dependency>
       <groupId>org.terracotta.internal</groupId>
       <artifactId>build-data</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.terracotta.session</groupId>
+      <artifactId>sessions</artifactId>
+      <version>${sessions.version}</version>
+      <type>tar.gz</type>
     </dependency>
   </dependencies>
 
@@ -169,6 +174,14 @@
                   <artifactId>ehcache-kit</artifactId>
                   <version>${ehcache.version}</version>
                   <classifier>distribution</classifier>
+                  <type>tar.gz</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.terracotta.session</groupId>
+                  <artifactId>sessions</artifactId>
+                  <version>${sessions.version}</version>
                   <type>tar.gz</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
