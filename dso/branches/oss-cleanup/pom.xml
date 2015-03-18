@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.terracotta.forge</groupId>
     <artifactId>forge-parent-ee</artifactId>
-    <version>3.18</version>
+    <version>3.19</version>
     <relativePath/>
   </parent>
 
@@ -54,6 +54,7 @@
 
     <module>management</module>
     <module>management-agent</module>
+    <module>terracotta-samples</module>
   </modules>
 
   <build>
@@ -343,6 +344,33 @@
       <modules>
         <module>devwork/terracotta-sessions</module>
       </modules>
+    </profile>
+      <profile>
+      <id>sag-deps</id>
+        <activation>
+          <property>
+            <name>sag-deps</name>
+            <value>true</value>
+          </property>
+        </activation>
+        <build>
+          <pluginManagement>
+            <plugins>
+              <plugin>
+              <groupId>org.terracotta</groupId>
+              <artifactId>maven-forge-plugin</artifactId>
+              <dependencies>
+                <dependency>
+                  <groupId>com.softwareag.ibit.tools.util</groupId>
+                  <artifactId>finder</artifactId>
+                  <version>3.5.1.0.1</version>
+                  <scope>compile</scope>
+                </dependency>
+              </dependencies>
+              </plugin>
+            </plugins>
+          </pluginManagement>
+        </build>
     </profile>
   </profiles>
 
