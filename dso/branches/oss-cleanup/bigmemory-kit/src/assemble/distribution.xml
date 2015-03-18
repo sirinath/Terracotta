@@ -54,7 +54,7 @@
       <outputDirectory>/apis/ehcache/javadoc</outputDirectory>
     </fileSet>
     <fileSet>
-      <directory>${project.build.directory}/code-samples/bigmemory-max-samples-${project.version}</directory>
+      <directory>${project.build.directory}/code-samples/terracotta-samples-${project.version}</directory>
       <outputDirectory>/code-samples</outputDirectory>
     </fileSet>
 
@@ -92,14 +92,6 @@
       <excludes>
         <exclude>terracotta-${project.version}.jar</exclude>
       </excludes>      
-    </fileSet>
-    <fileSet>
-      <directory>${project.build.directory}/server-lib</directory>
-      <outputDirectory>apis/toolkit/lib</outputDirectory>
-      <includes>
-        <include>terracotta-toolkit-api*.jar</include>
-      </includes>
-
     </fileSet>
   </fileSets>
 

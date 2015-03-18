@@ -13,7 +13,7 @@
   <groupId>org.terracotta.internal</groupId>
   <artifactId>bigmemory</artifactId>
   <packaging>pom</packaging>
-  <name>BigMemory Kit</name>
+  <name>Terracotta Kit</name>
 
   <properties>
     <product.name>bigmemory</product.name>
@@ -77,7 +77,7 @@
 
     <dependency>
       <groupId>com.terracotta</groupId>
-      <artifactId>bigmemory-max-samples</artifactId>
+      <artifactId>terracotta-samples</artifactId>
       <version>${bigmemory.version}</version>
     </dependency>
 
@@ -131,7 +131,6 @@
             <configuration>
               <artifacts>
                 <param>org.terracotta:terracotta:${project.version}</param>
-                <param>org.terracotta.toolkit:terracotta-toolkit-api-internal:1.17</param>
               </artifacts>
               <resolveTransitively>true</resolveTransitively>
               <outputDir>${project.build.directory}/server-lib</outputDir>          
@@ -186,7 +185,7 @@
                 -->
                 <artifactItem>
                   <groupId>com.terracotta</groupId>
-                  <artifactId>bigmemory-max-samples</artifactId>
+                  <artifactId>terracotta-samples</artifactId>
                   <version>${bigmemory.version}</version>
                   <classifier>distribution</classifier>
                   <type>tar.gz</type>
