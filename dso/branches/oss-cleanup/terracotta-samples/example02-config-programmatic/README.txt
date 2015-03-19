@@ -1,9 +1,9 @@
-BigMemory Programmatic Configuration
+Terracotta Server Programmatic Configuration
 ==========
 
 Overview:
 =========
-This example will demonstrate how to configure BigMemory using a size-based programmatic configuration
+This example will demonstrate how to configure Terracotta Open Source using a size-based programmatic configuration
 
 
 Requirements:

@@ -1,9 +1,9 @@
-BigMemory Nonstop Sample
+Terracotta Server Nonstop Sample
 ==========
 
 Overview:
 =========
-This example will demonstrate the non-stop and the rejoin features of BigMemory
+This example will demonstrate the non-stop and the rejoin features of Terracotta Server
 
 Requirements:
 ===============

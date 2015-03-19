@@ -1,9 +1,9 @@
-BigMemory Basic Operations
+Terracotta Server Basic Operations
 ==========
 
 Overview:
 =========
-This example will demonstrate how to create, retrieve, update, and delete using BigMemory
+This example will demonstrate how to create, retrieve, update, and delete using Terracotta Server Open Source
 
 Requirements:
 ===============

@@ -1,23 +1,21 @@
 Welcome
 =======
-Welcome to the BigMemory Max Samples directory.
+Welcome to the Terracotta Server Samples directory.
 
 This directory contains a couple of examples that show you how to use various
-features and configurations of BigMemory. It also contains samples for Cross-Language Clients. (For instructions on how to run the Cross-Language samples, see http://terracotta.org/kit/reflector?kitID=4.3&pageID=CLC).
-
+features and configurations of Terracotta Server. 
 The latest version of the code samples can be found in Subversion at
 http://svn.terracotta.org/svn/forge/projects/bigmemory/max/trunk/code-samples.
 
-How to run the BigMemory Samples 
+How to run the Terracotta Samples 
 ==========================
-1. Copy your terracotta-license.key to the root directory ("/path/to/bigmemory").
 
-2. Launch the server
+1. Launch the server
 Launch the server with either the start-sample-server.bat script (for Windows) or the start-sample-server.sh script (for Linux/UNIX) found in each sample repository.
 
 Note: After running the samples, stop the server using either the stop-sample-server.bat script (for Windows) or the stop-sample-server.sh (for Linux/UNIX) found in each sample repository.
 
-3. Configure and run the samples using either the scripts or Maven procedure below.
+2. Configure and run the samples using either the scripts or Maven procedure below.
 
 Using a script:
 
