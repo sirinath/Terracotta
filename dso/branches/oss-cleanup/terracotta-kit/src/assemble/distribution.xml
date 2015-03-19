@@ -57,7 +57,6 @@
       <directory>${project.build.directory}/code-samples/terracotta-samples-${project.version}</directory>
       <outputDirectory>/code-samples</outputDirectory>
     </fileSet>
-
     <fileSet>
       <directory>${project.build.directory}/ehcache-${ehcache.version}</directory>
       <outputDirectory>/config-samples</outputDirectory>
@@ -85,11 +84,7 @@
       <directory>${project.build.directory}/toolkit-javadoc</directory>
       <outputDirectory>/apis/toolkit/javadoc</outputDirectory>
     </fileSet>
-    <fileSet>
-      <directory>${project.build.directory}/sessions-${sessions.version}</directory>
-      <outputDirectory>/sessions</outputDirectory>
-    </fileSet>
-    <!-- copy dependencies of terracotta (except itself) into /server/lib --> 
+    <!-- copy dependencies of terracotta (except itself) into /server/lib -->
     <fileSet>
       <directory>${project.build.directory}/server-lib</directory>
       <outputDirectory>/server/lib</outputDirectory>

@@ -63,12 +63,6 @@
       </properties>
     </profile>
     <profile>
-      <id>search</id>
-      <properties>
-        <mainClass>com.bigmemory.samples.search.BigMemorySearch</mainClass>
-      </properties>
-    </profile>
-    <profile>
       <id>crud</id>
       <properties>
         <mainClass>com.bigmemory.samples.crud.BigMemoryCrud</mainClass>
@@ -90,12 +84,6 @@
       <id>cache</id>
       <properties>
         <mainClass>com.bigmemory.samples.cache.BigMemoryAsACacheConfiguration</mainClass>
-      </properties>
-    </profile>
-    <profile>
-      <id>wan</id>
-      <properties>
-        <mainClass>com.bigmemory.samples.wan.WanReplication</mainClass>
       </properties>
     </profile>
   </profiles>
