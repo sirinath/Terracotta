@@ -11,12 +11,12 @@
   </parent>
 
   <groupId>org.terracotta.internal</groupId>
-  <artifactId>bigmemory</artifactId>
+  <artifactId>terracotta-kit</artifactId>
   <packaging>pom</packaging>
   <name>Terracotta Kit</name>
 
   <properties>
-    <product.name>bigmemory</product.name>
+    <product.name>terracotta-kit</product.name>
     <kit.name>${product.name}-${project.version}</kit.name>
     <root.dir>${project.build.directory}/${kit.name}</root.dir>
 
@@ -84,12 +84,6 @@
       <groupId>org.terracotta.internal</groupId>
       <artifactId>build-data</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta.session</groupId>
-      <artifactId>sessions</artifactId>
-      <version>${sessions.version}</version>
-      <type>tar.gz</type>
     </dependency>
   </dependencies>
 
@@ -178,24 +172,6 @@
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
                 </artifactItem>
-                <artifactItem>
-                  <groupId>org.terracotta.session</groupId>
-                  <artifactId>sessions</artifactId>
-                  <version>${sessions.version}</version>
-                  <type>tar.gz</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
-<!--
-                <artifactItem>
-                  <groupId>org.terracotta</groupId>
-                  <artifactId>management-tsa-war</artifactId>
-                  <version>4.3.0-SNAPSHOT</version>
-                  <type>war</type>
-
-                  <outputDirectory>${project.build.directory}/management-tsa-war</outputDirectory>
-                </artifactItem>
-                -->
                 <artifactItem>
                   <groupId>com.terracotta</groupId>
                   <artifactId>terracotta-samples</artifactId>
