@@ -1,9 +1,9 @@
-Using BigMemory as a Cache
+Using Terracotta Server as a Cache
 ==========
 
 Overview:
 =========
-This example will demonstrate how to use BigMemory as a cache
+This example will demonstrate how to use Terracotta Server as a cache
 
 Requirements:
 ===============

@@ -1,9 +1,9 @@
-BigMemory File Configuration
+Terracotta Server File Configuration
 ==========
 
 Overview:
 =========
-This example will demonstrate how to configure BigMemory using a size-based XML configuration
+This example will demonstrate how to configure Terracotta Server Open Source using a size-based XML configuration
 
 Requirements:
 ===============

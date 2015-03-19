@@ -1,9 +1,9 @@
-BigMemory ARC Sample
+Terracotta Server ARC Sample
 ==========
 
 Overview:
 =========
-This example will demonstrate how to configure BigMemory with Automatic Resource Control (ARC)
+This example will demonstrate how to configure Terracotta Server with Automatic Resource Control (ARC)
 
 Requirements:
 ===============
