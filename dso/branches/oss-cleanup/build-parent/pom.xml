@@ -105,6 +105,11 @@
         <version>${bigmemory-core-storage.version}</version>
       </dependency>
       <dependency>
+        <groupId>com.terracottatech</groupId>
+        <artifactId>search</artifactId>
+        <version>${search.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.terracotta</groupId>
         <artifactId>tc-messaging</artifactId>
         <version>${tc-messaging.version}</version>
