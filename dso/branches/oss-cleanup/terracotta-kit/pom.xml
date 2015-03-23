@@ -229,7 +229,7 @@
           <plugin>
             <groupId>org.terracotta</groupId>
             <artifactId>maven-forge-plugin</artifactId>
-            <executions>     
+            <executions>
               <execution>
                 <id>finder-scan-kit</id>
                 <phase>verify</phase>
@@ -238,7 +238,7 @@
                 </goals>
                 <configuration>
                   <onlyRunWhenSagDepsIsTrue>true</onlyRunWhenSagDepsIsTrue>
-                  <scanDirectory>${project.build.directory}/bigmemory-${project.version}</scanDirectory>
+                  <scanDirectory>${project.build.directory}/terracotta-${project.version}</scanDirectory>
                   <exclusionList>${basedir}/src/finder-exclusions.txt</exclusionList>
                 </configuration>
               </execution>
@@ -257,7 +257,7 @@
                 </goals>
                 <configuration>
                   <checkSnapshot>true</checkSnapshot>
-                  <kitPath>${project.build.directory}/bigmemory-${project.version}/bigmemory-${project.version}</kitPath>
+                  <kitPath>${project.build.directory}/terracotta-${project.version}/terracotta-${project.version}</kitPath>
                 </configuration>
               </execution>
             </executions>
