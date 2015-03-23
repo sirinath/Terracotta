@@ -5,7 +5,7 @@ Welcome to the Terracotta Server Samples directory.
 This directory contains a couple of examples that show you how to use various
 features and configurations of Terracotta Server. 
 The latest version of the code samples can be found in Subversion at
-http://svn.terracotta.org/svn/tc/dso/branches/oss-cleanup/terracotta-samples/
+http://svn.terracotta.org/svn/tc/dso/trunk/terracotta-samples/
 
 How to run the Terracotta Samples 
 ==========================
