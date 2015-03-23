@@ -369,7 +369,8 @@
                 <dependency>
                   <groupId>com.softwareag.ibit.tools.util</groupId>
                   <artifactId>finder</artifactId>
-                  <version>3.5.1.0.1</version>
+                  <!-- Before bumping version - verify it still accepts exclusion files -->
+                  <version>3.0</version>
                   <scope>compile</scope>
                 </dependency>
               </dependencies>
