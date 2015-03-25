@@ -1,9 +1,9 @@
-Terracotta Server Basic Operations
+Terracotta READ/WRITE Operations
 ==========
 
 Overview:
 =========
-This example will demonstrate how to create, retrieve, update, and delete using Terracotta Server
+This example will demonstrate how to do read/write operations using Terracotta Server
 
 Requirements:
 ===============
