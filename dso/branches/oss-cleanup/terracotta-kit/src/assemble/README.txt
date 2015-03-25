@@ -20,9 +20,6 @@ Getting Started
 For detailed information on Terracotta, begin with the Terracotta website
 at http://www.terracotta.org
 
-The QUICK-START.html file in the Terracotta directory provides tutorial 
-instructions on getting started.
-
 To locate Terracotta documentation, see 
 http://www.terracotta.org/kit/reflector?kitID=default&pageID=Documentation
 
