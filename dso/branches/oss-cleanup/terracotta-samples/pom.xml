@@ -69,6 +69,12 @@
       </properties>
     </profile>
     <profile>
+      <id>readwritethrough</id>
+      <properties>
+        <mainClass>com.bigmemory.samples.readwritethrough.ReadWriteThrough</mainClass>
+      </properties>
+    </profile>
+    <profile>
       <id>nonstop</id>
       <properties>
         <mainClass>com.bigmemory.samples.nonstop.BigMemoryNonStopRejoin</mainClass>

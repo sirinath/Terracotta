@@ -47,7 +47,6 @@ arc - Configure BigMemory with Automatic Resource Control
 
 Samples demonstrating features:
 crud - Basic BigMemory operations - create, retrieve, update, delete
-search - BigMemory Search features
+readwritethrough - Cache Loader and Cache Writer
 cache - Use BigMemory as a cache
 nonstop - BigMemory nonstop and rejoin features
-wan - BigMemory WAN replication
