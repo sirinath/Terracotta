@@ -9,7 +9,7 @@
         <maxDataSize>512m</maxDataSize>
       </offheap>
     </server>
-    <restartable enabled="true"/>
+    <restartable enabled="false"/>
   </servers>
 
   <clients>
