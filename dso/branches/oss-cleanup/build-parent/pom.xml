@@ -49,7 +49,7 @@ The Initial Developer of the Covered Software is
     <javax.servlet.version>3.0.0.v201112011016</javax.servlet.version>
     <slf4j.version>1.7.7</slf4j.version>
     <search.version>1.4.14-SNAPSHOT</search.version>
-    <security-version>2.0.14</security-version>
+    <shiro.version>1.2.3</shiro.version>
     <management-core-version>2.0.12</management-core-version>
     <management.apps.parent.version>1.4.0-SNAPSHOT</management.apps.parent.version>
     <session-management.version>${project.version}</session-management.version>
@@ -281,21 +281,6 @@ The Initial Developer of the Covered Software is
         <groupId>org.terracotta</groupId>
         <artifactId>management-core-resources</artifactId>
         <version>${management-core-version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.terracotta</groupId>
-        <artifactId>security-core</artifactId>
-        <version>${security-version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.terracotta</groupId>
-        <artifactId>security-keychain</artifactId>
-        <version>${security-version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.terracotta</groupId>
-        <artifactId>security-REST</artifactId>
-        <version>${security-version}</version>
       </dependency>
       <dependency>
         <groupId>org.terracotta.license</groupId>

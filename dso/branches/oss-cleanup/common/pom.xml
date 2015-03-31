@@ -117,12 +117,7 @@ The Initial Developer of the Covered Software is
       <artifactId>slf4j-api</artifactId>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>com.terracotta</groupId>
-      <artifactId>security-keychain</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    
+
     <!-- tests dependencies -->
     <dependency>
       <groupId>hsqldb</groupId>

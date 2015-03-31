@@ -2,7 +2,7 @@
 <!--
 The contents of this file are subject to the Terracotta Public License Version
 2.0 (the "License"); You may not use this file except in compliance with the
-License. You may obtain a copy of the License at 
+License. You may obtain a copy of the License at
 
      http://terracotta.org/legal/terracotta-public-license.
 
@@ -12,7 +12,7 @@ the specific language governing rights and limitations under the License.
 
 The Covered Software is Terracotta Platform.
 
-The Initial Developer of the Covered Software is 
+The Initial Developer of the Covered Software is
      Terracotta, Inc., a Software AG company
 -->
 
@@ -290,15 +290,32 @@ The Initial Developer of the Covered Software is
             <configuration>
               <executable>${java.home}/bin/java</executable>
               <arguments>
+                <argument>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${debugPort}</argument>
                 <argument>-Xms512m</argument>
                 <argument>-Xmx512m</argument>
                 <argument>-XX:+HeapDumpOnOutOfMemoryError</argument>
-                <argument>-Dcom.tc.management.war=${basedir}/../management-agent/management-tsa-war/target/management-tsa-war-${project.version}.war</argument>
                 <argument>-Dcom.sun.management.jmxremote</argument>
+                <argument>-XX:MaxDirectMemorySize=650m</argument>
+                <argument>-Dcom.tc.management.war=${basedir}/../management-agent/management-tsa-war/target/management-tsa-war-${project.version}.war</argument>
                 <argument>-Dsun.rmi.dgc.server.gcInterval=31536000</argument>
+                <argument>-Djava.awt.headless=true</argument>
+                <argument>-Dcom.tc.productkey.path=${user.home}/.tc/terracotta-license.key</argument>
+                <argument>-XX:MaxDirectMemorySize=8G</argument>
+                <argument>-Djava.net.preferIPv4Stack=true</argument>
+                <!--                <argument>-DSecretProvider.secret=lala</argument> -->
+                <argument>-Dtc.ssl.trustAllCerts=true</argument>
+                <argument>-Dtc.ssl.disableHostnameVerifier=true</argument>
+                <argument>-Dtc.keychain.detectFileChanges=true</argument>
+
                 <argument>-classpath</argument>
                 <classpath/>
                 <argument>com.tc.server.TCServerMain</argument>
+
+                <!-- mvn exec:exec -Pstart-server -Dnodeid=tsa_[1,2]_[1,2] -->
+                <argument>-f</argument>
+                <argument>${configFile}</argument>
+                <argument>-n</argument>
+                <argument>${nodeId}</argument>
               </arguments>
             </configuration>
           </plugin>

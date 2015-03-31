@@ -29,7 +29,6 @@ import com.terracotta.management.security.RequestTicketMonitor;
 import com.terracotta.management.security.UserService;
 import com.terracotta.management.service.RemoteAgentBridgeService;
 import com.terracotta.management.service.TimeoutService;
-import com.terracotta.management.user.UserInfo;
 import com.terracotta.management.web.utils.TSAConfig;
 
 import java.lang.reflect.Method;
@@ -54,7 +53,7 @@ public class RemoteCallerV2 extends RemoteCaller {
   }
 
   public <T extends AbstractEntityV2> ResponseEntityV2<T> fanOutResponseCall(final String serviceAgency, Set<String> nodes, final String serviceName, final Method method, final Object[] args) throws ServiceExecutionException {
-    final UserInfo userInfo = contextService.getUserInfo();
+    final Object userInfo = contextService.getUserInfo();
     Map<String, Future<ResponseEntityV2<T>>> futures = new HashMap<String, Future<ResponseEntityV2<T>>>();
 
     for (final String node : nodes) {

@@ -17,7 +17,6 @@
 package com.terracotta.management.security.impl;
 
 import com.terracotta.management.security.ContextService;
-import com.terracotta.management.user.UserInfo;
 
 /**
  * @author Ludovic Orban
@@ -25,12 +24,12 @@ import com.terracotta.management.user.UserInfo;
 public class NullContextService implements ContextService {
 
   @Override
-  public UserInfo getUserInfo() {
+  public Object getUserInfo() {
     return null;
   }
 
   @Override
-  public void putUserInfo(UserInfo userInfo) {
+  public void putUserInfo(Object userInfo) {
     //
   }
 }

@@ -34,10 +34,6 @@ The Initial Developer of the Covered Software is
       <artifactId>management-core-resources</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.terracotta</groupId>
-      <artifactId>security-REST</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>jul-to-slf4j</artifactId>
     </dependency>
@@ -64,6 +60,11 @@ The Initial Developer of the Covered Software is
       <artifactId>dso-l1-api</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.shiro</groupId>
+      <artifactId>shiro-web</artifactId>
+      <version>${shiro.version}</version>
     </dependency>
 
     <dependency>

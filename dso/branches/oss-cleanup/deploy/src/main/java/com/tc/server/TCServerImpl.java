@@ -33,6 +33,7 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.servlet.DefaultServlet;
+import org.eclipse.jetty.servlet.ErrorPageErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -768,21 +769,26 @@ public class TCServerImpl extends SEDA implements TCServer {
     String warFile = System.getProperty("com.tc.management.war");
     String failureReason = null;
     if (warFile == null) {
-      final String webAppPrefix = "management-tsa-war";
+      final List<String> webAppPrefixes = Arrays.asList("ent-management-tsa-war", "management-tsa-war");
       try {
         File managementDir = Directories.getServerLibFolder();
 
         String[] files = managementDir.list(new FilenameFilter() {
           @Override
           public boolean accept(File dir, String name) {
-            return name.startsWith(webAppPrefix) && name.endsWith(".war");
+            for (String webAppPrefix : webAppPrefixes) {
+              if (name.startsWith(webAppPrefix) && name.endsWith(".war")) {
+                return true;
+              }
+            }
+            return false;
           }
         });
 
         if (files != null && files.length > 0) {
           warFile = managementDir.getPath() + File.separator + files[0];
         } else {
-          failureReason = "Could not find the management web archive named : " + webAppPrefix;
+          failureReason = "Could not find one of the management web archives : " + webAppPrefixes;
         }
       } catch (FileNotFoundException e) {
         failureReason = "Could not find the management web archive " + e.getMessage();
@@ -806,13 +812,18 @@ public class TCServerImpl extends SEDA implements TCServer {
 
         restContext.setContextPath("/tc-management-api");
         restContext.setWar(warFile);
+        restContext.setErrorHandler(new ErrorPageErrorHandler());
         contextHandlerCollection.addHandler(restContext);
 
         // make sure the REST webapp is started before binding the port
         if (contextHandlerCollection.isStarted()) {
           restContext.start();
         }
-        bindManagementHttpPort(commonL2Config);
+        if (restContext.isAvailable()) {
+          bindManagementHttpPort(commonL2Config);
+        } else {
+          consoleLogger.warn("Cannot deploy REST management due to agent initialization error.", restContext.getUnavailableException());
+        }
       } finally {
         fileUnlock();
       }

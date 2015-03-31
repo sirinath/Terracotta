@@ -47,11 +47,6 @@ The Initial Developer of the Covered Software is
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.terracotta</groupId>
-      <artifactId>security-keychain</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>org.terracotta.license</groupId>
       <artifactId>terracotta-license</artifactId>
       <scope>provided</scope>

@@ -136,6 +136,7 @@ The Initial Developer of the Covered Software is
         <module>../ent-active-active-tests</module>
         <module>../terracotta-ee</module>
         <module>../terracotta-l1-ee</module>
+        <module>../ent-management-agent</module>
         <module>../toolkit-impl-ee</module>
         <module>../toolkit-express-impl-ee</module>
         <module>../toolkit-runtime-ee</module>

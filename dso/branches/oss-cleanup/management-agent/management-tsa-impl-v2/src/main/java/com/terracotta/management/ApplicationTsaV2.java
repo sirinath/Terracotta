@@ -59,9 +59,6 @@ import com.terracotta.management.service.impl.events.EventServiceImplV2;
 import com.terracotta.management.service.impl.util.LocalManagementSource;
 import com.terracotta.management.service.impl.util.RemoteManagementSource;
 import com.terracotta.management.web.proxy.ProxyExceptionMapper;
-import com.terracotta.management.web.resource.services.IdentityAssertionResourceService;
-import com.terracottatech.wan.monitor.WanMonitorResourceServiceImplV2;
-import com.terracottatech.wan.monitor.WanMonitorServiceV2;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -86,7 +83,6 @@ public class ApplicationTsaV2 extends DefaultApplicationV2 implements Applicatio
     s.add(OperatorEventsResourceServiceImplV2.class);
     s.add(ShutdownResourceServiceImplV2.class);
     s.add(TopologyResourceServiceImplV2.class);
-    s.add(IdentityAssertionResourceService.class);
     s.add(JmxResourceServiceImplV2.class);
 
     s.add(LocalShutdownResourceServiceImplV2.class);
@@ -105,7 +101,6 @@ public class ApplicationTsaV2 extends DefaultApplicationV2 implements Applicatio
     s.add(LicenseResourceServiceImplV2.class);
     
     s.add(ProxyExceptionMapper.class);
-    s.add(WanMonitorResourceServiceImplV2.class);
 
     return s;
   }
@@ -163,9 +158,6 @@ public class ApplicationTsaV2 extends DefaultApplicationV2 implements Applicatio
                                                                                            serverManagementService);
 
     /// utility services ///
-    serviceClasses.put(RequestTicketMonitor.class, requestTicketMonitor);
-    serviceClasses.put(ContextService.class, contextService);
-    serviceClasses.put(UserService.class, userService);
     serviceClasses.put(RequestValidator.class, requestValidator);
     serviceClasses.put(RemoteAgentBridgeService.class, remoteAgentBridgeService);
 
@@ -181,9 +173,6 @@ public class ApplicationTsaV2 extends DefaultApplicationV2 implements Applicatio
     /// Sessions Services ///
     serviceClasses.put(SessionsServiceV2.class, remoteServiceStubGenerator.newRemoteService(SessionsServiceV2.class, "Sessions"));
 
-    /// WAN Services ///
-    serviceClasses.put(WanMonitorServiceV2.class, remoteServiceStubGenerator.newRemoteService(WanMonitorServiceV2.class, "WAN"));
-    
     return serviceClasses;
   }
 

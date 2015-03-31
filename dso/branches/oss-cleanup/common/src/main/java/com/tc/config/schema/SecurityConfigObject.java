@@ -20,9 +20,13 @@ import com.tc.config.schema.context.ConfigContext;
 import com.terracottatech.config.Management;
 import com.terracottatech.config.Security;
 import com.terracottatech.config.Ssl;
-import static com.terracotta.management.security.SecretUtils.*;
 
 public class SecurityConfigObject extends BaseConfigObject implements SecurityConfig {
+
+  // TODO Break up config so that only EE code needs these props.
+  public static final String TERRACOTTA_KEYCHAIN_LOCATION_PROP = "com.tc.security.keychain.url";
+  public static final String TERRACOTTA_KEYCHAIN_IMPL_CLASS_PROP = "com.tc.security.keychain.impl";
+  public static final String TERRACOTTA_CUSTOM_SECRET_PROVIDER_PROP = "com.terracotta.SecretProvider";
 
   public static final String VM_ARG_KEYCHAIN_SECRET_PROVIDER = System.getProperty(TERRACOTTA_CUSTOM_SECRET_PROVIDER_PROP);
   public static final String VM_ARG_KEYCHAIN_IMPL = System.getProperty(TERRACOTTA_KEYCHAIN_IMPL_CLASS_PROP);
