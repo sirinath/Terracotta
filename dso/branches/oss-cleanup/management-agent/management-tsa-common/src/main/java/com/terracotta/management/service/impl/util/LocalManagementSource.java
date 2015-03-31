@@ -16,10 +16,6 @@
  */
 package com.terracotta.management.service.impl.util;
 
-import org.terracotta.license.LicenseConstants;
-import org.terracotta.management.l1bridge.RemoteAgentEndpoint;
-import org.terracotta.management.resource.exceptions.ExceptionUtils;
-
 import com.tc.config.schema.L2Info;
 import com.tc.config.schema.ServerGroupInfo;
 import com.tc.config.schema.setup.ConfigurationSetupException;
@@ -32,31 +28,12 @@ import com.tc.management.beans.l1.L1InfoMBean;
 import com.tc.management.beans.logging.TCLoggingBroadcasterMBean;
 import com.tc.management.beans.object.EnterpriseTCServerMbean;
 import com.tc.management.beans.object.ObjectManagementMonitorMBean;
-import com.tc.net.util.TSASSLSocketFactory;
 import com.tc.objectserver.api.GCStats;
 import com.tc.operatorevent.TerracottaOperatorEvent;
 import com.tc.stats.api.DSOMBean;
 import com.tc.util.Conversion;
-import com.terracotta.management.keychain.URIKeyName;
-import com.terracotta.management.security.KeychainInitializationException;
 import com.terracotta.management.web.utils.TSAConfig;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.management.ManagementFactory;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.zip.ZipInputStream;
+import org.terracotta.license.LicenseConstants;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -68,7 +45,18 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.Notification;
 import javax.management.ObjectName;
-import javax.net.ssl.HttpsURLConnection;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.zip.ZipInputStream;
 
 /**
  * @author Ludovic Orban
@@ -496,111 +484,6 @@ public class LocalManagementSource {
     } catch (ConfigurationSetupException e) {
       throw new ManagementSourceException(e);
     }
-  }
-
-  public List<String> performSecurityChecks() {
-    List<String> errors = new ArrayList<String>();
-
-    // no need to do anything if we're not running secured
-    if (!TSAConfig.isSslEnabled()) {
-      return errors;
-    }
-
-    // Check that we can perform IA
-    String securityServiceLocation = TSAConfig.getSecurityServiceLocation();
-    if (securityServiceLocation == null) {
-      errors.add("No Security Service Location configured");
-    } else {
-      try {
-        URL url = new URL(securityServiceLocation);
-        HttpsURLConnection sslUrlConnection = (HttpsURLConnection) url.openConnection();
-
-        TSASSLSocketFactory tsaSslSocketFactory = new TSASSLSocketFactory();
-        sslUrlConnection.setSSLSocketFactory(tsaSslSocketFactory);
-
-        Integer securityTimeout = TSAConfig.getSecurityTimeout();
-        if (securityTimeout > -1) {
-          sslUrlConnection.setConnectTimeout(securityTimeout);
-          sslUrlConnection.setReadTimeout(securityTimeout);
-        }
-
-        InputStream inputStream;
-        try {
-          inputStream = sslUrlConnection.getInputStream();
-          inputStream.close();
-          throw new IOException("No Identity Assertion service running");
-        } catch (IOException ioe) {
-          // 401 is the expected response code
-          if (sslUrlConnection.getResponseCode() != 401) {
-            throw ioe;
-          }
-        }
-
-      } catch (IOException ioe) {
-        errors.add("Error opening connection to Security Service Location [" + securityServiceLocation + "]: " + ExceptionUtils
-            .getRootCause(ioe).getMessage());
-      } catch (Exception e) {
-        errors.add("Error setting up Security Service SSL socket factory: " + e.getMessage());
-      }
-    }
-
-    // Check that we can connect to all L2s
-    Map<String, String> remoteServerUrls = new LocalManagementSource().getRemoteServerUrls();
-    for (Map.Entry<String, String> entry : remoteServerUrls.entrySet()) {
-      String serverUrl = entry.getValue();
-
-      try {
-        URL url = new URL(serverUrl);
-        HttpsURLConnection sslUrlConnection = (HttpsURLConnection) url.openConnection();
-        TSASSLSocketFactory tsaSslSocketFactory = new TSASSLSocketFactory();
-        sslUrlConnection.setSSLSocketFactory(tsaSslSocketFactory);
-
-        Integer securityTimeout = TSAConfig.getSecurityTimeout();
-        if (securityTimeout > -1) {
-          sslUrlConnection.setConnectTimeout(securityTimeout);
-          sslUrlConnection.setReadTimeout(securityTimeout);
-        }
-
-        InputStream inputStream;
-        inputStream = sslUrlConnection.getInputStream();
-        inputStream.close();
-      } catch (IOException ioe) {
-        errors.add("Error opening connection to Server [" + securityServiceLocation + "]: " + ExceptionUtils.getRootCause(ioe).getMessage());
-      } catch (Exception e) {
-        errors.add("Error setting up Server SSL socket factory: " + e.getMessage());
-      }
-
-      // Check that the keychain contains the management server's URL
-      try {
-        String managementUrl = TSAConfig.getManagementUrl();
-        byte[] secret = TSAConfig.getKeyChain().retrieveSecret(new URIKeyName(managementUrl));
-        if (secret == null) {
-          errors.add("Missing keychain entry for Management URL [" + managementUrl + "]");
-        } else {
-          Arrays.fill(secret, (byte)0);
-        }
-      } catch (KeychainInitializationException kie) {
-        errors.add("Error accessing keychain: " + kie.getMessage());
-      } catch (URISyntaxException mue) {
-        errors.add("Malformed Security Management URL: " + mue.getMessage());
-      }
-
-      // Check that Ehcache can perform IA
-      try {
-        byte[] secret = TSAConfig.getKeyChain().retrieveSecret(new URIKeyName("jmx:net.sf.ehcache:type=" + RemoteAgentEndpoint.IDENTIFIER));
-        if (secret == null) {
-          errors.add("Missing keychain entry for Ehcache URI [jmx:net.sf.ehcache:type=" + RemoteAgentEndpoint.IDENTIFIER + "]");
-        } else {
-          Arrays.fill(secret, (byte)0);
-        }
-      } catch (KeychainInitializationException kie) {
-        errors.add("Error accessing keychain: " + kie.getMessage());
-      } catch (URISyntaxException mue) {
-        errors.add("Malformed Ehcache management URI: " + mue.getMessage());
-      }
-    }
-
-    return errors;
   }
 
   /**

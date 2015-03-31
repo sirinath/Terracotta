@@ -27,7 +27,6 @@ import com.terracotta.management.security.RequestTicketMonitor;
 import com.terracotta.management.security.UserService;
 import com.terracotta.management.service.RemoteAgentBridgeService;
 import com.terracotta.management.service.TimeoutService;
-import com.terracotta.management.user.UserInfo;
 import com.terracotta.management.web.utils.TSAConfig;
 
 import java.io.ByteArrayInputStream;
@@ -141,7 +140,7 @@ public class RemoteCaller {
   }
 
   public <T extends Representable> Collection<T> fanOutCollectionCall(final String serviceAgency, Set<String> nodes, final String serviceName, final Method method, final Object[] args) throws ServiceExecutionException {
-    final UserInfo userInfo = contextService.getUserInfo();
+    final Object userInfo = contextService.getUserInfo();
     Collection<Future<Collection<T>>> futures = new ArrayList<Future<Collection<T>>>();
 
     for (final String node : nodes) {

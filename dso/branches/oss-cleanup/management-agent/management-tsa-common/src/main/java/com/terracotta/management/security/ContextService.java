@@ -16,15 +16,13 @@
  */
 package com.terracotta.management.security;
 
-import com.terracotta.management.user.UserInfo;
-
 /**
  * @author Ludovic Orban
  */
 public interface ContextService {
 
-  UserInfo getUserInfo();
+  Object getUserInfo();
 
-  void putUserInfo(UserInfo userInfo);
+  void putUserInfo(Object userInfo);
 
 }

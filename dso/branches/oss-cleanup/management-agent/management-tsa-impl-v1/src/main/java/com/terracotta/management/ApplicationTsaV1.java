@@ -71,7 +71,6 @@ import com.terracotta.management.service.impl.TsaAgentServiceImpl;
 import com.terracotta.management.service.impl.util.LocalManagementSource;
 import com.terracotta.management.service.impl.util.RemoteManagementSource;
 import com.terracotta.management.web.proxy.ProxyExceptionMapper;
-import com.terracotta.management.web.resource.services.IdentityAssertionResourceService;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -93,7 +92,6 @@ public class ApplicationTsaV1 extends DefaultApplication implements ApplicationT
     s.add(OperatorEventsResourceServiceImpl.class);
     s.add(ShutdownResourceServiceImpl.class);
     s.add(TopologyResourceServiceImpl.class);
-    s.add(IdentityAssertionResourceService.class);
     s.add(JmxResourceServiceImpl.class);
     s.add(LicenseResourceServiceImpl.class);
     

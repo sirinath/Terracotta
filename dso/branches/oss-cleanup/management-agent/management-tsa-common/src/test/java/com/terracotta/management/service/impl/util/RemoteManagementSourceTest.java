@@ -111,7 +111,7 @@ public class RemoteManagementSourceTest {
     when(builder.header(anyString(), any())).thenReturn(builder);
     when(client.target(any(URI.class))).thenReturn(webTarget);
 
-    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), new DfltSecurityContextService(), client);
+    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), client);
     remoteManagementSource.getFromRemoteL2("server1", new URI("/xyz"), Collection.class, String.class);
 
     verify(client).target(eq(new URI("http://server-host1:9540/xyz")));
@@ -138,7 +138,7 @@ public class RemoteManagementSourceTest {
 
     when(builder.get(any(GenericType.class))).thenThrow(WebApplicationException.class);
 
-    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), new DfltSecurityContextService(), client);
+    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), client);
     try {
       remoteManagementSource.getFromRemoteL2("server1", new URI("/xyz"), Collection.class, String.class);
       fail("expected ManagementSourceException");
@@ -166,7 +166,7 @@ public class RemoteManagementSourceTest {
     when(builder.header(anyString(), any())).thenReturn(builder);
     when(client.target(any(URI.class))).thenReturn(webTarget);
 
-    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), new DfltSecurityContextService(), client);
+    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), client);
     remoteManagementSource.postToRemoteL2("server1", new URI("/xyz"));
 
     verify(client).target(eq(new URI("http://server-host1:9540/xyz")));
@@ -191,7 +191,7 @@ public class RemoteManagementSourceTest {
 
     when(builder.post(any(Entity.class))).thenThrow(WebApplicationException.class);
 
-    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), new DfltSecurityContextService(), client);
+    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), client);
     try {
       remoteManagementSource.postToRemoteL2("server1", new URI("/xyz"));
       fail("expected ManagementSourceException");
@@ -219,7 +219,7 @@ public class RemoteManagementSourceTest {
     when(builder.header(anyString(), any())).thenReturn(builder);
     when(client.target(any(URI.class))).thenReturn(webTarget);
 
-    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), new DfltSecurityContextService(), client);
+    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), client);
     remoteManagementSource.postToRemoteL2("server1", new URI("/xyz"), (Collection)Collections.singleton("aaa"), String.class);
 
     verify(client).target(eq(new URI("http://server-host1:9540/xyz")));
@@ -246,7 +246,7 @@ public class RemoteManagementSourceTest {
 
     when(builder.post(any(Entity.class), any(Class.class))).thenThrow(WebApplicationException.class);
 
-    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), new DfltSecurityContextService(), client);
+    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), client);
     try {
       remoteManagementSource.postToRemoteL2("server1", new URI("/xyz"), (Collection)Collections.singleton("aaa"), String.class);
       fail("expected ManagementSourceException");
@@ -276,7 +276,7 @@ public class RemoteManagementSourceTest {
     when(builder.header(anyString(), any())).thenReturn(builder);
     when(client.target(any(URI.class))).thenReturn(webTarget);
 
-    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), new DfltSecurityContextService(), client);
+    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), client);
     remoteManagementSource.postToRemoteL2("server1", new URI("/xyz"), Collection.class, String.class);
 
     verify(client).target(eq(new URI("http://server-host1:9540/xyz")));
@@ -301,7 +301,7 @@ public class RemoteManagementSourceTest {
 
     when(builder.post(any(Entity.class), any(SubGenericType.class))).thenThrow(WebApplicationException.class);
 
-    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), new DfltSecurityContextService(), client);
+    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), client);
     try {
       remoteManagementSource.postToRemoteL2("server1", new URI("/xyz"), Collection.class, String.class);
       fail("expected ManagementSourceException");
@@ -333,7 +333,7 @@ public class RemoteManagementSourceTest {
     when(asyncInvoker.get(any(InvocationCallback.class))).thenReturn(mock(Future.class));
 
 
-    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), new DfltSecurityContextService(), client) {
+    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), client) {
       @Override
       protected long eventReadFailureRetryDelayInMs() {
         return 1L;
@@ -386,7 +386,7 @@ public class RemoteManagementSourceTest {
     when(asyncInvoker.get(any(InvocationCallback.class))).thenReturn(mock(Future.class));
 
 
-    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), new DfltSecurityContextService(), client) {
+    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), client) {
       @Override
       protected long eventReadFailureRetryDelayInMs() {
         return 1L;
@@ -427,7 +427,7 @@ public class RemoteManagementSourceTest {
     when(asyncInvoker.get(any(InvocationCallback.class))).thenReturn(mock(Future.class));
 
 
-    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), new DfltSecurityContextService(), client) {
+    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), client) {
       @Override
       protected long eventReadFailureRetryDelayInMs() {
         return 1L;
@@ -467,7 +467,7 @@ public class RemoteManagementSourceTest {
     when(asyncInvoker.get(any(InvocationCallback.class))).thenReturn(mock(Future.class));
 
 
-    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), new DfltSecurityContextService(), client) {
+    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), client) {
       @Override
       protected long eventReadFailureRetryDelayInMs() {
         return 1L;
@@ -494,7 +494,7 @@ public class RemoteManagementSourceTest {
     Client client = mock(Client.class);
     Future<MyRepresentable> future = mock(Future.class);
 
-    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), new DfltSecurityContextService(), client);
+    RemoteManagementSource remoteManagementSource = new RemoteManagementSource(localManagementSource, new TimeoutServiceImpl(1000L), client);
 
     Collection<MyRepresentable> result = remoteManagementSource.collectEntitiesFromFutures(Collections.singletonMap("server1", future), 1000, "myMethod", 1000);
     assertThat(result.isEmpty(), is(true));

@@ -17,7 +17,6 @@
 package com.terracotta.management.security.impl;
 
 import com.terracotta.management.security.UserService;
-import com.terracotta.management.user.UserInfo;
 
 /**
  * @author Ludovic Orban
@@ -25,12 +24,12 @@ import com.terracotta.management.user.UserInfo;
 public class NullUserService implements UserService {
 
   @Override
-  public UserInfo getUserInfo(String token) {
+  public Object getUserInfo(String token) {
     return null;
   }
 
   @Override
-  public String putUserInfo(UserInfo userInfo) {
+  public String putUserInfo(Object userInfo) {
     return null;
   }
 

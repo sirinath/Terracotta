@@ -21,12 +21,12 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import org.terracotta.management.ServiceLocator;
-
 import com.terracotta.management.security.ContextService;
 import com.terracotta.management.security.RequestTicketMonitor;
 import com.terracotta.management.security.SecurityContextService;
 import com.terracotta.management.security.UserService;
+import org.terracotta.management.ServiceLocator;
+
 import com.terracotta.management.service.RemoteAgentBridgeService;
 import com.terracotta.management.service.TimeoutService;
 import com.terracotta.management.service.impl.util.LocalManagementSource;
@@ -60,10 +60,6 @@ public interface ApplicationTsaService {
    * @param timeoutService
    * @param localManagementSource
    * @param remoteManagementSource
-   * @param securityContextService
-   * @param requestTicketMonitor
-   * @param userService
-   * @param contextService
    * @param remoteAgentBridgeService
    * @param l1BridgeExecutorService
    * 

@@ -30,11 +30,6 @@ The Initial Developer of the Covered Software is
 
   <dependencies>
     <dependency>
-      <groupId>com.terracottatech</groupId>
-      <artifactId>wan-management-v2</artifactId>
-      <version>${wan-management.version}</version>
-    </dependency>  
-    <dependency>
       <groupId>org.terracotta.session</groupId>
       <artifactId>sessions-management-resources-v2</artifactId>
       <version>${session-management.version}</version>
@@ -53,10 +48,6 @@ The Initial Developer of the Covered Software is
       <groupId>net.sf.ehcache</groupId>
       <artifactId>management-ehcache-impl-v2</artifactId>
       <version>${ehcache.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.terracotta</groupId>
-      <artifactId>security-REST</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
