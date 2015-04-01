@@ -86,7 +86,11 @@ public class LocalManagementSource {
       dsoMBean = JMX.newMBeanProxy(mBeanServer, dsoObjectName, DSOMBean.class);
       objectManagementMonitorMBean = JMX.newMBeanProxy(mBeanServer, new ObjectName("org.terracotta:type=Terracotta Server,subsystem=Object Management,name=ObjectManagement"), ObjectManagementMonitorMBean.class);
       l2DumperMBean = JMX.newMBeanProxy(mBeanServer, new ObjectName("org.terracotta.internal:type=Terracotta Server,name=L2Dumper"), L2DumperMBean.class);
-      enterpriseTCServerMbean = JMX.newMBeanProxy(mBeanServer, new ObjectName("org.terracotta.internal:type=Terracotta Server,name=Enterprise Terracotta Server"), EnterpriseTCServerMbean.class);
+      if (TSAConfig.isEnterprise()) {
+        enterpriseTCServerMbean = JMX.newMBeanProxy(mBeanServer, new ObjectName("org.terracotta.internal:type=Terracotta Server,name=Enterprise Terracotta Server"), EnterpriseTCServerMbean.class);
+      } else {
+        enterpriseTCServerMbean = null;
+      }
 
       localServerName = (String)mBeanServer.getAttribute(internalTerracottaServerObjectName, "L2Identifier");
     } catch (JMException e) {
@@ -479,6 +483,9 @@ public class LocalManagementSource {
   }
 
   public TopologyReloadStatus reloadConfiguration() throws ManagementSourceException {
+    if (enterpriseTCServerMbean == null) {
+      throw new NotSupportedFeatureException("Configuration reloading is only possible with the Enterprise product.");
+    }
     try {
       return enterpriseTCServerMbean.reloadConfiguration();
     } catch (ConfigurationSetupException e) {
