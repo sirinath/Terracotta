@@ -72,6 +72,8 @@ The Initial Developer of the Covered Software is
     <module>management</module>
     <module>management-agent</module>
     <module>terracotta-samples</module>
+    <module>server-script</module>
+    <module>management-cli-oss</module>
   </modules>
 
   <build>
