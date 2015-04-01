@@ -35,8 +35,13 @@ import java.util.List;
  */
 public class SecuritySetup {
 
+  private final NullContextService nullContextService = new NullContextService();
+  private final NullRequestTicketMonitor nullRequestTicketMonitor = new NullRequestTicketMonitor();
+  private final NullUserService nullUserService = new NullUserService();
+  private final DfltSecurityContextService dfltSecurityContextService = new DfltSecurityContextService();
+
   public ContextService getContextService() {
-    return new NullContextService();
+    return nullContextService;
   }
 
   public RemoteManagementSource buildRemoteManagementSource(LocalManagementSource localManagementSource, TimeoutService timeoutService) {
@@ -44,15 +49,15 @@ public class SecuritySetup {
   }
 
   public RequestTicketMonitor getRequestTicketMonitor() {
-    return new NullRequestTicketMonitor();
+    return nullRequestTicketMonitor;
   }
 
   public UserService getUserService() {
-    return new NullUserService();
+    return nullUserService;
   }
 
   public SecurityContextService getSecurityContextService() {
-    return new DfltSecurityContextService();
+    return dfltSecurityContextService;
   }
 
   public List<String> performSecurityChecks() {
