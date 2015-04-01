@@ -150,7 +150,7 @@ The Initial Developer of the Covered Software is
               <artifactSet>
                 <includes>
                   <include>org.terracotta.internal:*</include>
-                  <include>org.terracotta.internal.enterprise:*</include>
+                  <include>com.terracottatech.internal:*</include>
                 </includes>
               </artifactSet>
               <filters>
