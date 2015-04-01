@@ -818,11 +818,13 @@ public class TCServerImpl extends SEDA implements TCServer {
         // make sure the REST webapp is started before binding the port
         if (contextHandlerCollection.isStarted()) {
           restContext.start();
-        }
-        if (restContext.isAvailable()) {
-          bindManagementHttpPort(commonL2Config);
-        } else {
-          consoleLogger.warn("Cannot deploy REST management due to agent initialization error.", restContext.getUnavailableException());
+          // only bind the port if the agent deployed successfully
+          if (restContext.isAvailable()) {
+            bindManagementHttpPort(commonL2Config);
+          } else {
+            logger.warn("Cannot deploy REST management due to agent initialization error", restContext.getUnavailableException());
+            consoleLogger.warn("Cannot deploy REST management due to agent initialization error : " + restContext.getUnavailableException());
+          }
         }
       } finally {
         fileUnlock();
