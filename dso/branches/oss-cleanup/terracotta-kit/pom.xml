@@ -237,8 +237,8 @@ The Initial Developer of the Covered Software is
           <appendAssemblyId>false</appendAssemblyId>
           <attach>true</attach>
           <tarLongFileMode>gnu</tarLongFileMode>
-         <filters>
-            <filter>src/assemble/filter.properties</filter>
+          <filters>
+            <filter>${basedir}/src/assemble/filter.properties</filter>
           </filters>
           <descriptors>
             <descriptor>${basedir}/src/assemble/distribution.xml</descriptor>
