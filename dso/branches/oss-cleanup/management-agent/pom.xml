@@ -35,7 +35,6 @@ The Initial Developer of the Covered Software is
     <module>management-tsa-impl-v2</module>
     <module>management-tsa-common</module>
     <module>management-tsa-war</module>
-    <module>management-system-tests</module>
   </modules>
 
 </project>
