@@ -30,11 +30,6 @@ The Initial Developer of the Covered Software is
 
   <dependencies>
     <dependency>
-      <groupId>org.terracotta.session</groupId>
-      <artifactId>sessions-management-resources-v2</artifactId>
-      <version>${session-management.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.terracotta</groupId>
       <artifactId>management-tsa-v2</artifactId>
       <version>${project.version}</version>
