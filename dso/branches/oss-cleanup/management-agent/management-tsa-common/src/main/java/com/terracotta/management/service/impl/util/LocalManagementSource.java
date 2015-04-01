@@ -86,7 +86,7 @@ public class LocalManagementSource {
       dsoMBean = JMX.newMBeanProxy(mBeanServer, dsoObjectName, DSOMBean.class);
       objectManagementMonitorMBean = JMX.newMBeanProxy(mBeanServer, new ObjectName("org.terracotta:type=Terracotta Server,subsystem=Object Management,name=ObjectManagement"), ObjectManagementMonitorMBean.class);
       l2DumperMBean = JMX.newMBeanProxy(mBeanServer, new ObjectName("org.terracotta.internal:type=Terracotta Server,name=L2Dumper"), L2DumperMBean.class);
-      if (TSAConfig.isEnterprise()) {
+      if (isEnterpriseEdition()) {
         enterpriseTCServerMbean = JMX.newMBeanProxy(mBeanServer, new ObjectName("org.terracotta.internal:type=Terracotta Server,name=Enterprise Terracotta Server"), EnterpriseTCServerMbean.class);
       } else {
         enterpriseTCServerMbean = null;

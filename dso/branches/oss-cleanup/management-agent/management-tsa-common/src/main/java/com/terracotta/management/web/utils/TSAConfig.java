@@ -39,16 +39,6 @@ public class TSAConfig {
     }
   }
 
-  public static boolean isEnterprise() {
-    try {
-      MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-      Object secure = mBeanServer.getAttribute(new ObjectName("org.terracotta.internal:type=Terracotta Server,name=Terracotta Server"), "Enterprise");
-      return Boolean.TRUE.equals(secure);
-    } catch (Exception e) {
-      return false;
-    }
-  }
-
   public static String getSecurityServiceLocation() {
     try {
       MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
