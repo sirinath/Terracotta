@@ -24,7 +24,6 @@ import net.sf.ehcache.management.service.EntityResourceFactory;
 import org.terracotta.management.application.DefaultApplication;
 import org.terracotta.management.resource.services.AgentService;
 import org.terracotta.management.resource.services.validator.RequestValidator;
-import org.terracotta.session.management.SessionsService;
 
 import com.terracotta.management.l1bridge.RemoteAgentService;
 import com.terracotta.management.l1bridge.RemoteRequestValidator;
@@ -106,9 +105,6 @@ public class ApplicationTsaV1 extends DefaultApplication implements ApplicationT
     s.add(org.terracotta.management.resource.services.AgentsResourceServiceImpl.class);
     s.add(net.sf.ehcache.management.resource.services.QueryResourceServiceImpl.class);
 
-    s.add(org.terracotta.session.management.SessionsResourceServiceImpl.class);
-    
-
     return s;
   }
 
@@ -170,9 +166,6 @@ public class ApplicationTsaV1 extends DefaultApplication implements ApplicationT
     serviceClasses.put(CacheManagerService.class, remoteServiceStubGenerator.newRemoteService(CacheManagerService.class, "Ehcache"));
     serviceClasses.put(CacheService.class, remoteServiceStubGenerator.newRemoteService(CacheService.class, "Ehcache"));
     serviceClasses.put(EntityResourceFactory.class, remoteServiceStubGenerator.newRemoteService(EntityResourceFactory.class, "Ehcache"));
-
-    /// Sessions Services ///
-    serviceClasses.put(SessionsService.class, remoteServiceStubGenerator.newRemoteService(SessionsService.class, "Sessions"));
 
     return serviceClasses;
 
