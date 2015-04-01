@@ -42,18 +42,30 @@ The Initial Developer of the Covered Software is
     <bigmemory.version>4.3.0-SNAPSHOT</bigmemory.version>
     <sessions.version>4.3.0-SNAPSHOT</sessions.version>
     <escrow-maven-plugin.version>1.0.0</escrow-maven-plugin.version>
-
+    <management-cli.version>${project.version}</management-cli.version>
     <terracotta.license>LICENSE.txt</terracotta.license>
 
     <jersey.version>1.16</jersey.version>
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>terracotta</artifactId>
-      <version>${project.version}</version>
-    </dependency>
+	<dependency>
+		<groupId>org.terracotta</groupId>
+		<artifactId>management-cli-oss</artifactId>
+		<version>${project.version}</version>
+		<classifier>with-dependencies</classifier>
+        <type>zip</type>
+	</dependency>
+	<dependency>
+		<groupId>org.terracotta</groupId>
+		<artifactId>server-script</artifactId>
+		<version>${project.version}</version>
+	</dependency>
+	<dependency>
+		<groupId>org.terracotta</groupId>
+		<artifactId>terracotta</artifactId>
+		<version>${project.version}</version>
+	</dependency>
 
     <!-- toolkit -->
     <dependency>
@@ -205,6 +217,13 @@ The Initial Developer of the Covered Software is
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
                 </artifactItem>
+                 <artifactItem>
+                  <groupId>org.terracotta</groupId>
+                  <artifactId>server-script</artifactId>
+                  <version>${project.version}</version>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
               </artifactItems>
             </configuration>
           </execution>
@@ -218,6 +237,9 @@ The Initial Developer of the Covered Software is
           <appendAssemblyId>false</appendAssemblyId>
           <attach>true</attach>
           <tarLongFileMode>gnu</tarLongFileMode>
+         <filters>
+            <filter>src/assemble/filter.properties</filter>
+          </filters>
           <descriptors>
             <descriptor>${basedir}/src/assemble/distribution.xml</descriptor>
           </descriptors>

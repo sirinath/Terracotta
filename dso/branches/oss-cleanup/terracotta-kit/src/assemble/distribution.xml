@@ -109,6 +109,11 @@ The Initial Developer of the Covered Software is
         <exclude>terracotta-${project.version}.jar</exclude>
       </excludes>      
     </fileSet>
+     <fileSet>
+      <directory>${project.build.directory}/management-server</directory>
+      <outputDirectory>/tools/management-console/bin</outputDirectory>
+      <filtered>true</filtered>
+    </fileSet>
   </fileSets>
 
   <files>
@@ -150,6 +155,11 @@ The Initial Developer of the Covered Software is
         <exclude>*:terracotta-toolkit-api-internal</exclude>
         <exclude>*:*:jar:javadoc</exclude>
       </excludes>
+    </dependencySet>
+    <dependencySet>
+    	<unpack>true</unpack>
+    	<includes><include>org.terracotta:management-cli-oss:zip:with-dependencies</include></includes>
+    	<outputDirectory>/tools/management-console/lib</outputDirectory>
     </dependencySet>
   </dependencySets>
 </assembly>
