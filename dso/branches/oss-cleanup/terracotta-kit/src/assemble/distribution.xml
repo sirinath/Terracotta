@@ -113,6 +113,7 @@ The Initial Developer of the Covered Software is
       <directory>${project.build.directory}/management-server</directory>
       <outputDirectory>/tools/management-console/bin</outputDirectory>
       <filtered>true</filtered>
+      <fileMode>0755</fileMode>
     </fileSet>
   </fileSets>
 
