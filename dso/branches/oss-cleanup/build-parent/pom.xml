@@ -48,19 +48,16 @@ The Initial Developer of the Covered Software is
     <jetty.version>8.1.15.v20140411</jetty.version>
     <javax.servlet.version>3.0.0.v201112011016</javax.servlet.version>
     <slf4j.version>1.7.7</slf4j.version>
-    <search.version>1.4.14-SNAPSHOT</search.version>
+    <search.version>1.4.14</search.version>
     <shiro.version>1.2.3</shiro.version>
     <management-core-version>2.0.12</management-core-version>
-    <management.apps.parent.version>1.4.0-SNAPSHOT</management.apps.parent.version>
     <session-management.version>${project.version}</session-management.version>
-    <wan-management.version>4.3.0-SNAPSHOT</wan-management.version>
     <tc-messaging.version>1.0.0</tc-messaging.version>
     <terracotta-license.version>1.1.2</terracotta-license.version>
     <toolkit-api.version>2.7</toolkit-api.version> 
     <toolkit-api-internal.version>1.17</toolkit-api-internal.version>
     <!-- version of ehcache embedded inside toolkit -->
     <ehcache.version>2.10.0-SNAPSHOT</ehcache.version>
-    <ehcache-ee.version>2.10.0-SNAPSHOT</ehcache-ee.version>
     <tcconfig.version>9.1</tcconfig.version>
     <linked-child-process.version>1.0.8</linked-child-process.version>
     <gmaven-plugin.version>1.4</gmaven-plugin.version>
