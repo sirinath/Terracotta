@@ -1,4 +1,4 @@
-﻿Terracotta Public License, version 2.0
+Terracotta Public License, version 2.0
 
 1. Definitions
 
@@ -79,9 +79,9 @@ display, perform, sublicense, distribute, and otherwise exploit its
 Contributions, either on an unmodified basis, with Modifications, or as part of 
 a Larger Work; and
 
-(b) under Patent Claims of such Contributor to make, use, sell, offer for  
-sale, have made, import, and otherwise transfer either its Contributions or its 
-Contributor Version.
+(b) under Patent Claims of such Initial Developer or Contributor to make, use, 
+sell, offer for sale, have made, import, and otherwise transfer either its 
+Contributions or its Contributor Version.
 
 2.2. Effective Date
 The licenses granted in Section 2.1 with respect to any Contribution become 
@@ -102,12 +102,12 @@ modifications of Covered Software, or (ii) You and any other third party's
 combination with other software (except as part of its Contributor Version) or 
 devices; or
 
-(c) under Patent Claims infringed by Covered Software in the absence of its 
+(c) under Patent Claims infringed by Covered Software in the absence of
 Contributions.
 
 This License does not grant any rights in the trademarks, service marks, or 
 logos of any Contributor (except as may be necessary to comply with the notice 
-and attribution requirements in Sections 3.5 and 3.8.
+and attribution requirements in Sections 3.5 and 3.8).
 
 2.4. Subsequent Licenses
 No Contributor makes additional grants as a result of Your choice to distribute 
@@ -390,10 +390,10 @@ Software distributed under the License is distributed on an "AS IS" basis,
 WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for 
 the specific language governing rights and limitations under the License.
 
-The Covered Software is ______________________________________.
+The Covered Software is Terracotta Server Open Source Kit.
 
-The Initial Developer of the Covered Software is Terracotta, Inc. © Terracotta, 
-Inc., a Software AG company
+The Initial Developer of the Covered Software is Terracotta, Inc. (C) 2015
+Terracotta, Inc., a Software AG company
 
 Portions created by ______________________ are Copyright (C) _______________. 
 All Rights Reserved.
