@@ -37,7 +37,7 @@ public class OssCommandManager implements RestCommandManager {
 
   @Override
   public Command<Context> getUrlEncodingCommand() {
-    return null;
+    return new SetupUrlEncodingCommand();
   }
 
   @Override
