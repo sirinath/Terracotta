@@ -16,11 +16,11 @@
  */
 package org.terracotta.management.cli.rest;
 
-public abstract class BaseOssHttpCommand extends AbstractHttpCommand{
+public abstract class BaseOssHttpCommand extends AbstractHttpCommand {
 
-    @Override
-    protected void docleanUp() throws Exception {
-      // no-cleanup required for oss http command
-    }
+  @Override
+  protected void docleanUp() throws Exception {
+    // no-cleanup required for oss http command
+  }
 
 }

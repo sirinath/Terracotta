@@ -18,29 +18,29 @@ package org.terracotta.management.cli.rest;
 
 public class RestCommandManagerProvider {
 
-   private static final String COMMAND_MANAGER_PROPERTY_KEY = "manager";
-   private static RestCommandManager manager;
+  private static final String COMMAND_MANAGER_PROPERTY_KEY = "manager";
+  private static RestCommandManager manager;
 
-   private RestCommandManagerProvider() {
-   }
+  private RestCommandManagerProvider() {
+  }
 
-   @SuppressWarnings("unchecked")
-   public static RestCommandManager getCommandManager() {
-      if (manager == null) {
-          String clazz = System.getProperty(COMMAND_MANAGER_PROPERTY_KEY);
-          Class<RestCommandManager> managerClazz;
-          try {
-                managerClazz = (Class<RestCommandManager>) Class.forName(clazz);
-                manager = managerClazz.newInstance();
-          } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-          } catch (InstantiationException e) {
-                e.printStackTrace();
-          } catch (IllegalAccessException e) {
-                e.printStackTrace();
-          }
-        }
-      return manager;
-   }
+  @SuppressWarnings("unchecked")
+  public static RestCommandManager getCommandManager() {
+    if (manager == null) {
+      String clazz = System.getProperty(COMMAND_MANAGER_PROPERTY_KEY);
+      Class<RestCommandManager> managerClazz;
+      try {
+        managerClazz = (Class<RestCommandManager>) Class.forName(clazz);
+        manager = managerClazz.newInstance();
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      } catch (InstantiationException e) {
+        e.printStackTrace();
+      } catch (IllegalAccessException e) {
+        e.printStackTrace();
+      }
+    }
+    return manager;
+  }
 
 }
