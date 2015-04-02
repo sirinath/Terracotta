@@ -29,7 +29,7 @@ class HelpCommand implements Command<Context> {
     System.out.println("Usage : ");
     System.out.println("rest-client <flags> <url> <POST data> <json query 1> <json query 2> ... <json query n>");
     for (CliCommand cliCommand : CliCommand.values()) {
-      if (!cliCommand.isHidden()) {
+      if (!cliCommand.isHidden() && (cliCommand.getCommand()!=null)) {
         System.out.println("  -" + cliCommand.getSwitchChar() + " " + cliCommand.getCommand().helpMessage());
       }
     }
