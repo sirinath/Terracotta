@@ -19,14 +19,14 @@ package org.terracotta.management.cli.rest;
 import org.terracotta.management.cli.Command;
 
 public interface RestCommandManager {
-      
-      Command<Context> getHelpCommand();
-      
-      Command<Context> getPostCommand();
-      
-      Command<Context> getGetCommand();
-      
-      Command<Context> getUrlEncodingCommand();
-      
-      Command<Context> getUnsafeSSLCommand();
+
+  Command<Context> getHelpCommand();
+
+  Command<Context> getPostCommand();
+
+  Command<Context> getGetCommand();
+
+  Command<Context> getUrlEncodingCommand();
+
+  Command<Context> getUnsafeSSLCommand();
 }

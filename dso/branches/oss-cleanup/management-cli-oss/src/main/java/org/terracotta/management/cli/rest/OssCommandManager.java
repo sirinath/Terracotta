@@ -20,29 +20,29 @@ import org.terracotta.management.cli.Command;
 
 public class OssCommandManager implements RestCommandManager {
 
-    @Override
-    public Command<Context> getHelpCommand() {
-     return new HelpCommand();
-    }
+  @Override
+  public Command<Context> getHelpCommand() {
+    return new HelpCommand();
+  }
 
-    @Override
-    public Command<Context> getPostCommand() {
-       return new PostCommand();
-    }
+  @Override
+  public Command<Context> getPostCommand() {
+    return new PostCommand();
+  }
 
-    @Override
-    public Command<Context> getGetCommand() {
-       return new GetCommand();
-    }
+  @Override
+  public Command<Context> getGetCommand() {
+    return new GetCommand();
+  }
 
-    @Override
-    public Command<Context> getUrlEncodingCommand() {
-      return null;
-    }
+  @Override
+  public Command<Context> getUrlEncodingCommand() {
+    return null;
+  }
 
-    @Override
-    public Command<Context> getUnsafeSSLCommand() {
-       return null;
-    }
+  @Override
+  public Command<Context> getUnsafeSSLCommand() {
+    return null;
+  }
 
 }

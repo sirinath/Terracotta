@@ -20,40 +20,39 @@ import org.terracotta.management.cli.Command;
 import org.terracotta.management.cli.CommandProvider;
 
 public enum CliCommand implements CommandProvider<Context> {
-        
-        HELP('h', RestCommandManagerProvider.getCommandManager().getHelpCommand()),
-        GET('g', RestCommandManagerProvider.getCommandManager().getGetCommand()),
-        POST('p', RestCommandManagerProvider.getCommandManager().getPostCommand()),
-        ENCODE('e', RestCommandManagerProvider.getCommandManager().getUrlEncodingCommand()),
-        IGNORE_SSL_ERRORS('k', RestCommandManagerProvider.getCommandManager().getUnsafeSSLCommand()),
-        FAIL_ON_EMPTY('f', new FailOnEmptyCommand(), true);
 
+  HELP('h', RestCommandManagerProvider.getCommandManager().getHelpCommand()), 
+  GET('g', RestCommandManagerProvider.getCommandManager().getGetCommand()), 
+  POST('p', RestCommandManagerProvider.getCommandManager().getPostCommand()), 
+  ENCODE('e', RestCommandManagerProvider.getCommandManager().getUrlEncodingCommand()), 
+  IGNORE_SSL_ERRORS('k', RestCommandManagerProvider.getCommandManager().getUnsafeSSLCommand()),
+  FAIL_ON_EMPTY('f', new FailOnEmptyCommand(), true);
 
-        private final char c;
-        private final Command<Context> command;
-        private final boolean hidden;
+  private final char c;
+  private final Command<Context> command;
+  private final boolean hidden;
 
-        CliCommand(final char h, final Command<Context> command) {
-          this(h, command, false);
-        }
+  CliCommand(final char h, final Command<Context> command) {
+    this(h, command, false);
+  }
 
-        CliCommand(final char h, final Command<Context> command, boolean hidden) {
-          this.c = h;
-          this.command = command;
-          this.hidden = hidden;
-        }
+  CliCommand(final char h, final Command<Context> command, boolean hidden) {
+    this.c = h;
+    this.command = command;
+    this.hidden = hidden;
+  }
 
-        @Override
-        public Command<Context> getCommand() {
-          return command;
-        }
+  @Override
+  public Command<Context> getCommand() {
+    return command;
+  }
 
-        @Override
-        public char getSwitchChar() {
-          return c;
-        }
+  @Override
+  public char getSwitchChar() {
+    return c;
+  }
 
-        public boolean isHidden() {
-          return hidden;
-        }
-      }
+  public boolean isHidden() {
+    return hidden;
+  }
+}
