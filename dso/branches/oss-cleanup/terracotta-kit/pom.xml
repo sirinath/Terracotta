@@ -39,8 +39,6 @@ The Initial Developer of the Covered Software is
 
     <ehcache.version>2.10.0-SNAPSHOT</ehcache.version>
     <toolkit-api.version>2.1.0</toolkit-api.version>
-    <bigmemory.version>4.3.0-SNAPSHOT</bigmemory.version>
-    <sessions.version>4.3.0-SNAPSHOT</sessions.version>
     <escrow-maven-plugin.version>1.0.0</escrow-maven-plugin.version>
     <management-cli.version>${project.version}</management-cli.version>
     <terracotta.license>LICENSE.txt</terracotta.license>
@@ -107,7 +105,7 @@ The Initial Developer of the Covered Software is
     <dependency>
       <groupId>com.terracotta</groupId>
       <artifactId>terracotta-samples</artifactId>
-      <version>${bigmemory.version}</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.terracotta.internal</groupId>
@@ -204,7 +202,7 @@ The Initial Developer of the Covered Software is
                 <artifactItem>
                   <groupId>com.terracotta</groupId>
                   <artifactId>terracotta-samples</artifactId>
-                  <version>${bigmemory.version}</version>
+                  <version>${project.version}</version>
                   <classifier>distribution</classifier>
                   <type>tar.gz</type>
                   <overWrite>false</overWrite>
