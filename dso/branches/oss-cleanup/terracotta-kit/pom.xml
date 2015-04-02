@@ -103,7 +103,7 @@ The Initial Developer of the Covered Software is
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.terracotta</groupId>
+      <groupId>org.terracotta</groupId>
       <artifactId>terracotta-samples</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -200,7 +200,7 @@ The Initial Developer of the Covered Software is
                   <outputDirectory>${project.build.directory}</outputDirectory>
                 </artifactItem>
                 <artifactItem>
-                  <groupId>com.terracotta</groupId>
+                  <groupId>org.terracotta</groupId>
                   <artifactId>terracotta-samples</artifactId>
                   <version>${project.version}</version>
                   <classifier>distribution</classifier>
