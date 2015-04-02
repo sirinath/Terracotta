@@ -408,10 +408,10 @@ The Initial Developer of the Covered Software is
       <url>${terracotta-nexus-staging-url}</url>
     </repository>
     <snapshotRepository>
-      <id>terracotta-ee-snapshots</id>
+      <id>terracotta-os-snapshots</id>
        <uniqueVersion>false</uniqueVersion>
-       <name>Terracotta EE Snapshots Repository</name>
-       <url>${terracotta-ee-snapshots-url}</url>
+       <name>Terracotta OS Snapshots Repository</name>
+       <url>${terracotta-os-snapshots-url}</url>
     </snapshotRepository>
   </distributionManagement>
 

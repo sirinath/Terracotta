@@ -257,9 +257,6 @@ The Initial Developer of the Covered Software is
     </plugins>
   </build>
 
-  <distributionManagement>
-  </distributionManagement>
-
   <profiles>
     <profile>
       <id>tc-publish</id>
@@ -398,17 +395,5 @@ The Initial Developer of the Covered Software is
         </plugins>
       </build>
     </profile>
-
-
-    <!--profile>
-      <id>release</id>
-      <distributionManagement>
-        <repository>
-          <id>terracotta-ee-releases</id>
-          <name>Terracotta EE Releases Repository</name>
-          <url>${terracotta-ee-releases.url}</url>
-        </repository>
-      </distributionManagement>
-    </profile-->
   </profiles>
 </project>
