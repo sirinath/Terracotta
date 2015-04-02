@@ -3,7 +3,7 @@ Terracotta  Server 4.3
 
 Welcome to Terracotta Server Open Source Software (OSS) kit!
 
-Terracotta Server OSS offers powerful distributed In-Memory Data Management. It also includes widely used caching library - Ehcache (/apis/ehcache).
+Terracotta Server OSS offers powerful distributed In-Memory Data Management. It also includes the widely used caching library - Ehcache (/apis/ehcache).
 
 Contents
 ---------------
@@ -11,7 +11,7 @@ Contents
    README.txt -- This file 
    config-samples -- Directory containing sample configuration files 
    server -- Directory containing libraries, executables, and other supporting files for the Terracotta Server 
-   apis -- Directory containing data access APIs - ehcache 
+   apis -- Directory containing data access APIs - ehcache and Terracotta toolkit
    RELEASE_NOTES.txt -- Link to release notes 
    code-samples -- Directory containing code samples for using Ehcache with Terracotta Server
 

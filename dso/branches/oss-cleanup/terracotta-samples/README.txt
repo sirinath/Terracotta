@@ -38,15 +38,15 @@ Running the samples with Maven:
 All samples can be run via Maven commands. After starting the server:
 
 %> mvn install ( run at least once to compile the samples )
-%> mvn exec:exec -P mySample (where mySample is the name of the test (crud, search, configprogrammatic ...). See details in next paragraphs.
+%> mvn exec:exec -P mySample (where mySample is the name of the test (crud, configprogrammatic ...). See details in next paragraphs.
 
 Basic configuration samples:
-configprogrammatic - Configure BigMemory programatically
-configfile - Configure BigMemory via xml
-arc - Configure BigMemory with Automatic Resource Control
+configprogrammatic - Configure Terracotta server programatically
+configfile - Configure Terracotta server via xml
+arc - Configure Terracotta server with Automatic Resource Control
 
 Samples demonstrating features:
-crud - Basic BigMemory operations - create, retrieve, update, delete
+crud - Basic Terracotta server operations - create, retrieve, update, delete
 readwritethrough - Cache Loader and Cache Writer
-cache - Use BigMemory as a cache
-nonstop - BigMemory nonstop and rejoin features
+cache - Use Terracotta server as a cache
+nonstop - Terracotta server nonstop and rejoin features
