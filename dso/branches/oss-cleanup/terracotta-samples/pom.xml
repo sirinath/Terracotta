@@ -192,20 +192,6 @@ The Initial Developer of the Covered Software is
     </plugins>
   </build>
 
-  <distributionManagement>
-    <repository>
-      <id>terracotta-nexus-staging</id>
-      <name>Terracotta Nexus Staging Repository</name>
-      <url>${terracotta-nexus-staging-url}</url>
-    </repository>
-    <snapshotRepository>
-      <id>terracotta-snapshots</id>
-      <uniqueVersion>false</uniqueVersion>
-      <name>Terracotta Snapshots Repository</name>
-      <url>${terracotta-snapshots-url}</url>
-    </snapshotRepository>
-  </distributionManagement>
-
   <repositories>
     <repository>
       <id>terracotta-repository</id>
