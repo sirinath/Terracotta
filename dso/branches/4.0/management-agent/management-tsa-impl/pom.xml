@@ -7,13 +7,13 @@
   <parent>
     <groupId>org.terracotta</groupId>
     <artifactId>build-parent</artifactId>
-    <version>4.0.8-SNAPSHOT</version>
+    <version>4.0.9-SNAPSHOT</version>
     <relativePath>../../build-parent</relativePath>
   </parent>
 
   <properties>
-    <ehcache.management.version>2.7.8-SNAPSHOT</ehcache.management.version>
-    <management.apps.parent.version>1.1.8-SNAPSHOT</management.apps.parent.version>
+    <ehcache.management.version>2.7.9-SNAPSHOT</ehcache.management.version>
+    <management.apps.parent.version>1.1.9-SNAPSHOT</management.apps.parent.version>
   </properties>
 
 
