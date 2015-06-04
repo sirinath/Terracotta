@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+The contents of this file are subject to the Terracotta Public License Version
+2.0 (the "License"); You may not use this file except in compliance with the
+License. You may obtain a copy of the License at 
+
+     http://terracotta.org/legal/terracotta-public-license.
+
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
+the specific language governing rights and limitations under the License.
+
+The Covered Software is Terracotta Platform.
+
+The Initial Developer of the Covered Software is 
+     Terracotta, Inc., a Software AG company
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  
+  <parent>
+    <groupId>org.terracotta</groupId>
+    <artifactId>build-parent</artifactId>
+    <version>4.3.1.0.140</version>
+    <relativePath>../build-parent</relativePath>
+  </parent>
+  
+  <groupId>org.terracotta.internal</groupId>
+  <artifactId>build-data</artifactId>
+  <packaging>jar</packaging>
+  <name>build-data</name>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.terracotta</groupId>
+        <artifactId>maven-forge-plugin</artifactId>
+        <configuration>
+          <rootPath>${basedir}/..</rootPath>
+          <eeRootPath>${basedir}/../..</eeRootPath>
+        </configuration>
+        <executions>
+          <execution>
+            <id>create-build-info</id>
+            <goals>
+              <goal>buildinfo</goal>
+            </goals>
+            <phase>generate-resources</phase>
+          </execution>
+        </executions>
+      </plugin>       
+    </plugins>
+  </build>
+  
+  <profiles>
+    <profile>
+      <id>patch</id>
+      <build>
+        <resources>
+          <resource>
+            <directory>${basedir}/src/main/filtered-resources</directory>
+            <filtering>true</filtering>
+          </resource>        
+          <resource>
+            <directory>${basedir}/src/main/patch-resources</directory>
+            <filtering>true</filtering>
+          </resource>
+        </resources>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.gmaven</groupId>
+            <artifactId>gmaven-plugin</artifactId>
+            <version>${gmaven-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>read-patch-def-file</id>
+                <phase>generate-resources</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <source>
+                    def patchDefFile = new File(project.basedir, "../../bigmemory-max-kit/src/packaging/patch/patch-def.xml")
+                    def patchDef = new XmlSlurper().parse(patchDefFile)
+                    def patchLevel = patchDef.level.text()
+                    project.properties['patch.level'] = patchLevel
+                  </source>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>
