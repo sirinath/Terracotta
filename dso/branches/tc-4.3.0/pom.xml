@@ -116,6 +116,7 @@
         <module>../toolkit-runtime-ee</module>
         <module>../toolkit-ee-system-tests</module>
         <module>../toolkit-lrt-system-tests</module>
+        <module>../wan-standalone</module>
       </modules>
     </profile>
 
